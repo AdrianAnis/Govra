@@ -17,25 +17,7 @@
   --secondary-fg: #ffffff;
   --accent: #c3f84a;
   --accent-fg: #152641;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0b1424;
-    --surface: #152641;
-    --surface-muted: #1c3052;
-    --border: #2c3c56;
-    --border-strong: #44536b;
-    --fg: #ffffff;
-    --fg-muted: #c4c9d0;
-    --fg-subtle: #a1a8b3;
-    --primary: #5a98fd;
-    --primary-hover: #89b5fe;
-    --primary-fg: #0b1424;
-    --primary-soft: #17345e;
-    --secondary: #e8f4fc;
-    --secondary-fg: #152641;
-  }
+  color-scheme: light;
 }
 
 @theme inline {
