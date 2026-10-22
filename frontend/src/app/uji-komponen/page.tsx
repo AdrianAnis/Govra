@@ -1,6 +1,12 @@
 "use client";
 
 import { toast } from "sonner";
+import { IssueCard, IssueCardSkeleton } from "@/components/issue-card";
+import { IssueTimeline } from "@/components/issue-timeline";
+import { KpiTile, KpiTileSkeleton } from "@/components/kpi-tile";
+import { ProgramCard, ProgramCardSkeleton } from "@/components/program-card";
+import { SimulationBanner } from "@/components/simulation-banner";
+import { EmptyState, ErrorState } from "@/components/state-message";
 import { StatusBadge } from "@/components/status-badge";
 import { UrgencyEdge, UrgencyMarker } from "@/components/urgency-marker";
 import { ISSUE_STATUS, PROGRAM_STATUS } from "@/lib/status";
@@ -40,6 +46,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+
+import { EVENTS, ISSUES, NOW, PROGRAMS } from "./fixtures";
 
 const OPD_ITEMS = [
   { value: "all", label: "Semua OPD" },
@@ -150,6 +158,42 @@ export default function ComponentTestPage() {
             <UrgencyEdge urgency="URGENT" />
             Kartu dengan garis kiri Urgent
           </div>
+        </section>
+
+        <section className="flex flex-col gap-4">
+          <SimulationBanner />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <KpiTile
+              label="Proker sesuai jadwal"
+              value="72%"
+              delta="Naik 3 poin dari bulan lalu"
+              href="/rapor"
+            />
+            <KpiTileSkeleton />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {PROGRAMS.map((program) => (
+              <ProgramCard key={program.code} program={program} />
+            ))}
+            <ProgramCardSkeleton />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {ISSUES.map((issue) => (
+              <IssueCard key={issue.id} issue={issue} now={NOW} />
+            ))}
+            <IssueCardSkeleton />
+          </div>
+          <IssueTimeline events={EVENTS} now={NOW} />
+          <EmptyState
+            title="Belum ada isu"
+            description="Isu yang cocok dengan filter Anda akan muncul di sini."
+            action={<Button variant="secondary">Hapus filter</Button>}
+          />
+          <ErrorState
+            title="Data belum bisa dimuat"
+            description="Terjadi gangguan saat mengambil data. Coba lagi beberapa saat."
+            action={<Button>Coba lagi</Button>}
+          />
         </section>
 
         <section className="flex flex-col gap-2">

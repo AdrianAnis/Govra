@@ -53,6 +53,10 @@ export function formatNumber(value: number): string {
   return numberFormat.format(value);
 }
 
+export function clampPercent(value: number): number {
+  return Math.min(100, Math.max(0, value));
+}
+
 export function formatPercent(value: number): string {
   return `${numberFormat.format(Math.round(value))}%`;
 }

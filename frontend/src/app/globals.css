@@ -67,6 +67,14 @@
   }
 }
 
+@utility bg-hatch {
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--secondary) 0 2px,
+    transparent 2px 6px
+  );
+}
+
 body {
   background: var(--bg);
   color: var(--fg);
