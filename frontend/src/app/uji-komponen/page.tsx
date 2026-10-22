@@ -1,6 +1,9 @@
 "use client";
 
 import { toast } from "sonner";
+import { StatusBadge } from "@/components/status-badge";
+import { UrgencyEdge, UrgencyMarker } from "@/components/urgency-marker";
+import { ISSUE_STATUS, PROGRAM_STATUS } from "@/lib/status";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -126,6 +129,28 @@ export default function ComponentTestPage() {
           <TabsContent value="a">Isi tab ringkasan.</TabsContent>
           <TabsContent value="b">Isi tab timeline.</TabsContent>
         </Tabs>
+
+        <section className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(PROGRAM_STATUS).map(([key, meta]) => (
+              <StatusBadge key={key} {...meta} />
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(ISSUE_STATUS).map(([key, meta]) => (
+              <StatusBadge key={key} {...meta} />
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <UrgencyMarker urgency="URGENT" />
+            <UrgencyMarker urgency="TINGGI" />
+            <UrgencyMarker urgency="NORMAL" />
+          </div>
+          <div className="relative rounded-lg border p-4 pl-5">
+            <UrgencyEdge urgency="URGENT" />
+            Kartu dengan garis kiri Urgent
+          </div>
+        </section>
 
         <section className="flex flex-col gap-2">
           <Skeleton className="h-6 w-1/2" />
