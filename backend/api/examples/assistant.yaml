@@ -1,0 +1,12 @@
+ChatReplyPublic:
+  summary: Jawaban tentang proker untuk pengunjung
+  value:
+    reply: Proker perbaikan jalan poros Kecamatan Utara baru mencapai 40 persen, sedangkan seharusnya sudah 83 persen. Statusnya Terlambat.
+    sources:
+      - {kind: PROGRAM, title: Perbaikan jalan poros Kecamatan Utara, path: /proker/PRK-001}
+ChatReplyReporter:
+  summary: Jawaban tentang laporan milik pelapor
+  value:
+    reply: Laporan TLK-2610-8F3K sedang diproses oleh Dinas Bina Marga dan Sumber Daya Air. Tim survei sudah dikirim ke lokasi.
+    sources:
+      - {kind: ISSUE, title: Jalan berlubang di Jalan Melati membahayakan pengendara, path: /isu/0197b000-0000-7000-8000-000000000001}

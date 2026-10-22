@@ -1,0 +1,27 @@
+messages:
+  post:
+    operationId: sendAssistantMessage
+    tags: [Chatbot]
+    summary: Kirim pertanyaan ke chatbot
+    description: >-
+      Pengunjung publik dan Pelapor. Riwayat hanya dibawa klien selama sesi.
+      Jawaban hanya berdasarkan data sistem dan menyertakan tautan sumber.
+    security:
+      - bffKey: []
+      - bffKey: []
+        bearer: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/assistant.yaml#/ChatRequest'}
+    responses:
+      '200':
+        description: Jawaban chatbot
+        content:
+          application/json:
+            schema: {$ref: '../schemas/assistant.yaml#/ChatReply'}
+            examples:
+              publik: {$ref: '../examples/assistant.yaml#/ChatReplyPublic'}
+              pelapor: {$ref: '../examples/assistant.yaml#/ChatReplyReporter'}
+      default: {$ref: '../responses/error.yaml'}

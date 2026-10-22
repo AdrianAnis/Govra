@@ -1,0 +1,33 @@
+ChatMessage:
+  type: object
+  required: [role, content]
+  properties:
+    role: {$ref: 'enums.yaml#/ChatRole'}
+    content: {type: string, minLength: 1, maxLength: 2000}
+ChatRequest:
+  type: object
+  required: [messages]
+  properties:
+    messages:
+      type: array
+      minItems: 1
+      maxItems: 20
+      description: Riwayat sesi. Pesan terakhir adalah pertanyaan pengguna.
+      items: {$ref: '#/ChatMessage'}
+ChatSource:
+  type: object
+  required: [kind, title, path]
+  properties:
+    kind: {$ref: 'enums.yaml#/SourceKind'}
+    title: {type: string}
+    path:
+      type: string
+      pattern: '^/'
+ChatReply:
+  type: object
+  required: [reply, sources]
+  properties:
+    reply: {type: string}
+    sources:
+      type: array
+      items: {$ref: '#/ChatSource'}

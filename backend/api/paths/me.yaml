@@ -1,0 +1,111 @@
+me:
+  get:
+    operationId: getMe
+    tags: [Akun]
+    summary: Profil dan role pengguna yang sedang login
+    security:
+      - bffKey: []
+        bearer: []
+    responses:
+      '200':
+        description: Profil
+        content:
+          application/json:
+            schema: {$ref: '../schemas/user.yaml#/Profile'}
+            examples:
+              pelapor: {$ref: '../examples/me.yaml#/ProfilePelapor'}
+              dinas: {$ref: '../examples/me.yaml#/ProfileDinas'}
+              admin: {$ref: '../examples/me.yaml#/ProfileAdmin'}
+      default: {$ref: '../responses/error.yaml'}
+  delete:
+    operationId: deleteMyAccount
+    tags: [Akun]
+    summary: Hapus akun. Laporan dianonimkan, bukan dihapus.
+    security:
+      - bffKey: []
+        bearer: []
+    responses:
+      '204':
+        description: Akun dihapus
+      default: {$ref: '../responses/error.yaml'}
+export:
+  get:
+    operationId: exportMyData
+    tags: [Akun]
+    summary: Unduh data milik pelapor
+    security:
+      - bffKey: []
+        bearer: []
+    responses:
+      '200':
+        description: Data pelapor
+        content:
+          application/json:
+            schema: {$ref: '../schemas/report.yaml#/MyDataExport'}
+            examples:
+              pelapor: {$ref: '../examples/me.yaml#/MyDataExport'}
+      default: {$ref: '../responses/error.yaml'}
+reports:
+  get:
+    operationId: listMyReports
+    tags: [Akun]
+    summary: Laporan milik pelapor
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/Page'
+      - $ref: '../parameters/common.yaml#/Limit'
+    responses:
+      '200':
+        description: Halaman laporan
+        content:
+          application/json:
+            schema: {$ref: '../schemas/report.yaml#/MyReportList'}
+            examples:
+              pelapor: {$ref: '../examples/reports.yaml#/MyReportList'}
+      default: {$ref: '../responses/error.yaml'}
+report:
+  get:
+    operationId: getMyReport
+    tags: [Akun]
+    summary: Detail laporan milik pelapor
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/ReportCodePath'
+    responses:
+      '200':
+        description: Detail laporan
+        content:
+          application/json:
+            schema: {$ref: '../schemas/report.yaml#/MyReportDetail'}
+            examples:
+              pelapor: {$ref: '../examples/reports.yaml#/MyReportDetail'}
+      default: {$ref: '../responses/error.yaml'}
+feedback:
+  post:
+    operationId: submitResolutionFeedback
+    tags: [Akun]
+    summary: Konfirmasi atau sanggah penyelesaian isu
+    description: Hanya anggota isu, dalam batas waktu sanggahan.
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/ReportCodePath'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/report.yaml#/FeedbackRequest'}
+    responses:
+      '200':
+        description: Umpan balik tercatat
+        content:
+          application/json:
+            schema: {$ref: '../schemas/report.yaml#/FeedbackResult'}
+            examples:
+              pelapor: {$ref: '../examples/reports.yaml#/FeedbackResult'}
+      default: {$ref: '../responses/error.yaml'}

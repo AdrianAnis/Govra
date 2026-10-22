@@ -1,0 +1,64 @@
+list:
+  get:
+    operationId: listIssues
+    tags: [Isu]
+    summary: Daftar isu publik untuk peta dan feed
+    parameters:
+      - $ref: '../parameters/common.yaml#/Query'
+      - $ref: '../parameters/common.yaml#/OpdSlugFilter'
+      - $ref: '../parameters/common.yaml#/DistrictFilter'
+      - $ref: '../parameters/common.yaml#/IssueStatusFilter'
+      - $ref: '../parameters/common.yaml#/UrgencyFilter'
+      - $ref: '../parameters/common.yaml#/Page'
+      - $ref: '../parameters/common.yaml#/Limit'
+    responses:
+      '200':
+        description: Halaman isu. Lokasi dibulatkan ke kelurahan.
+        content:
+          application/json:
+            schema: {$ref: '../schemas/issue.yaml#/IssueList'}
+            examples:
+              publik: {$ref: '../examples/issues.yaml#/IssueList'}
+              pelapor: {$ref: '../examples/issues.yaml#/IssueList'}
+              dinas: {$ref: '../examples/issues.yaml#/IssueList'}
+              admin: {$ref: '../examples/issues.yaml#/IssueList'}
+      default: {$ref: '../responses/error.yaml'}
+detail:
+  get:
+    operationId: getIssue
+    tags: [Isu]
+    summary: Detail isu publik beserta timeline
+    parameters:
+      - $ref: '../parameters/common.yaml#/IdPath'
+    responses:
+      '200':
+        description: Detail isu
+        content:
+          application/json:
+            schema: {$ref: '../schemas/issue.yaml#/IssueDetail'}
+            examples:
+              publik: {$ref: '../examples/issues.yaml#/IssueDetail'}
+              pelapor: {$ref: '../examples/issues.yaml#/IssueDetail'}
+              dinas: {$ref: '../examples/issues.yaml#/IssueDetail'}
+              admin: {$ref: '../examples/issues.yaml#/IssueDetail'}
+      default: {$ref: '../responses/error.yaml'}
+support:
+  post:
+    operationId: supportIssue
+    tags: [Isu]
+    summary: Dukung isu yang sudah ada
+    description: Laporan baru langsung tergabung ke isu ini. Hanya Pelapor.
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/IdPath'
+    responses:
+      '200':
+        description: Dukungan tercatat
+        content:
+          application/json:
+            schema: {$ref: '../schemas/issue.yaml#/SupportResult'}
+            examples:
+              pelapor: {$ref: '../examples/issues.yaml#/SupportResult'}
+      default: {$ref: '../responses/error.yaml'}

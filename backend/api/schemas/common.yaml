@@ -1,0 +1,82 @@
+Uuid:
+  type: string
+  format: uuid
+DateTime:
+  type: string
+  format: date-time
+Date:
+  type: string
+  format: date
+Code:
+  type: string
+  pattern: '^[A-Z0-9_]+$'
+  maxLength: 40
+Slug:
+  type: string
+  pattern: '^[a-z0-9-]+$'
+  maxLength: 80
+Error:
+  type: object
+  required: [code, message, request_id]
+  properties:
+    code: {type: string}
+    message: {type: string}
+    request_id: {type: string}
+Pagination:
+  type: object
+  required: [page, limit, total]
+  properties:
+    page: {type: integer, minimum: 1}
+    limit: {type: integer, minimum: 1, maximum: 50}
+    total: {type: integer, minimum: 0}
+AreaRef:
+  type: object
+  required: [id, name]
+  properties:
+    id: {$ref: '#/Uuid'}
+    name: {type: string}
+OpdRef:
+  type: object
+  required: [code, slug, name]
+  properties:
+    code: {$ref: '#/Code'}
+    slug: {$ref: '#/Slug'}
+    name: {type: string}
+CategoryRef:
+  type: object
+  required: [code, name]
+  properties:
+    code: {$ref: '#/Code'}
+    name: {type: string}
+GeoPoint:
+  type: object
+  required: [lat, lng]
+  properties:
+    lat: {type: number, minimum: -90, maximum: 90}
+    lng: {type: number, minimum: -180, maximum: 180}
+PublicLocation:
+  type: object
+  required: [village, district, point]
+  properties:
+    village: {$ref: '#/AreaRef'}
+    district: {$ref: '#/AreaRef'}
+    point: {$ref: '#/GeoPoint'}
+Attachment:
+  type: object
+  required: [id, url, mime, size_bytes]
+  properties:
+    id: {$ref: '#/Uuid'}
+    url:
+      type: string
+      format: uri
+      description: Signed URL, berlaku maksimal 5 menit.
+    mime:
+      type: string
+      enum: [image/jpeg, image/png, image/webp]
+    size_bytes: {type: integer, minimum: 1}
+StatusCount:
+  type: object
+  required: [status, count]
+  properties:
+    status: {$ref: 'enums.yaml#/IssueStatus'}
+    count: {type: integer, minimum: 0}

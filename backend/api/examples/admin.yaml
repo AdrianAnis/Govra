@@ -1,0 +1,147 @@
+Overview:
+  summary: Ringkasan Admin
+  value:
+    pending_verification: 3
+    pending_transfer: 1
+    dead_letter_jobs: 0
+    reports_today: 14
+    active_agency_users: 4
+VerificationList:
+  summary: Antrean verifikasi dan pengalihan
+  value:
+    page: 1
+    limit: 20
+    total: 2
+    items:
+      - issue_id: 0197b000-0000-7000-8000-000000000011
+        kind: VERIFIKASI
+        title: Warga mengeluhkan bau menyengat dari saluran dekat pasar
+        reporter_count: 1
+        created_at: '2026-10-22T09:00:00Z'
+        ai_suggestion:
+          opd: {code: LHK, slug: dinas-lingkungan-hidup, name: Dinas Lingkungan Hidup dan Kebersihan}
+          category: {code: SAMPAH, name: Sampah menumpuk}
+          confidence: 0.58
+        current_opd: null
+        transfer_reason: null
+        transfer_note: null
+      - issue_id: 0197b000-0000-7000-8000-000000000012
+        kind: PENGALIHAN
+        title: Papan penunjuk jalan roboh
+        reporter_count: 3
+        created_at: '2026-10-20T07:30:00Z'
+        ai_suggestion: null
+        current_opd: {code: BMSDA, slug: dinas-bina-marga-sda, name: Dinas Bina Marga dan Sumber Daya Air}
+        transfer_reason: BUKAN_WEWENANG_OPD
+        transfer_note: Rambu lalu lintas menjadi wewenang Dinas Perhubungan.
+IssueStatusResult:
+  summary: Isu diteruskan
+  value:
+    issue_id: 0197b000-0000-7000-8000-000000000011
+    status: DITERUSKAN
+AdminUserList:
+  summary: Daftar akun
+  value:
+    page: 1
+    limit: 20
+    total: 1
+    items:
+      - &admin_user
+        id: 0197c000-0000-7000-8000-000000000002
+        email: bmsda@example.org
+        display_name: Admin Bina Marga
+        role: DINAS
+        opd: {code: BMSDA, slug: dinas-bina-marga-sda, name: Dinas Bina Marga dan Sumber Daya Air}
+        status: ACTIVE
+        mfa_enrolled: true
+        last_sign_in_at: '2026-10-22T08:15:00Z'
+AdminUser:
+  summary: Satu akun Dinas
+  value:
+    <<: *admin_user
+OpdDetailList:
+  summary: Master OPD
+  value:
+    items:
+      - &opd_detail
+        code: BMSDA
+        slug: dinas-bina-marga-sda
+        name: Dinas Bina Marga dan Sumber Daya Air
+        active: true
+        categories:
+          - {code: JALAN_RUSAK, name: Jalan rusak, active: true}
+          - {code: DRAINASE, name: Saluran dan drainase, active: true}
+OpdDetail:
+  summary: Satu OPD
+  value:
+    <<: *opd_detail
+CategoryDetail:
+  summary: Satu kategori
+  value: {code: JALAN_RUSAK, name: Jalan rusak, active: true}
+District:
+  summary: Satu kecamatan
+  value:
+    id: 0197a000-0000-7000-8000-000000000001
+    name: Kecamatan Utara
+    villages:
+      - {id: 0197a000-0000-7000-8000-000000000011, name: Kelurahan Melati}
+Village:
+  summary: Satu kelurahan atau desa
+  value: {id: 0197a000-0000-7000-8000-000000000011, name: Kelurahan Melati}
+ModerationList:
+  summary: Laporan untuk moderasi
+  value:
+    page: 1
+    limit: 20
+    total: 1
+    items:
+      - &moderation_report
+        id: 0197f000-0000-7000-8000-000000000001
+        code: TLK-2610-5Z9X
+        body: Promo murah, hubungi nomor ini sekarang.
+        visibility: PUBLIK
+        created_at: '2026-10-21T11:00:00Z'
+        hidden: false
+        hide_reason: null
+ModerationReport:
+  summary: Laporan tersembunyi
+  value:
+    <<: *moderation_report
+    hidden: true
+    hide_reason: SPAM
+SettingList:
+  summary: Semua ambang
+  value:
+    items:
+      - &setting_late {key: PROGRAM_LATE_THRESHOLD, label: Selisih progres yang dianggap Terlambat, value: 10, unit: POINTS}
+      - {key: TRIAGE_CONFIDENCE_MIN, label: Confidence minimum untuk diteruskan otomatis, value: 0.75, unit: RATIO}
+      - {key: MERGE_SIMILARITY_MIN, label: Kemiripan minimum untuk menggabungkan isu, value: 0.85, unit: RATIO}
+      - {key: MERGE_RADIUS_METERS, label: Radius penggabungan isu, value: 500, unit: METERS}
+      - {key: MERGE_WINDOW_DAYS, label: Umur isu yang masih bisa digabung, value: 30, unit: DAYS}
+      - {key: URGENT_REPORTERS_7D, label: Pelapor unik 7 hari untuk Urgent, value: 10, unit: COUNT}
+      - {key: URGENT_REPORTERS_72H, label: Pelapor unik 72 jam untuk Urgent, value: 5, unit: COUNT}
+      - {key: HIGH_REPORTERS_7D, label: Pelapor unik 7 hari untuk Tinggi, value: 5, unit: COUNT}
+      - {key: SUBNET_REPORTER_CAP, label: Batas pelapor per subnet, value: 3, unit: COUNT}
+      - {key: SLA_URGENT_HOURS, label: Batas tanggapan pertama Urgent, value: 24, unit: HOURS}
+      - {key: SLA_HIGH_DAYS, label: Batas tanggapan pertama Tinggi, value: 3, unit: DAYS}
+      - {key: SLA_NORMAL_BUSINESS_DAYS, label: Batas tanggapan pertama Normal, value: 5, unit: DAYS}
+      - {key: REOPEN_DISPUTE_RATIO, label: Rasio sanggahan untuk membuka ulang, value: 0.3, unit: RATIO}
+      - {key: REOPEN_WINDOW_DAYS, label: Batas waktu menyanggah, value: 7, unit: DAYS}
+Setting:
+  summary: Satu ambang
+  value: *setting_late
+AuditLogList:
+  summary: Audit log
+  value:
+    page: 1
+    limit: 20
+    total: 1
+    items:
+      - id: 0197f000-0000-7000-8000-000000000101
+        at: '2026-10-22T09:30:00Z'
+        actor_id: 0197c000-0000-7000-8000-000000000003
+        actor_role: ADMIN
+        action: ISSUE_ROUTED
+        target_type: ISSUE
+        target_id: 0197b000-0000-7000-8000-000000000011
+        detail: Diteruskan ke LHK dengan kategori SAMPAH.

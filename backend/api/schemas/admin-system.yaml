@@ -1,0 +1,50 @@
+ModerationReport:
+  type: object
+  required: [id, code, body, visibility, created_at, hidden, hide_reason]
+  properties:
+    id: {$ref: 'common.yaml#/Uuid'}
+    code: {$ref: 'report.yaml#/ReportCode'}
+    body: {type: string}
+    visibility: {$ref: 'enums.yaml#/Visibility'}
+    created_at: {$ref: 'common.yaml#/DateTime'}
+    hidden: {type: boolean}
+    hide_reason:
+      anyOf:
+        - $ref: 'enums.yaml#/ModerationReason'
+        - type: 'null'
+ModerationReportList:
+  allOf:
+    - $ref: 'common.yaml#/Pagination'
+    - type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/ModerationReport'}
+HideReportRequest:
+  type: object
+  required: [reason]
+  properties:
+    reason: {$ref: 'enums.yaml#/ModerationReason'}
+    note: {type: string, maxLength: 500}
+AuditLog:
+  type: object
+  required: [id, at, actor_id, actor_role, action, target_type, target_id, detail]
+  properties:
+    id: {$ref: 'common.yaml#/Uuid'}
+    at: {$ref: 'common.yaml#/DateTime'}
+    actor_id: {$ref: 'common.yaml#/Uuid'}
+    actor_role: {$ref: 'enums.yaml#/Role'}
+    action: {type: string}
+    target_type: {type: string}
+    target_id: {type: [string, 'null']}
+    detail: {type: [string, 'null']}
+AuditLogList:
+  allOf:
+    - $ref: 'common.yaml#/Pagination'
+    - type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/AuditLog'}

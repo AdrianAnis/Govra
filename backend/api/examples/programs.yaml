@@ -1,0 +1,80 @@
+ProgramList:
+  summary: Daftar proker dengan variasi status
+  value:
+    page: 1
+    limit: 20
+    total: 4
+    items:
+      - code: PRK-001
+        name: Perbaikan jalan poros Kecamatan Utara
+        opd: {code: BMSDA, slug: dinas-bina-marga-sda, name: Dinas Bina Marga dan Sumber Daya Air}
+        goal: {code: INFRA_JALAN, name: Infrastruktur jalan mantap}
+        district: {id: 0197a000-0000-7000-8000-000000000001, name: Kecamatan Utara}
+        status: TERLAMBAT
+        progress_percent: 40
+        expected_percent: 83
+        start_date: '2026-01-05'
+        end_date: '2026-12-20'
+        related_issue_count: 3
+      - code: PRK-002
+        name: Pembangunan TPS 3R Kecamatan Selatan
+        opd: {code: LHK, slug: dinas-lingkungan-hidup, name: Dinas Lingkungan Hidup dan Kebersihan}
+        goal: {code: LINGKUNGAN, name: Lingkungan bersih dan sehat}
+        district: {id: 0197a000-0000-7000-8000-000000000002, name: Kecamatan Selatan}
+        status: SESUAI_JADWAL
+        progress_percent: 82
+        expected_percent: 86
+        start_date: '2026-03-01'
+        end_date: '2026-11-30'
+        related_issue_count: 1
+      - code: PRK-003
+        name: Pengadaan alat kesehatan puskesmas
+        opd: {code: KES, slug: dinas-kesehatan, name: Dinas Kesehatan}
+        goal: {code: KESEHATAN, name: Layanan kesehatan merata}
+        district: {id: 0197a000-0000-7000-8000-000000000003, name: Kecamatan Timur}
+        status: MELEWATI_TENGGAT
+        progress_percent: 70
+        expected_percent: 100
+        start_date: '2026-02-01'
+        end_date: '2026-09-30'
+        related_issue_count: 0
+      - code: PRK-004
+        name: Normalisasi saluran drainase Kecamatan Utara
+        opd: {code: BMSDA, slug: dinas-bina-marga-sda, name: Dinas Bina Marga dan Sumber Daya Air}
+        goal: {code: INFRA_JALAN, name: Infrastruktur jalan mantap}
+        district: {id: 0197a000-0000-7000-8000-000000000001, name: Kecamatan Utara}
+        status: BELUM_DIMULAI
+        progress_percent: 0
+        expected_percent: 0
+        start_date: '2026-11-15'
+        end_date: '2027-06-30'
+        related_issue_count: 1
+ProgramDetail:
+  summary: Detail proker terlambat
+  value:
+    code: PRK-001
+    name: Perbaikan jalan poros Kecamatan Utara
+    opd: {code: BMSDA, slug: dinas-bina-marga-sda, name: Dinas Bina Marga dan Sumber Daya Air}
+    goal: {code: INFRA_JALAN, name: Infrastruktur jalan mantap}
+    district: {id: 0197a000-0000-7000-8000-000000000001, name: Kecamatan Utara}
+    status: TERLAMBAT
+    progress_percent: 40
+    expected_percent: 83
+    start_date: '2026-01-05'
+    end_date: '2026-12-20'
+    related_issue_count: 3
+    indicator: Panjang jalan yang diperbaiki
+    target: 12
+    unit: km
+    realization: 4.8
+    budget: {ceiling: 4500000000, realized: 1800000000}
+    milestones:
+      - {name: Survei dan perencanaan, due_date: '2026-02-15', done: true}
+      - {name: Lelang pekerjaan, due_date: '2026-04-30', done: true}
+      - {name: Pengaspalan tahap 1, due_date: '2026-08-31', done: false}
+      - {name: Pengaspalan tahap 2, due_date: '2026-12-15', done: false}
+    documentation:
+      - {url: 'https://example.org/dokumentasi/prk-001-1.jpg', caption: Pengaspalan segmen pertama}
+    updates:
+      - {date: '2026-10-10', note: Pengaspalan segmen kedua tertunda cuaca., progress_percent: 40}
+      - {date: '2026-08-12', note: Material tiba di lokasi., progress_percent: 30}

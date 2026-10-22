@@ -1,0 +1,38 @@
+ProfilePelapor:
+  summary: Pelapor
+  value:
+    id: 0197c000-0000-7000-8000-000000000001
+    email: warga@example.org
+    display_name: Warga Contoh
+    role: PELAPOR
+    opd: null
+    status: ACTIVE
+ProfileDinas:
+  summary: Dinas
+  value:
+    id: 0197c000-0000-7000-8000-000000000002
+    email: bmsda@example.org
+    display_name: Admin Bina Marga
+    role: DINAS
+    opd: {code: BMSDA, slug: dinas-bina-marga-sda, name: Dinas Bina Marga dan Sumber Daya Air}
+    status: ACTIVE
+ProfileAdmin:
+  summary: Admin
+  value:
+    id: 0197c000-0000-7000-8000-000000000003
+    email: admin@example.org
+    display_name: Admin Sistem
+    role: ADMIN
+    opd: null
+    status: ACTIVE
+MyDataExport:
+  summary: Unduhan data pelapor
+  value:
+    profile:
+      id: 0197c000-0000-7000-8000-000000000001
+      email: warga@example.org
+      display_name: Warga Contoh
+      role: PELAPOR
+      opd: null
+      status: ACTIVE
+    reports: []

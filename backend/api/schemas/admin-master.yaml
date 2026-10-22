@@ -1,0 +1,56 @@
+CategoryDetail:
+  type: object
+  required: [code, name, active]
+  properties:
+    code: {$ref: 'common.yaml#/Code'}
+    name: {type: string}
+    active: {type: boolean}
+OpdDetail:
+  type: object
+  required: [code, slug, name, active, categories]
+  properties:
+    code: {$ref: 'common.yaml#/Code'}
+    slug: {$ref: 'common.yaml#/Slug'}
+    name: {type: string}
+    active: {type: boolean}
+    categories:
+      type: array
+      items: {$ref: '#/CategoryDetail'}
+OpdDetailList:
+  type: object
+  required: [items]
+  properties:
+    items:
+      type: array
+      items: {$ref: '#/OpdDetail'}
+CreateOpd:
+  type: object
+  required: [code, slug, name]
+  properties:
+    code: {$ref: 'common.yaml#/Code'}
+    slug: {$ref: 'common.yaml#/Slug'}
+    name: {type: string, minLength: 1, maxLength: 120}
+UpdateOpd:
+  type: object
+  minProperties: 1
+  properties:
+    slug: {$ref: 'common.yaml#/Slug'}
+    name: {type: string, minLength: 1, maxLength: 120}
+    active: {type: boolean}
+CreateCategory:
+  type: object
+  required: [code, name]
+  properties:
+    code: {$ref: 'common.yaml#/Code'}
+    name: {type: string, minLength: 1, maxLength: 120}
+UpdateCategory:
+  type: object
+  minProperties: 1
+  properties:
+    name: {type: string, minLength: 1, maxLength: 120}
+    active: {type: boolean}
+AreaName:
+  type: object
+  required: [name]
+  properties:
+    name: {type: string, minLength: 1, maxLength: 120}

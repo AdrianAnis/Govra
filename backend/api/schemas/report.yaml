@@ -1,0 +1,120 @@
+ReportCode:
+  type: string
+  pattern: '^TLK-[0-9]{4}-[A-Z0-9]{4}$'
+CreateReportForm:
+  type: object
+  required: [body, village_id, lat, lng, visibility, turnstile_token]
+  properties:
+    title: {type: string, maxLength: 120}
+    body: {type: string, minLength: 20, maxLength: 2000}
+    village_id: {$ref: 'common.yaml#/Uuid'}
+    lat: {type: number, minimum: -90, maximum: 90}
+    lng: {type: number, minimum: -180, maximum: 180}
+    visibility: {$ref: 'enums.yaml#/Visibility'}
+    turnstile_token: {type: string}
+    attachments:
+      type: array
+      maxItems: 3
+      description: Foto JPEG, PNG, atau WebP, maksimal 5 MB per file.
+      items: {type: string, format: binary}
+CreatedReport:
+  type: object
+  required: [code, status, created_at]
+  properties:
+    code: {$ref: '#/ReportCode'}
+    status: {$ref: 'enums.yaml#/IssueStatus'}
+    created_at: {$ref: 'common.yaml#/DateTime'}
+DuplicateQuery:
+  type: object
+  required: [body, lat, lng]
+  properties:
+    body: {type: string, minLength: 20, maxLength: 2000}
+    lat: {type: number, minimum: -90, maximum: 90}
+    lng: {type: number, minimum: -180, maximum: 180}
+DuplicateSuggestion:
+  type: object
+  required: [issue, distance_m]
+  properties:
+    issue: {$ref: 'issue.yaml#/IssueSummary'}
+    distance_m: {type: integer, minimum: 0}
+DuplicateSuggestionList:
+  type: object
+  required: [items]
+  properties:
+    items:
+      type: array
+      maxItems: 3
+      items: {$ref: '#/DuplicateSuggestion'}
+MyReportSummary:
+  type: object
+  required: [code, title, status, visibility, created_at, issue_id]
+  properties:
+    code: {$ref: '#/ReportCode'}
+    title: {type: [string, 'null']}
+    status: {$ref: 'enums.yaml#/IssueStatus'}
+    visibility: {$ref: 'enums.yaml#/Visibility'}
+    created_at: {$ref: 'common.yaml#/DateTime'}
+    issue_id:
+      anyOf:
+        - $ref: 'common.yaml#/Uuid'
+        - type: 'null'
+MyReportList:
+  allOf:
+    - $ref: 'common.yaml#/Pagination'
+    - type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/MyReportSummary'}
+FeedbackState:
+  type: object
+  required: [can_submit, deadline, submitted]
+  properties:
+    can_submit: {type: boolean}
+    deadline:
+      anyOf:
+        - $ref: 'common.yaml#/DateTime'
+        - type: 'null'
+    submitted:
+      anyOf:
+        - $ref: 'enums.yaml#/FeedbackOutcome'
+        - type: 'null'
+MyReportDetail:
+  allOf:
+    - $ref: '#/MyReportSummary'
+    - type: object
+      required: [body, location, attachments, timeline, feedback, issue]
+      properties:
+        body: {type: string}
+        location: {$ref: 'common.yaml#/PublicLocation'}
+        attachments:
+          type: array
+          items: {$ref: 'common.yaml#/Attachment'}
+        timeline:
+          type: array
+          items: {$ref: 'issue.yaml#/IssueEvent'}
+        feedback: {$ref: '#/FeedbackState'}
+        issue:
+          anyOf:
+            - $ref: 'issue.yaml#/IssueSummary'
+            - type: 'null'
+FeedbackRequest:
+  type: object
+  required: [outcome]
+  properties:
+    outcome: {$ref: 'enums.yaml#/FeedbackOutcome'}
+    note: {type: string, maxLength: 500}
+FeedbackResult:
+  type: object
+  required: [issue_status]
+  properties:
+    issue_status: {$ref: 'enums.yaml#/IssueStatus'}
+MyDataExport:
+  type: object
+  required: [profile, reports]
+  properties:
+    profile: {$ref: 'user.yaml#/Profile'}
+    reports:
+      type: array
+      items: {$ref: '#/MyReportDetail'}

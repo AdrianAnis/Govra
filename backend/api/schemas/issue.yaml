@@ -1,0 +1,63 @@
+IssueEvent:
+  type: object
+  required: [id, at, from_status, to_status, actor_label, note, evidence]
+  properties:
+    id: {$ref: 'common.yaml#/Uuid'}
+    at: {$ref: 'common.yaml#/DateTime'}
+    from_status:
+      anyOf:
+        - $ref: 'enums.yaml#/IssueStatus'
+        - type: 'null'
+    to_status: {$ref: 'enums.yaml#/IssueStatus'}
+    actor_label:
+      type: string
+      description: Nama OPD, Admin, atau Sistem. Nama petugas tidak pernah ditampilkan.
+    note: {type: [string, 'null']}
+    evidence:
+      type: array
+      items: {$ref: 'common.yaml#/Attachment'}
+IssueSummary:
+  type: object
+  required: [id, title, opd, category, status, urgency, reporter_count, location, created_at, updated_at, response_overdue]
+  properties:
+    id: {$ref: 'common.yaml#/Uuid'}
+    title:
+      type: string
+      maxLength: 160
+      description: Ringkasan netral dari triage AI.
+    opd: {$ref: 'common.yaml#/OpdRef'}
+    category: {$ref: 'common.yaml#/CategoryRef'}
+    status: {$ref: 'enums.yaml#/IssueStatus'}
+    urgency: {$ref: 'enums.yaml#/Urgency'}
+    reporter_count: {type: integer, minimum: 1}
+    location: {$ref: 'common.yaml#/PublicLocation'}
+    created_at: {$ref: 'common.yaml#/DateTime'}
+    updated_at: {$ref: 'common.yaml#/DateTime'}
+    response_overdue:
+      type: boolean
+      description: Melewati SLA tanggapan pertama. Tampil sebagai Terlambat Ditanggapi.
+IssueList:
+  allOf:
+    - $ref: 'common.yaml#/Pagination'
+    - type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/IssueSummary'}
+IssueDetail:
+  allOf:
+    - $ref: '#/IssueSummary'
+    - type: object
+      required: [timeline]
+      properties:
+        timeline:
+          type: array
+          items: {$ref: '#/IssueEvent'}
+SupportResult:
+  type: object
+  required: [issue_id, report_code, reporter_count]
+  properties:
+    issue_id: {$ref: 'common.yaml#/Uuid'}
+    report_code: {$ref: 'report.yaml#/ReportCode'}
+    reporter_count: {type: integer, minimum: 1}

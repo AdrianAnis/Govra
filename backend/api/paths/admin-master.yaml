@@ -1,0 +1,204 @@
+opds:
+  get:
+    operationId: listOpdsAdmin
+    tags: [Admin]
+    summary: Master OPD beserta kategori, termasuk yang nonaktif
+    security:
+      - bffKey: []
+        bearer: []
+    responses:
+      '200':
+        description: Daftar OPD
+        content:
+          application/json:
+            schema: {$ref: '../schemas/admin-master.yaml#/OpdDetailList'}
+            examples:
+              admin: {$ref: '../examples/admin.yaml#/OpdDetailList'}
+      default: {$ref: '../responses/error.yaml'}
+  post:
+    operationId: createOpd
+    tags: [Admin]
+    summary: Tambah OPD
+    security:
+      - bffKey: []
+        bearer: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/admin-master.yaml#/CreateOpd'}
+    responses:
+      '201':
+        description: OPD dibuat
+        content:
+          application/json:
+            schema: {$ref: '../schemas/admin-master.yaml#/OpdDetail'}
+            examples:
+              admin: {$ref: '../examples/admin.yaml#/OpdDetail'}
+      default: {$ref: '../responses/error.yaml'}
+opd:
+  patch:
+    operationId: updateOpd
+    tags: [Admin]
+    summary: Ubah atau nonaktifkan OPD
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/CodePath'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/admin-master.yaml#/UpdateOpd'}
+    responses:
+      '200':
+        description: OPD diperbarui
+        content:
+          application/json:
+            schema: {$ref: '../schemas/admin-master.yaml#/OpdDetail'}
+            examples:
+              admin: {$ref: '../examples/admin.yaml#/OpdDetail'}
+      default: {$ref: '../responses/error.yaml'}
+categories:
+  post:
+    operationId: createCategory
+    tags: [Admin]
+    summary: Tambah kategori pada satu OPD
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/CodePath'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/admin-master.yaml#/CreateCategory'}
+    responses:
+      '201':
+        description: Kategori dibuat
+        content:
+          application/json:
+            schema: {$ref: '../schemas/admin-master.yaml#/CategoryDetail'}
+            examples:
+              admin: {$ref: '../examples/admin.yaml#/CategoryDetail'}
+      default: {$ref: '../responses/error.yaml'}
+category:
+  patch:
+    operationId: updateCategory
+    tags: [Admin]
+    summary: Ubah atau nonaktifkan kategori
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/CodePath'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/admin-master.yaml#/UpdateCategory'}
+    responses:
+      '200':
+        description: Kategori diperbarui
+        content:
+          application/json:
+            schema: {$ref: '../schemas/admin-master.yaml#/CategoryDetail'}
+            examples:
+              admin: {$ref: '../examples/admin.yaml#/CategoryDetail'}
+      default: {$ref: '../responses/error.yaml'}
+districts:
+  post:
+    operationId: createDistrict
+    tags: [Admin]
+    summary: Tambah kecamatan
+    security:
+      - bffKey: []
+        bearer: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/admin-master.yaml#/AreaName'}
+    responses:
+      '201':
+        description: Kecamatan dibuat
+        content:
+          application/json:
+            schema: {$ref: '../schemas/reference.yaml#/District'}
+            examples:
+              admin: {$ref: '../examples/admin.yaml#/District'}
+      default: {$ref: '../responses/error.yaml'}
+district:
+  patch:
+    operationId: renameDistrict
+    tags: [Admin]
+    summary: Ubah nama kecamatan
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/IdPath'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/admin-master.yaml#/AreaName'}
+    responses:
+      '200':
+        description: Kecamatan diperbarui
+        content:
+          application/json:
+            schema: {$ref: '../schemas/reference.yaml#/District'}
+            examples:
+              admin: {$ref: '../examples/admin.yaml#/District'}
+      default: {$ref: '../responses/error.yaml'}
+villages:
+  post:
+    operationId: createVillage
+    tags: [Admin]
+    summary: Tambah kelurahan atau desa pada satu kecamatan
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/IdPath'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/admin-master.yaml#/AreaName'}
+    responses:
+      '201':
+        description: Kelurahan atau desa dibuat
+        content:
+          application/json:
+            schema: {$ref: '../schemas/common.yaml#/AreaRef'}
+            examples:
+              admin: {$ref: '../examples/admin.yaml#/Village'}
+      default: {$ref: '../responses/error.yaml'}
+village:
+  patch:
+    operationId: renameVillage
+    tags: [Admin]
+    summary: Ubah nama kelurahan atau desa
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/IdPath'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/admin-master.yaml#/AreaName'}
+    responses:
+      '200':
+        description: Kelurahan atau desa diperbarui
+        content:
+          application/json:
+            schema: {$ref: '../schemas/common.yaml#/AreaRef'}
+            examples:
+              admin: {$ref: '../examples/admin.yaml#/Village'}
+      default: {$ref: '../responses/error.yaml'}

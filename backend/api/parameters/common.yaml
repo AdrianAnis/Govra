@@ -1,0 +1,64 @@
+Page:
+  name: page
+  in: query
+  schema: {type: integer, minimum: 1, default: 1}
+Limit:
+  name: limit
+  in: query
+  schema: {type: integer, minimum: 1, maximum: 50, default: 20}
+Query:
+  name: q
+  in: query
+  description: Pencarian teks bebas.
+  schema: {type: string, maxLength: 100}
+OpdSlugFilter:
+  name: opd
+  in: query
+  schema: {$ref: '../schemas/common.yaml#/Slug'}
+DistrictFilter:
+  name: district_id
+  in: query
+  schema: {$ref: '../schemas/common.yaml#/Uuid'}
+IssueStatusFilter:
+  name: status
+  in: query
+  schema: {$ref: '../schemas/enums.yaml#/IssueStatus'}
+UrgencyFilter:
+  name: urgency
+  in: query
+  schema: {$ref: '../schemas/enums.yaml#/Urgency'}
+ProgramCodePath:
+  name: code
+  in: path
+  required: true
+  schema: {type: string, pattern: '^PRK-[0-9]{3}$'}
+ReportCodePath:
+  name: code
+  in: path
+  required: true
+  schema: {$ref: '../schemas/report.yaml#/ReportCode'}
+IndicatorCodePath:
+  name: code
+  in: path
+  required: true
+  schema: {$ref: '../schemas/enums.yaml#/IndicatorCode'}
+CodePath:
+  name: code
+  in: path
+  required: true
+  schema: {$ref: '../schemas/common.yaml#/Code'}
+OpdSlugPath:
+  name: slug
+  in: path
+  required: true
+  schema: {$ref: '../schemas/common.yaml#/Slug'}
+IdPath:
+  name: id
+  in: path
+  required: true
+  schema: {$ref: '../schemas/common.yaml#/Uuid'}
+SettingKeyPath:
+  name: key
+  in: path
+  required: true
+  schema: {$ref: '../schemas/enums.yaml#/SettingKey'}

@@ -1,0 +1,108 @@
+issues:
+  get:
+    operationId: listAgencyIssues
+    tags: [Dinas]
+    summary: Inbox isu milik OPD pemanggil
+    description: Urut berdasarkan urgensi, sisa waktu SLA, lalu jumlah pelapor. Wajib MFA aal2.
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/IssueStatusFilter'
+      - $ref: '../parameters/common.yaml#/UrgencyFilter'
+      - $ref: '../parameters/common.yaml#/Page'
+      - $ref: '../parameters/common.yaml#/Limit'
+    responses:
+      '200':
+        description: Halaman isu
+        content:
+          application/json:
+            schema: {$ref: '../schemas/agency.yaml#/AgencyIssueList'}
+            examples:
+              dinas: {$ref: '../examples/agency.yaml#/AgencyIssueList'}
+      default: {$ref: '../responses/error.yaml'}
+issue:
+  get:
+    operationId: getAgencyIssue
+    tags: [Dinas]
+    summary: Detail isu untuk Dinas
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/IdPath'
+    responses:
+      '200':
+        description: Detail isu
+        content:
+          application/json:
+            schema: {$ref: '../schemas/agency.yaml#/AgencyIssueDetail'}
+            examples:
+              dinas: {$ref: '../examples/agency.yaml#/AgencyIssueDetail'}
+      default: {$ref: '../responses/error.yaml'}
+transition:
+  post:
+    operationId: transitionAgencyIssue
+    tags: [Dinas]
+    summary: Ubah status isu
+    description: Tanggapan wajib di setiap transisi. Frontend hanya menawarkan allowed_transitions.
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/IdPath'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/agency.yaml#/TransitionRequest'}
+    responses:
+      '200':
+        description: Status berubah
+        content:
+          application/json:
+            schema: {$ref: '../schemas/agency.yaml#/TransitionResult'}
+            examples:
+              dinas: {$ref: '../examples/agency.yaml#/TransitionResult'}
+      default: {$ref: '../responses/error.yaml'}
+evidence:
+  post:
+    operationId: uploadAgencyEvidence
+    tags: [Dinas]
+    summary: Unggah foto bukti penanganan
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/IdPath'
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema: {$ref: '../schemas/agency.yaml#/EvidenceForm'}
+    responses:
+      '201':
+        description: Bukti terunggah
+        content:
+          application/json:
+            schema: {$ref: '../schemas/common.yaml#/Attachment'}
+            examples:
+              dinas: {$ref: '../examples/agency.yaml#/EvidenceAttachment'}
+      default: {$ref: '../responses/error.yaml'}
+stats:
+  get:
+    operationId: getAgencyStats
+    tags: [Dinas]
+    summary: Statistik OPD pemanggil
+    security:
+      - bffKey: []
+        bearer: []
+    responses:
+      '200':
+        description: Statistik
+        content:
+          application/json:
+            schema: {$ref: '../schemas/agency.yaml#/AgencyStats'}
+            examples:
+              dinas: {$ref: '../examples/agency.yaml#/AgencyStats'}
+      default: {$ref: '../responses/error.yaml'}

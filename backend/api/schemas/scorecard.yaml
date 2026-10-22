@@ -1,0 +1,79 @@
+IndicatorValue:
+  type: object
+  required: [code, label, unit, value, sample_size]
+  properties:
+    code: {$ref: 'enums.yaml#/IndicatorCode'}
+    label: {type: string}
+    unit: {$ref: 'enums.yaml#/IndicatorUnit'}
+    value:
+      type: [number, 'null']
+      description: Null jika data penyusun belum ada.
+    sample_size: {type: integer, minimum: 0}
+OpdScorecard:
+  type: object
+  required: [opd, indicators]
+  properties:
+    opd: {$ref: 'common.yaml#/OpdRef'}
+    indicators:
+      type: array
+      items: {$ref: '#/IndicatorValue'}
+Scorecard:
+  type: object
+  required: [period, head_label, is_simulation, indicators, by_opd]
+  properties:
+    period:
+      type: object
+      required: [start_year, end_year]
+      properties:
+        start_year: {type: integer}
+        end_year: {type: integer}
+    head_label: {type: string}
+    is_simulation: {type: boolean}
+    indicators:
+      type: array
+      items: {$ref: '#/IndicatorValue'}
+    by_opd:
+      type: array
+      items: {$ref: '#/OpdScorecard'}
+DrillItem:
+  type: object
+  required: [kind, ref, title, opd, counted, note]
+  properties:
+    kind: {$ref: 'enums.yaml#/DrillKind'}
+    ref:
+      type: string
+      description: Kode proker atau ID isu, dipakai untuk tautan ke halaman detail.
+    title: {type: string}
+    opd: {$ref: 'common.yaml#/OpdRef'}
+    counted:
+      type: boolean
+      description: Apakah data ini ikut dihitung di angka indikator.
+    note: {type: string}
+DrillList:
+  allOf:
+    - $ref: 'common.yaml#/Pagination'
+    - type: object
+      required: [indicator, items]
+      properties:
+        indicator: {$ref: 'enums.yaml#/IndicatorCode'}
+        items:
+          type: array
+          items: {$ref: '#/DrillItem'}
+MethodologyIndicator:
+  type: object
+  required: [code, label, formula, description]
+  properties:
+    code: {$ref: 'enums.yaml#/IndicatorCode'}
+    label: {type: string}
+    formula: {type: string}
+    description: {type: string}
+Methodology:
+  type: object
+  required: [indicators, thresholds]
+  properties:
+    indicators:
+      type: array
+      items: {$ref: '#/MethodologyIndicator'}
+    thresholds:
+      type: array
+      items: {$ref: 'settings.yaml#/Setting'}

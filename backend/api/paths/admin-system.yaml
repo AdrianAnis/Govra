@@ -1,0 +1,122 @@
+moderation:
+  get:
+    operationId: listModerationReports
+    tags: [Admin]
+    summary: Cari laporan untuk moderasi
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/Query'
+      - name: hidden
+        in: query
+        schema: {type: boolean}
+      - $ref: '../parameters/common.yaml#/Page'
+      - $ref: '../parameters/common.yaml#/Limit'
+    responses:
+      '200':
+        description: Halaman laporan
+        content:
+          application/json:
+            schema: {$ref: '../schemas/admin-system.yaml#/ModerationReportList'}
+            examples:
+              admin: {$ref: '../examples/admin.yaml#/ModerationList'}
+      default: {$ref: '../responses/error.yaml'}
+hide:
+  post:
+    operationId: hideReport
+    tags: [Admin]
+    summary: Sembunyikan laporan spam atau SARA
+    description: Soft-hide, wajib alasan, data tidak dihapus. Admin tidak bisa mengubah isi laporan.
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/IdPath'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/admin-system.yaml#/HideReportRequest'}
+    responses:
+      '200':
+        description: Laporan disembunyikan
+        content:
+          application/json:
+            schema: {$ref: '../schemas/admin-system.yaml#/ModerationReport'}
+            examples:
+              admin: {$ref: '../examples/admin.yaml#/ModerationReport'}
+      default: {$ref: '../responses/error.yaml'}
+settings:
+  get:
+    operationId: listSettings
+    tags: [Admin]
+    summary: Semua ambang dan konfigurasi
+    security:
+      - bffKey: []
+        bearer: []
+    responses:
+      '200':
+        description: Daftar ambang
+        content:
+          application/json:
+            schema: {$ref: '../schemas/settings.yaml#/SettingList'}
+            examples:
+              admin: {$ref: '../examples/admin.yaml#/SettingList'}
+      default: {$ref: '../responses/error.yaml'}
+setting:
+  put:
+    operationId: updateSetting
+    tags: [Admin]
+    summary: Ubah satu ambang
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/SettingKeyPath'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/settings.yaml#/SettingUpdate'}
+    responses:
+      '200':
+        description: Ambang diperbarui
+        content:
+          application/json:
+            schema: {$ref: '../schemas/settings.yaml#/Setting'}
+            examples:
+              admin: {$ref: '../examples/admin.yaml#/Setting'}
+      default: {$ref: '../responses/error.yaml'}
+audit:
+  get:
+    operationId: listAuditLogs
+    tags: [Admin]
+    summary: Audit log, hanya baca
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - name: actor_id
+        in: query
+        schema: {$ref: '../schemas/common.yaml#/Uuid'}
+      - name: action
+        in: query
+        schema: {type: string, maxLength: 60}
+      - name: from
+        in: query
+        schema: {$ref: '../schemas/common.yaml#/DateTime'}
+      - name: to
+        in: query
+        schema: {$ref: '../schemas/common.yaml#/DateTime'}
+      - $ref: '../parameters/common.yaml#/Page'
+      - $ref: '../parameters/common.yaml#/Limit'
+    responses:
+      '200':
+        description: Halaman audit log
+        content:
+          application/json:
+            schema: {$ref: '../schemas/admin-system.yaml#/AuditLogList'}
+            examples:
+              admin: {$ref: '../examples/admin.yaml#/AuditLogList'}
+      default: {$ref: '../responses/error.yaml'}

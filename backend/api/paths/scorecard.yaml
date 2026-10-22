@@ -1,0 +1,56 @@
+scorecard:
+  get:
+    operationId: getScorecard
+    tags: [Rapor]
+    summary: Rapor periode beserta pecahan per OPD
+    responses:
+      '200':
+        description: Rapor
+        content:
+          application/json:
+            schema: {$ref: '../schemas/scorecard.yaml#/Scorecard'}
+            examples:
+              publik: {$ref: '../examples/scorecard.yaml#/Scorecard'}
+              pelapor: {$ref: '../examples/scorecard.yaml#/Scorecard'}
+              dinas: {$ref: '../examples/scorecard.yaml#/Scorecard'}
+              admin: {$ref: '../examples/scorecard.yaml#/Scorecard'}
+      default: {$ref: '../responses/error.yaml'}
+drill:
+  get:
+    operationId: listIndicatorItems
+    tags: [Rapor]
+    summary: Data penyusun satu indikator
+    parameters:
+      - $ref: '../parameters/common.yaml#/IndicatorCodePath'
+      - $ref: '../parameters/common.yaml#/OpdSlugFilter'
+      - $ref: '../parameters/common.yaml#/Page'
+      - $ref: '../parameters/common.yaml#/Limit'
+    responses:
+      '200':
+        description: Halaman data penyusun
+        content:
+          application/json:
+            schema: {$ref: '../schemas/scorecard.yaml#/DrillList'}
+            examples:
+              publik: {$ref: '../examples/scorecard.yaml#/DrillItems'}
+              pelapor: {$ref: '../examples/scorecard.yaml#/DrillItems'}
+              dinas: {$ref: '../examples/scorecard.yaml#/DrillItems'}
+              admin: {$ref: '../examples/scorecard.yaml#/DrillItems'}
+      default: {$ref: '../responses/error.yaml'}
+methodology:
+  get:
+    operationId: getMethodology
+    tags: [Rapor]
+    summary: Rumus indikator dan ambang yang berlaku
+    responses:
+      '200':
+        description: Metodologi
+        content:
+          application/json:
+            schema: {$ref: '../schemas/scorecard.yaml#/Methodology'}
+            examples:
+              publik: {$ref: '../examples/scorecard.yaml#/Methodology'}
+              pelapor: {$ref: '../examples/scorecard.yaml#/Methodology'}
+              dinas: {$ref: '../examples/scorecard.yaml#/Methodology'}
+              admin: {$ref: '../examples/scorecard.yaml#/Methodology'}
+      default: {$ref: '../responses/error.yaml'}

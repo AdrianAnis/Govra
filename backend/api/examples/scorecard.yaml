@@ -1,0 +1,76 @@
+Scorecard:
+  summary: Rapor periode 2025 sampai 2030
+  value:
+    period: {start_year: 2025, end_year: 2030}
+    head_label: Bupati (data simulasi)
+    is_simulation: true
+    indicators:
+      - {code: KETUNTASAN_PROKER, label: Ketuntasan proker, unit: PERCENT, value: 50, sample_size: 2}
+      - {code: KETEPATAN_JADWAL, label: Ketepatan jadwal, unit: PERCENT, value: 33.3, sample_size: 3}
+      - {code: RESPONSIVITAS, label: Responsivitas, unit: HOURS, value: 30.5, sample_size: 12}
+      - {code: PENYELESAIAN_ISU, label: Penyelesaian isu, unit: PERCENT, value: 80, sample_size: 10}
+      - {code: PENYERAPAN_ANGGARAN, label: Penyerapan anggaran, unit: PERCENT, value: 62.4, sample_size: 4}
+    by_opd:
+      - opd: {code: BMSDA, slug: dinas-bina-marga-sda, name: Dinas Bina Marga dan Sumber Daya Air}
+        indicators:
+          - {code: KETUNTASAN_PROKER, label: Ketuntasan proker, unit: PERCENT, value: null, sample_size: 0}
+          - {code: KETEPATAN_JADWAL, label: Ketepatan jadwal, unit: PERCENT, value: 0, sample_size: 1}
+          - {code: RESPONSIVITAS, label: Responsivitas, unit: HOURS, value: 30.5, sample_size: 6}
+          - {code: PENYELESAIAN_ISU, label: Penyelesaian isu, unit: PERCENT, value: 75, sample_size: 4}
+          - {code: PENYERAPAN_ANGGARAN, label: Penyerapan anggaran, unit: PERCENT, value: 40, sample_size: 2}
+      - opd: {code: LHK, slug: dinas-lingkungan-hidup, name: Dinas Lingkungan Hidup dan Kebersihan}
+        indicators:
+          - {code: KETUNTASAN_PROKER, label: Ketuntasan proker, unit: PERCENT, value: null, sample_size: 0}
+          - {code: KETEPATAN_JADWAL, label: Ketepatan jadwal, unit: PERCENT, value: 100, sample_size: 1}
+          - {code: RESPONSIVITAS, label: Responsivitas, unit: HOURS, value: 18, sample_size: 4}
+          - {code: PENYELESAIAN_ISU, label: Penyelesaian isu, unit: PERCENT, value: 100, sample_size: 2}
+          - {code: PENYERAPAN_ANGGARAN, label: Penyerapan anggaran, unit: PERCENT, value: 71, sample_size: 1}
+DrillItems:
+  summary: Data penyusun Ketuntasan Proker
+  value:
+    page: 1
+    limit: 20
+    total: 2
+    indicator: KETUNTASAN_PROKER
+    items:
+      - kind: PROGRAM
+        ref: PRK-003
+        title: Pengadaan alat kesehatan puskesmas
+        opd: {code: KES, slug: dinas-kesehatan, name: Dinas Kesehatan}
+        counted: true
+        note: Tenggat sudah lewat, progres 70 persen. Belum Selesai.
+      - kind: PROGRAM
+        ref: PRK-005
+        title: Rehabilitasi ruang kelas
+        opd: {code: LHK, slug: dinas-lingkungan-hidup, name: Dinas Lingkungan Hidup dan Kebersihan}
+        counted: true
+        note: Tenggat sudah lewat dan progres 100 persen. Selesai.
+Methodology:
+  summary: Rumus dan ambang
+  value:
+    indicators:
+      - code: KETUNTASAN_PROKER
+        label: Ketuntasan proker
+        formula: proker Selesai dibagi proker yang tenggatnya sudah lewat
+        description: Seberapa banyak proker yang sudah jatuh tempo benar-benar selesai.
+      - code: KETEPATAN_JADWAL
+        label: Ketepatan jadwal
+        formula: (Sesuai Jadwal ditambah Selesai) dibagi proker yang sudah dimulai
+        description: Seberapa banyak proker yang berjalan sesuai jadwal.
+      - code: RESPONSIVITAS
+        label: Responsivitas
+        formula: median waktu dari isu Diteruskan sampai tanggapan pertama Dinas
+        description: Seberapa cepat Dinas menanggapi isu warga, dalam jam.
+      - code: PENYELESAIAN_ISU
+        label: Penyelesaian isu
+        formula: isu Selesai yang dikonfirmasi warga dibagi isu yang ditutup
+        description: Seberapa banyak isu yang benar-benar dirasakan selesai oleh warga.
+      - code: PENYERAPAN_ANGGARAN
+        label: Penyerapan anggaran
+        formula: realisasi dibagi pagu, per OPD
+        description: Seberapa besar anggaran yang sudah terealisasi.
+    thresholds:
+      - {key: PROGRAM_LATE_THRESHOLD, label: Selisih progres yang dianggap Terlambat, value: 10, unit: POINTS}
+      - {key: SLA_URGENT_HOURS, label: Batas tanggapan pertama isu Urgent, value: 24, unit: HOURS}
+      - {key: SLA_HIGH_DAYS, label: Batas tanggapan pertama isu Tinggi, value: 3, unit: DAYS}
+      - {key: SLA_NORMAL_BUSINESS_DAYS, label: Batas tanggapan pertama isu Normal, value: 5, unit: DAYS}

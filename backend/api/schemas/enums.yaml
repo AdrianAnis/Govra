@@ -1,0 +1,74 @@
+Role:
+  type: string
+  enum: [PELAPOR, DINAS, ADMIN]
+ProgramStatus:
+  type: string
+  enum: [BELUM_DIMULAI, SESUAI_JADWAL, TERLAMBAT, MELEWATI_TENGGAT, SELESAI]
+IssueStatus:
+  type: string
+  enum: [DIAJUKAN, MENUNGGU_VERIFIKASI, DITERUSKAN, DIPROSES, SELESAI, DITOLAK, DIALIHKAN, DIBUKA_ULANG]
+Urgency:
+  type: string
+  enum: [NORMAL, TINGGI, URGENT]
+Visibility:
+  type: string
+  enum: [PUBLIK, RAHASIA]
+SafetyRisk:
+  type: string
+  enum: [NONE, PROPERTY, LIFE]
+UserStatus:
+  type: string
+  enum: [ACTIVE, DISABLED]
+RejectionReason:
+  type: string
+  enum: [DUPLIKAT, DATA_TIDAK_LENGKAP, BUKAN_MASALAH_PUBLIK, SUDAH_DITANGANI, LAPORAN_TIDAK_BENAR]
+TransferReason:
+  type: string
+  enum: [BUKAN_WEWENANG_OPD, PERLU_OPD_LAIN, KATEGORI_SALAH]
+ModerationReason:
+  type: string
+  enum: [SPAM, SARA, LAINNYA]
+FeedbackOutcome:
+  type: string
+  enum: [CONFIRM, DISPUTE]
+IndicatorCode:
+  type: string
+  enum: [KETUNTASAN_PROKER, KETEPATAN_JADWAL, RESPONSIVITAS, PENYELESAIAN_ISU, PENYERAPAN_ANGGARAN]
+IndicatorUnit:
+  type: string
+  enum: [PERCENT, HOURS]
+SettingKey:
+  type: string
+  enum:
+    - PROGRAM_LATE_THRESHOLD
+    - TRIAGE_CONFIDENCE_MIN
+    - MERGE_SIMILARITY_MIN
+    - MERGE_RADIUS_METERS
+    - MERGE_WINDOW_DAYS
+    - URGENT_REPORTERS_7D
+    - URGENT_REPORTERS_72H
+    - HIGH_REPORTERS_7D
+    - SUBNET_REPORTER_CAP
+    - SLA_URGENT_HOURS
+    - SLA_HIGH_DAYS
+    - SLA_NORMAL_BUSINESS_DAYS
+    - REOPEN_DISPUTE_RATIO
+    - REOPEN_WINDOW_DAYS
+SettingUnit:
+  type: string
+  enum: [POINTS, RATIO, METERS, DAYS, HOURS, COUNT]
+AgencyTransition:
+  type: string
+  enum: [DIPROSES, SELESAI, DITOLAK, DIALIHKAN]
+ChatRole:
+  type: string
+  enum: [USER, ASSISTANT]
+SourceKind:
+  type: string
+  enum: [PROGRAM, ISSUE]
+VerificationKind:
+  type: string
+  enum: [VERIFIKASI, PENGALIHAN]
+DrillKind:
+  type: string
+  enum: [PROGRAM, ISSUE]

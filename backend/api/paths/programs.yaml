@@ -1,0 +1,49 @@
+list:
+  get:
+    operationId: listPrograms
+    tags: [Proker]
+    summary: Daftar proker dengan filter
+    parameters:
+      - $ref: '../parameters/common.yaml#/Query'
+      - $ref: '../parameters/common.yaml#/OpdSlugFilter'
+      - $ref: '../parameters/common.yaml#/DistrictFilter'
+      - name: goal
+        in: query
+        description: Kode sasaran RPJMD.
+        schema: {$ref: '../schemas/common.yaml#/Code'}
+      - name: status
+        in: query
+        schema: {$ref: '../schemas/enums.yaml#/ProgramStatus'}
+      - $ref: '../parameters/common.yaml#/Page'
+      - $ref: '../parameters/common.yaml#/Limit'
+    responses:
+      '200':
+        description: Halaman proker
+        content:
+          application/json:
+            schema: {$ref: '../schemas/program.yaml#/ProgramList'}
+            examples:
+              publik: {$ref: '../examples/programs.yaml#/ProgramList'}
+              pelapor: {$ref: '../examples/programs.yaml#/ProgramList'}
+              dinas: {$ref: '../examples/programs.yaml#/ProgramList'}
+              admin: {$ref: '../examples/programs.yaml#/ProgramList'}
+      default: {$ref: '../responses/error.yaml'}
+detail:
+  get:
+    operationId: getProgram
+    tags: [Proker]
+    summary: Detail proker
+    parameters:
+      - $ref: '../parameters/common.yaml#/ProgramCodePath'
+    responses:
+      '200':
+        description: Detail proker
+        content:
+          application/json:
+            schema: {$ref: '../schemas/program.yaml#/ProgramDetail'}
+            examples:
+              publik: {$ref: '../examples/programs.yaml#/ProgramDetail'}
+              pelapor: {$ref: '../examples/programs.yaml#/ProgramDetail'}
+              dinas: {$ref: '../examples/programs.yaml#/ProgramDetail'}
+              admin: {$ref: '../examples/programs.yaml#/ProgramDetail'}
+      default: {$ref: '../responses/error.yaml'}

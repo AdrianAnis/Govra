@@ -1,0 +1,86 @@
+Region:
+  summary: Wilayah simulasi
+  value:
+    name: Kabupaten Contoh
+    head_label: Bupati (data simulasi)
+    is_simulation: true
+    period: {start_year: 2025, end_year: 2030}
+    bounds: [112.6, -7.6, 112.9, -7.3]
+Districts:
+  summary: Kecamatan beserta kelurahan atau desa
+  value:
+    items:
+      - id: 0197a000-0000-7000-8000-000000000001
+        name: Kecamatan Utara
+        villages:
+          - {id: 0197a000-0000-7000-8000-000000000011, name: Kelurahan Melati}
+          - {id: 0197a000-0000-7000-8000-000000000012, name: Desa Kenanga}
+      - id: 0197a000-0000-7000-8000-000000000002
+        name: Kecamatan Selatan
+        villages:
+          - {id: 0197a000-0000-7000-8000-000000000013, name: Kelurahan Anggrek}
+      - id: 0197a000-0000-7000-8000-000000000003
+        name: Kecamatan Timur
+        villages:
+          - {id: 0197a000-0000-7000-8000-000000000014, name: Desa Mawar}
+Goals:
+  summary: Sasaran RPJMD
+  value:
+    items:
+      - {code: INFRA_JALAN, name: Infrastruktur jalan mantap}
+      - {code: LINGKUNGAN, name: Lingkungan bersih dan sehat}
+      - {code: KESEHATAN, name: Layanan kesehatan merata}
+Opds:
+  summary: Daftar OPD
+  value:
+    items:
+      - code: BMSDA
+        slug: dinas-bina-marga-sda
+        name: Dinas Bina Marga dan Sumber Daya Air
+        categories:
+          - {code: JALAN_RUSAK, name: Jalan rusak}
+          - {code: DRAINASE, name: Saluran dan drainase}
+        program_count: 2
+        open_issue_count: 4
+      - code: LHK
+        slug: dinas-lingkungan-hidup
+        name: Dinas Lingkungan Hidup dan Kebersihan
+        categories:
+          - {code: SAMPAH, name: Sampah menumpuk}
+        program_count: 1
+        open_issue_count: 1
+      - code: KES
+        slug: dinas-kesehatan
+        name: Dinas Kesehatan
+        categories:
+          - {code: PUSKESMAS, name: Layanan puskesmas}
+        program_count: 1
+        open_issue_count: 0
+      - code: PERHUB
+        slug: dinas-perhubungan
+        name: Dinas Perhubungan
+        categories:
+          - {code: LAMPU_LALIN, name: Lampu lalu lintas}
+        program_count: 0
+        open_issue_count: 2
+OpdProfile:
+  summary: Profil OPD
+  value:
+    code: BMSDA
+    slug: dinas-bina-marga-sda
+    name: Dinas Bina Marga dan Sumber Daya Air
+    categories:
+      - {code: JALAN_RUSAK, name: Jalan rusak}
+      - {code: DRAINASE, name: Saluran dan drainase}
+    program_count: 2
+    open_issue_count: 4
+    indicators:
+      - {code: KETUNTASAN_PROKER, label: Ketuntasan proker, unit: PERCENT, value: 0, sample_size: 1}
+      - {code: KETEPATAN_JADWAL, label: Ketepatan jadwal, unit: PERCENT, value: 0, sample_size: 1}
+      - {code: RESPONSIVITAS, label: Responsivitas, unit: HOURS, value: 30.5, sample_size: 6}
+      - {code: PENYELESAIAN_ISU, label: Penyelesaian isu, unit: PERCENT, value: 75, sample_size: 4}
+      - {code: PENYERAPAN_ANGGARAN, label: Penyerapan anggaran, unit: PERCENT, value: 40, sample_size: 2}
+    issue_stats:
+      - {status: DITERUSKAN, count: 1}
+      - {status: DIPROSES, count: 3}
+      - {status: SELESAI, count: 3}

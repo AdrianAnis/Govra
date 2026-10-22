@@ -1,0 +1,87 @@
+region:
+  get:
+    operationId: getRegion
+    tags: [Referensi]
+    summary: Wilayah pilot dan periode
+    responses:
+      '200':
+        description: Wilayah aktif
+        content:
+          application/json:
+            schema: {$ref: '../schemas/reference.yaml#/Region'}
+            examples:
+              publik: {$ref: '../examples/reference.yaml#/Region'}
+              pelapor: {$ref: '../examples/reference.yaml#/Region'}
+              dinas: {$ref: '../examples/reference.yaml#/Region'}
+              admin: {$ref: '../examples/reference.yaml#/Region'}
+      default: {$ref: '../responses/error.yaml'}
+districts:
+  get:
+    operationId: listDistricts
+    tags: [Referensi]
+    summary: Kecamatan beserta kelurahan atau desa
+    responses:
+      '200':
+        description: Daftar kecamatan
+        content:
+          application/json:
+            schema: {$ref: '../schemas/reference.yaml#/DistrictList'}
+            examples:
+              publik: {$ref: '../examples/reference.yaml#/Districts'}
+              pelapor: {$ref: '../examples/reference.yaml#/Districts'}
+              dinas: {$ref: '../examples/reference.yaml#/Districts'}
+              admin: {$ref: '../examples/reference.yaml#/Districts'}
+      default: {$ref: '../responses/error.yaml'}
+goals:
+  get:
+    operationId: listGoals
+    tags: [Referensi]
+    summary: Sasaran RPJMD untuk filter proker
+    responses:
+      '200':
+        description: Daftar sasaran
+        content:
+          application/json:
+            schema: {$ref: '../schemas/reference.yaml#/GoalList'}
+            examples:
+              publik: {$ref: '../examples/reference.yaml#/Goals'}
+              pelapor: {$ref: '../examples/reference.yaml#/Goals'}
+              dinas: {$ref: '../examples/reference.yaml#/Goals'}
+              admin: {$ref: '../examples/reference.yaml#/Goals'}
+      default: {$ref: '../responses/error.yaml'}
+opds:
+  get:
+    operationId: listOpds
+    tags: [Referensi]
+    summary: Daftar OPD beserta kategorinya
+    responses:
+      '200':
+        description: Daftar OPD
+        content:
+          application/json:
+            schema: {$ref: '../schemas/reference.yaml#/OpdSummaryList'}
+            examples:
+              publik: {$ref: '../examples/reference.yaml#/Opds'}
+              pelapor: {$ref: '../examples/reference.yaml#/Opds'}
+              dinas: {$ref: '../examples/reference.yaml#/Opds'}
+              admin: {$ref: '../examples/reference.yaml#/Opds'}
+      default: {$ref: '../responses/error.yaml'}
+opd:
+  get:
+    operationId: getOpd
+    tags: [Referensi]
+    summary: Profil satu OPD
+    parameters:
+      - $ref: '../parameters/common.yaml#/OpdSlugPath'
+    responses:
+      '200':
+        description: Profil OPD
+        content:
+          application/json:
+            schema: {$ref: '../schemas/reference.yaml#/OpdProfile'}
+            examples:
+              publik: {$ref: '../examples/reference.yaml#/OpdProfile'}
+              pelapor: {$ref: '../examples/reference.yaml#/OpdProfile'}
+              dinas: {$ref: '../examples/reference.yaml#/OpdProfile'}
+              admin: {$ref: '../examples/reference.yaml#/OpdProfile'}
+      default: {$ref: '../responses/error.yaml'}

@@ -1,0 +1,81 @@
+users:
+  get:
+    operationId: listAgencyUsers
+    tags: [Admin]
+    summary: Daftar akun Dinas
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/OpdSlugFilter'
+      - $ref: '../parameters/common.yaml#/Page'
+      - $ref: '../parameters/common.yaml#/Limit'
+    responses:
+      '200':
+        description: Halaman akun
+        content:
+          application/json:
+            schema: {$ref: '../schemas/admin-users.yaml#/AdminUserList'}
+            examples:
+              admin: {$ref: '../examples/admin.yaml#/AdminUserList'}
+      default: {$ref: '../responses/error.yaml'}
+  post:
+    operationId: createAgencyUser
+    tags: [Admin]
+    summary: Buat akun Dinas yang terikat ke satu OPD
+    description: Akun wajib enrol TOTP saat login pertama. Akun Admin tidak bisa dibuat lewat API.
+    security:
+      - bffKey: []
+        bearer: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/admin-users.yaml#/CreateAgencyUser'}
+    responses:
+      '201':
+        description: Akun dibuat
+        content:
+          application/json:
+            schema: {$ref: '../schemas/admin-users.yaml#/AdminUser'}
+            examples:
+              admin: {$ref: '../examples/admin.yaml#/AdminUser'}
+      default: {$ref: '../responses/error.yaml'}
+user:
+  patch:
+    operationId: updateAgencyUser
+    tags: [Admin]
+    summary: Nonaktifkan akun atau ganti OPD
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/IdPath'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/admin-users.yaml#/UpdateAgencyUser'}
+    responses:
+      '200':
+        description: Akun diperbarui
+        content:
+          application/json:
+            schema: {$ref: '../schemas/admin-users.yaml#/AdminUser'}
+            examples:
+              admin: {$ref: '../examples/admin.yaml#/AdminUser'}
+      default: {$ref: '../responses/error.yaml'}
+resetMfa:
+  post:
+    operationId: resetAgencyUserMfa
+    tags: [Admin]
+    summary: Reset MFA akun Dinas
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/IdPath'
+    responses:
+      '204':
+        description: MFA direset
+      default: {$ref: '../responses/error.yaml'}

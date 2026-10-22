@@ -1,0 +1,41 @@
+AdminUser:
+  type: object
+  required: [id, email, display_name, role, opd, status, mfa_enrolled, last_sign_in_at]
+  properties:
+    id: {$ref: 'common.yaml#/Uuid'}
+    email: {type: string, format: email}
+    display_name: {type: [string, 'null']}
+    role: {$ref: 'enums.yaml#/Role'}
+    opd:
+      anyOf:
+        - $ref: 'common.yaml#/OpdRef'
+        - type: 'null'
+    status: {$ref: 'enums.yaml#/UserStatus'}
+    mfa_enrolled: {type: boolean}
+    last_sign_in_at:
+      anyOf:
+        - $ref: 'common.yaml#/DateTime'
+        - type: 'null'
+AdminUserList:
+  allOf:
+    - $ref: 'common.yaml#/Pagination'
+    - type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/AdminUser'}
+CreateAgencyUser:
+  type: object
+  required: [email, display_name, opd_code, password]
+  properties:
+    email: {type: string, format: email}
+    display_name: {type: string, minLength: 1, maxLength: 80}
+    opd_code: {$ref: 'common.yaml#/Code'}
+    password: {type: string, minLength: 12, maxLength: 128}
+UpdateAgencyUser:
+  type: object
+  minProperties: 1
+  properties:
+    status: {$ref: 'enums.yaml#/UserStatus'}
+    opd_code: {$ref: 'common.yaml#/Code'}

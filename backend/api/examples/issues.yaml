@@ -1,0 +1,82 @@
+IssueList:
+  summary: Isu publik dengan berbagai urgensi
+  value:
+    page: 1
+    limit: 20
+    total: 3
+    items:
+      - &issue_urgent
+        id: 0197b000-0000-7000-8000-000000000001
+        title: Jalan berlubang di Jalan Melati membahayakan pengendara
+        opd: {code: BMSDA, slug: dinas-bina-marga-sda, name: Dinas Bina Marga dan Sumber Daya Air}
+        category: {code: JALAN_RUSAK, name: Jalan rusak}
+        status: DIPROSES
+        urgency: URGENT
+        reporter_count: 12
+        location:
+          village: {id: 0197a000-0000-7000-8000-000000000011, name: Kelurahan Melati}
+          district: {id: 0197a000-0000-7000-8000-000000000001, name: Kecamatan Utara}
+          point: {lat: -7.45, lng: 112.72}
+        created_at: '2026-10-15T01:10:00Z'
+        updated_at: '2026-10-16T04:00:00Z'
+        response_overdue: false
+      - id: 0197b000-0000-7000-8000-000000000002
+        title: Tumpukan sampah di pinggir jalan Kelurahan Anggrek
+        opd: {code: LHK, slug: dinas-lingkungan-hidup, name: Dinas Lingkungan Hidup dan Kebersihan}
+        category: {code: SAMPAH, name: Sampah menumpuk}
+        status: SELESAI
+        urgency: NORMAL
+        reporter_count: 2
+        location:
+          village: {id: 0197a000-0000-7000-8000-000000000013, name: Kelurahan Anggrek}
+          district: {id: 0197a000-0000-7000-8000-000000000002, name: Kecamatan Selatan}
+          point: {lat: -7.51, lng: 112.73}
+        created_at: '2026-10-02T03:00:00Z'
+        updated_at: '2026-10-09T08:30:00Z'
+        response_overdue: false
+      - id: 0197b000-0000-7000-8000-000000000003
+        title: Lampu lalu lintas mati di perempatan Desa Mawar
+        opd: {code: PERHUB, slug: dinas-perhubungan, name: Dinas Perhubungan}
+        category: {code: LAMPU_LALIN, name: Lampu lalu lintas}
+        status: DITERUSKAN
+        urgency: TINGGI
+        reporter_count: 6
+        location:
+          village: {id: 0197a000-0000-7000-8000-000000000014, name: Desa Mawar}
+          district: {id: 0197a000-0000-7000-8000-000000000003, name: Kecamatan Timur}
+          point: {lat: -7.47, lng: 112.81}
+        created_at: '2026-10-12T02:00:00Z'
+        updated_at: '2026-10-12T02:00:30Z'
+        response_overdue: true
+IssueDetail:
+  summary: Detail isu publik dengan timeline
+  value:
+    <<: *issue_urgent
+    timeline:
+      - id: 0197e000-0000-7000-8000-000000000001
+        at: '2026-10-15T01:10:00Z'
+        from_status: null
+        to_status: DIAJUKAN
+        actor_label: Sistem
+        note: null
+        evidence: []
+      - id: 0197e000-0000-7000-8000-000000000002
+        at: '2026-10-15T01:10:12Z'
+        from_status: DIAJUKAN
+        to_status: DITERUSKAN
+        actor_label: Sistem
+        note: Diteruskan ke Dinas Bina Marga dan Sumber Daya Air.
+        evidence: []
+      - id: 0197e000-0000-7000-8000-000000000003
+        at: '2026-10-16T04:00:00Z'
+        from_status: DITERUSKAN
+        to_status: DIPROSES
+        actor_label: Dinas Bina Marga dan Sumber Daya Air
+        note: Tim survei dikirim ke lokasi.
+        evidence: []
+SupportResult:
+  summary: Dukungan berhasil
+  value:
+    issue_id: 0197b000-0000-7000-8000-000000000001
+    report_code: TLK-2610-9QW2
+    reporter_count: 13

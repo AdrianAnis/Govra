@@ -1,0 +1,65 @@
+AdminOverview:
+  type: object
+  required: [pending_verification, pending_transfer, dead_letter_jobs, reports_today, active_agency_users]
+  properties:
+    pending_verification: {type: integer, minimum: 0}
+    pending_transfer: {type: integer, minimum: 0}
+    dead_letter_jobs: {type: integer, minimum: 0}
+    reports_today: {type: integer, minimum: 0}
+    active_agency_users: {type: integer, minimum: 0}
+AiSuggestion:
+  type: object
+  required: [opd, category, confidence]
+  properties:
+    opd: {$ref: 'common.yaml#/OpdRef'}
+    category: {$ref: 'common.yaml#/CategoryRef'}
+    confidence: {type: number, minimum: 0, maximum: 1}
+VerificationItem:
+  type: object
+  required: [issue_id, kind, title, reporter_count, created_at, ai_suggestion, current_opd, transfer_reason, transfer_note]
+  properties:
+    issue_id: {$ref: 'common.yaml#/Uuid'}
+    kind: {$ref: 'enums.yaml#/VerificationKind'}
+    title: {type: string}
+    reporter_count: {type: integer, minimum: 1}
+    created_at: {$ref: 'common.yaml#/DateTime'}
+    ai_suggestion:
+      anyOf:
+        - $ref: '#/AiSuggestion'
+        - type: 'null'
+    current_opd:
+      anyOf:
+        - $ref: 'common.yaml#/OpdRef'
+        - type: 'null'
+    transfer_reason:
+      anyOf:
+        - $ref: 'enums.yaml#/TransferReason'
+        - type: 'null'
+    transfer_note: {type: [string, 'null']}
+VerificationList:
+  allOf:
+    - $ref: 'common.yaml#/Pagination'
+    - type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/VerificationItem'}
+RouteIssueRequest:
+  type: object
+  required: [opd_code, category_code]
+  properties:
+    opd_code: {$ref: 'common.yaml#/Code'}
+    category_code: {$ref: 'common.yaml#/Code'}
+RejectIssueRequest:
+  type: object
+  required: [reason, explanation]
+  properties:
+    reason: {$ref: 'enums.yaml#/RejectionReason'}
+    explanation: {type: string, minLength: 1, maxLength: 1000}
+IssueStatusResult:
+  type: object
+  required: [issue_id, status]
+  properties:
+    issue_id: {$ref: 'common.yaml#/Uuid'}
+    status: {$ref: 'enums.yaml#/IssueStatus'}

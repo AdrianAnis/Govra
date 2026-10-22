@@ -1,0 +1,82 @@
+ProgramSummary:
+  type: object
+  required: [code, name, opd, goal, district, status, progress_percent, expected_percent, start_date, end_date, related_issue_count]
+  properties:
+    code:
+      type: string
+      pattern: '^PRK-[0-9]{3}$'
+    name: {type: string}
+    opd: {$ref: 'common.yaml#/OpdRef'}
+    goal: {$ref: 'reference.yaml#/Goal'}
+    district: {$ref: 'common.yaml#/AreaRef'}
+    status: {$ref: 'enums.yaml#/ProgramStatus'}
+    progress_percent: {type: number, minimum: 0, maximum: 100}
+    expected_percent:
+      type: number
+      minimum: 0
+      maximum: 100
+      description: Progres yang seharusnya dicapai hari ini, dihitung backend dari jadwal.
+    start_date: {$ref: 'common.yaml#/Date'}
+    end_date: {$ref: 'common.yaml#/Date'}
+    related_issue_count: {type: integer, minimum: 0}
+ProgramList:
+  allOf:
+    - $ref: 'common.yaml#/Pagination'
+    - type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/ProgramSummary'}
+Milestone:
+  type: object
+  required: [name, due_date, done]
+  properties:
+    name: {type: string}
+    due_date: {$ref: 'common.yaml#/Date'}
+    done: {type: boolean}
+ProgramDocument:
+  type: object
+  required: [url, caption]
+  properties:
+    url: {type: string, format: uri}
+    caption: {type: string}
+ProgramUpdate:
+  type: object
+  required: [date, note, progress_percent]
+  properties:
+    date: {$ref: 'common.yaml#/Date'}
+    note: {type: string}
+    progress_percent: {type: number, minimum: 0, maximum: 100}
+ProgramBudget:
+  type: object
+  required: [ceiling, realized]
+  properties:
+    ceiling:
+      type: integer
+      minimum: 0
+      description: Pagu dalam rupiah.
+    realized:
+      type: integer
+      minimum: 0
+      description: Realisasi anggaran dalam rupiah.
+ProgramDetail:
+  allOf:
+    - $ref: '#/ProgramSummary'
+    - type: object
+      required: [indicator, target, unit, realization, budget, milestones, documentation, updates]
+      properties:
+        indicator: {type: string}
+        target: {type: number}
+        unit: {type: string}
+        realization: {type: number}
+        budget: {$ref: '#/ProgramBudget'}
+        milestones:
+          type: array
+          items: {$ref: '#/Milestone'}
+        documentation:
+          type: array
+          items: {$ref: '#/ProgramDocument'}
+        updates:
+          type: array
+          items: {$ref: '#/ProgramUpdate'}

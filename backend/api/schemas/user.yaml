@@ -1,0 +1,13 @@
+Profile:
+  type: object
+  required: [id, email, display_name, role, opd, status]
+  properties:
+    id: {$ref: 'common.yaml#/Uuid'}
+    email: {type: string, format: email}
+    display_name: {type: [string, 'null']}
+    role: {$ref: 'enums.yaml#/Role'}
+    opd:
+      anyOf:
+        - $ref: 'common.yaml#/OpdRef'
+        - type: 'null'
+    status: {$ref: 'enums.yaml#/UserStatus'}

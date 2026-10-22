@@ -1,0 +1,84 @@
+AgencyIssueList:
+  summary: Inbox Dinas, urut urgensi
+  value:
+    page: 1
+    limit: 20
+    total: 1
+    items:
+      - &agency_issue
+        id: 0197b000-0000-7000-8000-000000000001
+        title: Jalan berlubang di Jalan Melati membahayakan pengendara
+        opd: {code: BMSDA, slug: dinas-bina-marga-sda, name: Dinas Bina Marga dan Sumber Daya Air}
+        category: {code: JALAN_RUSAK, name: Jalan rusak}
+        status: DIPROSES
+        urgency: URGENT
+        reporter_count: 12
+        location:
+          village: {id: 0197a000-0000-7000-8000-000000000011, name: Kelurahan Melati}
+          district: {id: 0197a000-0000-7000-8000-000000000001, name: Kecamatan Utara}
+          point: {lat: -7.45, lng: 112.72}
+        created_at: '2026-10-15T01:10:00Z'
+        updated_at: '2026-10-16T04:00:00Z'
+        response_overdue: false
+        sla_due_at: '2026-10-16T01:10:00Z'
+AgencyIssueDetail:
+  summary: Detail isu untuk Dinas
+  value:
+    <<: *agency_issue
+    ai: {summary: Jalan berlubang di Jalan Melati yang membahayakan pengendara., confidence: 0.93, safety_risk: PROPERTY, sensitive: false}
+    reports:
+      - code: TLK-2610-8F3K
+        body: Lubang di depan sekolah cukup dalam dan sudah dua kali ada motor yang terjatuh.
+        visibility: PUBLIK
+        created_at: '2026-10-15T01:10:00Z'
+        location:
+          village: {id: 0197a000-0000-7000-8000-000000000011, name: Kelurahan Melati}
+          district: {id: 0197a000-0000-7000-8000-000000000001, name: Kecamatan Utara}
+          point: {lat: -7.4503, lng: 112.7198}
+        attachments:
+          - id: 0197d000-0000-7000-8000-000000000001
+            url: https://example.org/signed/lubang-jalan.webp
+            mime: image/webp
+            size_bytes: 482113
+    timeline:
+      - id: 0197e000-0000-7000-8000-000000000003
+        at: '2026-10-16T04:00:00Z'
+        from_status: DITERUSKAN
+        to_status: DIPROSES
+        actor_label: Dinas Bina Marga dan Sumber Daya Air
+        note: Tim survei dikirim ke lokasi.
+        evidence: []
+    allowed_transitions: [SELESAI, DITOLAK, DIALIHKAN]
+TransitionResult:
+  summary: Status berubah
+  value:
+    status: SELESAI
+    event:
+      id: 0197e000-0000-7000-8000-000000000009
+      at: '2026-10-22T13:20:00Z'
+      from_status: DIPROSES
+      to_status: SELESAI
+      actor_label: Dinas Bina Marga dan Sumber Daya Air
+      note: Lubang sudah ditambal dan diaspal ulang.
+      evidence:
+        - id: 0197d000-0000-7000-8000-000000000002
+          url: https://example.org/signed/bukti-tambal.webp
+          mime: image/webp
+          size_bytes: 390221
+EvidenceAttachment:
+  summary: Bukti terunggah
+  value:
+    id: 0197d000-0000-7000-8000-000000000002
+    url: https://example.org/signed/bukti-tambal.webp
+    mime: image/webp
+    size_bytes: 390221
+AgencyStats:
+  summary: Statistik OPD
+  value:
+    total_open: 4
+    by_status:
+      - {status: DITERUSKAN, count: 1}
+      - {status: DIPROSES, count: 3}
+      - {status: SELESAI, count: 3}
+    sla_compliance_percent: 83.3
+    median_response_hours: 30.5

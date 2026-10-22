@@ -1,0 +1,89 @@
+overview:
+  get:
+    operationId: getAdminOverview
+    tags: [Admin]
+    summary: Ringkasan untuk beranda Admin
+    security:
+      - bffKey: []
+        bearer: []
+    responses:
+      '200':
+        description: Ringkasan
+        content:
+          application/json:
+            schema: {$ref: '../schemas/admin-queue.yaml#/AdminOverview'}
+            examples:
+              admin: {$ref: '../examples/admin.yaml#/Overview'}
+      default: {$ref: '../responses/error.yaml'}
+verification:
+  get:
+    operationId: listVerificationQueue
+    tags: [Admin]
+    summary: Antrean verifikasi dan permintaan pengalihan
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - name: kind
+        in: query
+        schema: {$ref: '../schemas/enums.yaml#/VerificationKind'}
+      - $ref: '../parameters/common.yaml#/Page'
+      - $ref: '../parameters/common.yaml#/Limit'
+    responses:
+      '200':
+        description: Halaman antrean
+        content:
+          application/json:
+            schema: {$ref: '../schemas/admin-queue.yaml#/VerificationList'}
+            examples:
+              admin: {$ref: '../examples/admin.yaml#/VerificationList'}
+      default: {$ref: '../responses/error.yaml'}
+route:
+  post:
+    operationId: routeIssue
+    tags: [Admin]
+    summary: Tentukan OPD dan kategori, lalu teruskan
+    description: Keputusan disimpan sebagai label koreksi untuk evaluasi AI.
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/IdPath'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/admin-queue.yaml#/RouteIssueRequest'}
+    responses:
+      '200':
+        description: Isu diteruskan
+        content:
+          application/json:
+            schema: {$ref: '../schemas/admin-queue.yaml#/IssueStatusResult'}
+            examples:
+              admin: {$ref: '../examples/admin.yaml#/IssueStatusResult'}
+      default: {$ref: '../responses/error.yaml'}
+reject:
+  post:
+    operationId: rejectIssue
+    tags: [Admin]
+    summary: Tolak isu dari antrean verifikasi
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/IdPath'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/admin-queue.yaml#/RejectIssueRequest'}
+    responses:
+      '200':
+        description: Isu ditolak
+        content:
+          application/json:
+            schema: {$ref: '../schemas/admin-queue.yaml#/IssueStatusResult'}
+            examples:
+              admin: {$ref: '../examples/admin.yaml#/IssueStatusResult'}
+      default: {$ref: '../responses/error.yaml'}

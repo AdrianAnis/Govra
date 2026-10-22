@@ -1,0 +1,46 @@
+create:
+  post:
+    operationId: createReport
+    tags: [Laporan]
+    summary: Kirim laporan baru
+    description: Tersimpan dengan status DIAJUKAN sebelum triage AI berjalan. Hanya Pelapor.
+    security:
+      - bffKey: []
+        bearer: []
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema: {$ref: '../schemas/report.yaml#/CreateReportForm'}
+    responses:
+      '201':
+        description: Laporan diterima
+        content:
+          application/json:
+            schema: {$ref: '../schemas/report.yaml#/CreatedReport'}
+            examples:
+              pelapor: {$ref: '../examples/reports.yaml#/CreatedReport'}
+      default: {$ref: '../responses/error.yaml'}
+duplicates:
+  post:
+    operationId: suggestDuplicateIssues
+    tags: [Laporan]
+    summary: Maksimal 3 isu terbuka yang mirip di sekitar lokasi
+    description: Embedding laporan Rahasia tidak dipakai untuk saran ini. Hanya Pelapor.
+    security:
+      - bffKey: []
+        bearer: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/report.yaml#/DuplicateQuery'}
+    responses:
+      '200':
+        description: Saran isu mirip
+        content:
+          application/json:
+            schema: {$ref: '../schemas/report.yaml#/DuplicateSuggestionList'}
+            examples:
+              pelapor: {$ref: '../examples/reports.yaml#/DuplicateSuggestions'}
+      default: {$ref: '../responses/error.yaml'}

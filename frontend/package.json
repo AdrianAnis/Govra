@@ -6,10 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "gen": "openapi-typescript ../backend/api/openapi.yaml -o src/types/api.ts",
+    "mock": "npx --yes @stoplight/prism-cli@5.16.0 mock ../backend/api/openapi.yaml -p 4010"
   },
   "dependencies": {
     "next": "16.4.2",
+    "openapi-fetch": "^0.17.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "server-only": "^0.0.1",
@@ -22,6 +25,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
+    "openapi-typescript": "^7.13.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

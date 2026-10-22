@@ -1,0 +1,93 @@
+AiTriage:
+  type: object
+  required: [summary, confidence, safety_risk, sensitive]
+  properties:
+    summary: {type: string, maxLength: 160}
+    confidence: {type: number, minimum: 0, maximum: 1}
+    safety_risk: {$ref: 'enums.yaml#/SafetyRisk'}
+    sensitive: {type: boolean}
+AgencyReport:
+  type: object
+  required: [code, body, visibility, created_at, location, attachments]
+  description: Identitas pelapor tidak pernah disertakan.
+  properties:
+    code: {$ref: 'report.yaml#/ReportCode'}
+    body: {type: string}
+    visibility: {$ref: 'enums.yaml#/Visibility'}
+    created_at: {$ref: 'common.yaml#/DateTime'}
+    location: {$ref: 'common.yaml#/PublicLocation'}
+    attachments:
+      type: array
+      items: {$ref: 'common.yaml#/Attachment'}
+AgencyIssueSummary:
+  allOf:
+    - $ref: 'issue.yaml#/IssueSummary'
+    - type: object
+      required: [sla_due_at]
+      properties:
+        sla_due_at:
+          anyOf:
+            - $ref: 'common.yaml#/DateTime'
+            - type: 'null'
+AgencyIssueList:
+  allOf:
+    - $ref: 'common.yaml#/Pagination'
+    - type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/AgencyIssueSummary'}
+AgencyIssueDetail:
+  allOf:
+    - $ref: '#/AgencyIssueSummary'
+    - type: object
+      required: [ai, reports, timeline, allowed_transitions]
+      properties:
+        ai: {$ref: '#/AiTriage'}
+        reports:
+          type: array
+          items: {$ref: '#/AgencyReport'}
+        timeline:
+          type: array
+          items: {$ref: 'issue.yaml#/IssueEvent'}
+        allowed_transitions:
+          type: array
+          description: Transisi yang boleh dilakukan sekarang, ditentukan state machine di backend.
+          items: {$ref: 'enums.yaml#/AgencyTransition'}
+TransitionRequest:
+  type: object
+  required: [to, response]
+  description: >-
+    Selesai wajib menyertakan evidence_ids minimal 1. Ditolak wajib rejection_reason.
+    Dialihkan wajib transfer_reason. Aturan ini divalidasi backend.
+  properties:
+    to: {$ref: 'enums.yaml#/AgencyTransition'}
+    response: {type: string, minLength: 1, maxLength: 2000}
+    rejection_reason: {$ref: 'enums.yaml#/RejectionReason'}
+    transfer_reason: {$ref: 'enums.yaml#/TransferReason'}
+    evidence_ids:
+      type: array
+      maxItems: 3
+      items: {$ref: 'common.yaml#/Uuid'}
+TransitionResult:
+  type: object
+  required: [status, event]
+  properties:
+    status: {$ref: 'enums.yaml#/IssueStatus'}
+    event: {$ref: 'issue.yaml#/IssueEvent'}
+EvidenceForm:
+  type: object
+  required: [file]
+  properties:
+    file: {type: string, format: binary}
+AgencyStats:
+  type: object
+  required: [total_open, by_status, sla_compliance_percent, median_response_hours]
+  properties:
+    total_open: {type: integer, minimum: 0}
+    by_status:
+      type: array
+      items: {$ref: 'common.yaml#/StatusCount'}
+    sla_compliance_percent: {type: number, minimum: 0, maximum: 100}
+    median_response_hours: {type: [number, 'null']}

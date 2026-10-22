@@ -1,0 +1,195 @@
+openapi: 3.1.0
+info:
+  title: Tilik API
+  version: 1.0.0
+  description: >-
+    Kontrak API Tilik, platform transparansi proker pemerintah daerah dan pelaporan warga.
+    Seluruh data contoh adalah data simulasi.
+servers:
+  - url: http://localhost:4010
+    description: Mock Prism
+tags:
+  - {name: Referensi}
+  - {name: Proker}
+  - {name: Rapor}
+  - {name: Isu}
+  - {name: Laporan}
+  - {name: Akun}
+  - {name: Chatbot}
+  - {name: Dinas}
+  - {name: Admin}
+security:
+  - bffKey: []
+paths:
+  /region: {$ref: 'paths/reference.yaml#/region'}
+  /districts: {$ref: 'paths/reference.yaml#/districts'}
+  /goals: {$ref: 'paths/reference.yaml#/goals'}
+  /opds: {$ref: 'paths/reference.yaml#/opds'}
+  /opds/{slug}: {$ref: 'paths/reference.yaml#/opd'}
+  /programs: {$ref: 'paths/programs.yaml#/list'}
+  /programs/{code}: {$ref: 'paths/programs.yaml#/detail'}
+  /scorecard: {$ref: 'paths/scorecard.yaml#/scorecard'}
+  /scorecard/indicators/{code}/items: {$ref: 'paths/scorecard.yaml#/drill'}
+  /methodology: {$ref: 'paths/scorecard.yaml#/methodology'}
+  /issues: {$ref: 'paths/issues.yaml#/list'}
+  /issues/{id}: {$ref: 'paths/issues.yaml#/detail'}
+  /issues/{id}/support: {$ref: 'paths/issues.yaml#/support'}
+  /reports: {$ref: 'paths/reports.yaml#/create'}
+  /reports/duplicate-suggestions: {$ref: 'paths/reports.yaml#/duplicates'}
+  /assistant/messages: {$ref: 'paths/assistant.yaml#/messages'}
+  /me: {$ref: 'paths/me.yaml#/me'}
+  /me/export: {$ref: 'paths/me.yaml#/export'}
+  /me/reports: {$ref: 'paths/me.yaml#/reports'}
+  /me/reports/{code}: {$ref: 'paths/me.yaml#/report'}
+  /me/reports/{code}/resolution-feedback: {$ref: 'paths/me.yaml#/feedback'}
+  /agency/issues: {$ref: 'paths/agency.yaml#/issues'}
+  /agency/issues/{id}: {$ref: 'paths/agency.yaml#/issue'}
+  /agency/issues/{id}/transitions: {$ref: 'paths/agency.yaml#/transition'}
+  /agency/issues/{id}/evidence: {$ref: 'paths/agency.yaml#/evidence'}
+  /agency/stats: {$ref: 'paths/agency.yaml#/stats'}
+  /admin/overview: {$ref: 'paths/admin-queue.yaml#/overview'}
+  /admin/verification: {$ref: 'paths/admin-queue.yaml#/verification'}
+  /admin/issues/{id}/route: {$ref: 'paths/admin-queue.yaml#/route'}
+  /admin/issues/{id}/reject: {$ref: 'paths/admin-queue.yaml#/reject'}
+  /admin/users: {$ref: 'paths/admin-users.yaml#/users'}
+  /admin/users/{id}: {$ref: 'paths/admin-users.yaml#/user'}
+  /admin/users/{id}/reset-mfa: {$ref: 'paths/admin-users.yaml#/resetMfa'}
+  /admin/opds: {$ref: 'paths/admin-master.yaml#/opds'}
+  /admin/opds/{code}: {$ref: 'paths/admin-master.yaml#/opd'}
+  /admin/opds/{code}/categories: {$ref: 'paths/admin-master.yaml#/categories'}
+  /admin/categories/{code}: {$ref: 'paths/admin-master.yaml#/category'}
+  /admin/districts: {$ref: 'paths/admin-master.yaml#/districts'}
+  /admin/districts/{id}: {$ref: 'paths/admin-master.yaml#/district'}
+  /admin/districts/{id}/villages: {$ref: 'paths/admin-master.yaml#/villages'}
+  /admin/villages/{id}: {$ref: 'paths/admin-master.yaml#/village'}
+  /admin/moderation/reports: {$ref: 'paths/admin-system.yaml#/moderation'}
+  /admin/moderation/reports/{id}/hide: {$ref: 'paths/admin-system.yaml#/hide'}
+  /admin/settings: {$ref: 'paths/admin-system.yaml#/settings'}
+  /admin/settings/{key}: {$ref: 'paths/admin-system.yaml#/setting'}
+  /admin/audit-logs: {$ref: 'paths/admin-system.yaml#/audit'}
+components:
+  securitySchemes:
+    bffKey:
+      type: apiKey
+      in: header
+      name: X-BFF-Key
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Role: {$ref: 'schemas/enums.yaml#/Role'}
+    ProgramStatus: {$ref: 'schemas/enums.yaml#/ProgramStatus'}
+    IssueStatus: {$ref: 'schemas/enums.yaml#/IssueStatus'}
+    Urgency: {$ref: 'schemas/enums.yaml#/Urgency'}
+    Visibility: {$ref: 'schemas/enums.yaml#/Visibility'}
+    SafetyRisk: {$ref: 'schemas/enums.yaml#/SafetyRisk'}
+    UserStatus: {$ref: 'schemas/enums.yaml#/UserStatus'}
+    RejectionReason: {$ref: 'schemas/enums.yaml#/RejectionReason'}
+    TransferReason: {$ref: 'schemas/enums.yaml#/TransferReason'}
+    ModerationReason: {$ref: 'schemas/enums.yaml#/ModerationReason'}
+    FeedbackOutcome: {$ref: 'schemas/enums.yaml#/FeedbackOutcome'}
+    IndicatorCode: {$ref: 'schemas/enums.yaml#/IndicatorCode'}
+    IndicatorUnit: {$ref: 'schemas/enums.yaml#/IndicatorUnit'}
+    SettingKey: {$ref: 'schemas/enums.yaml#/SettingKey'}
+    SettingUnit: {$ref: 'schemas/enums.yaml#/SettingUnit'}
+    AgencyTransition: {$ref: 'schemas/enums.yaml#/AgencyTransition'}
+    ChatRole: {$ref: 'schemas/enums.yaml#/ChatRole'}
+    SourceKind: {$ref: 'schemas/enums.yaml#/SourceKind'}
+    VerificationKind: {$ref: 'schemas/enums.yaml#/VerificationKind'}
+    DrillKind: {$ref: 'schemas/enums.yaml#/DrillKind'}
+    Uuid: {$ref: 'schemas/common.yaml#/Uuid'}
+    DateTime: {$ref: 'schemas/common.yaml#/DateTime'}
+    Date: {$ref: 'schemas/common.yaml#/Date'}
+    Code: {$ref: 'schemas/common.yaml#/Code'}
+    Slug: {$ref: 'schemas/common.yaml#/Slug'}
+    Error: {$ref: 'schemas/common.yaml#/Error'}
+    Pagination: {$ref: 'schemas/common.yaml#/Pagination'}
+    AreaRef: {$ref: 'schemas/common.yaml#/AreaRef'}
+    OpdRef: {$ref: 'schemas/common.yaml#/OpdRef'}
+    CategoryRef: {$ref: 'schemas/common.yaml#/CategoryRef'}
+    GeoPoint: {$ref: 'schemas/common.yaml#/GeoPoint'}
+    PublicLocation: {$ref: 'schemas/common.yaml#/PublicLocation'}
+    Attachment: {$ref: 'schemas/common.yaml#/Attachment'}
+    StatusCount: {$ref: 'schemas/common.yaml#/StatusCount'}
+    Region: {$ref: 'schemas/reference.yaml#/Region'}
+    District: {$ref: 'schemas/reference.yaml#/District'}
+    DistrictList: {$ref: 'schemas/reference.yaml#/DistrictList'}
+    Goal: {$ref: 'schemas/reference.yaml#/Goal'}
+    GoalList: {$ref: 'schemas/reference.yaml#/GoalList'}
+    OpdSummary: {$ref: 'schemas/reference.yaml#/OpdSummary'}
+    OpdSummaryList: {$ref: 'schemas/reference.yaml#/OpdSummaryList'}
+    OpdProfile: {$ref: 'schemas/reference.yaml#/OpdProfile'}
+    ProgramSummary: {$ref: 'schemas/program.yaml#/ProgramSummary'}
+    ProgramList: {$ref: 'schemas/program.yaml#/ProgramList'}
+    Milestone: {$ref: 'schemas/program.yaml#/Milestone'}
+    ProgramDocument: {$ref: 'schemas/program.yaml#/ProgramDocument'}
+    ProgramUpdate: {$ref: 'schemas/program.yaml#/ProgramUpdate'}
+    ProgramBudget: {$ref: 'schemas/program.yaml#/ProgramBudget'}
+    ProgramDetail: {$ref: 'schemas/program.yaml#/ProgramDetail'}
+    IndicatorValue: {$ref: 'schemas/scorecard.yaml#/IndicatorValue'}
+    OpdScorecard: {$ref: 'schemas/scorecard.yaml#/OpdScorecard'}
+    Scorecard: {$ref: 'schemas/scorecard.yaml#/Scorecard'}
+    DrillItem: {$ref: 'schemas/scorecard.yaml#/DrillItem'}
+    DrillList: {$ref: 'schemas/scorecard.yaml#/DrillList'}
+    MethodologyIndicator: {$ref: 'schemas/scorecard.yaml#/MethodologyIndicator'}
+    Methodology: {$ref: 'schemas/scorecard.yaml#/Methodology'}
+    Setting: {$ref: 'schemas/settings.yaml#/Setting'}
+    SettingList: {$ref: 'schemas/settings.yaml#/SettingList'}
+    SettingUpdate: {$ref: 'schemas/settings.yaml#/SettingUpdate'}
+    IssueEvent: {$ref: 'schemas/issue.yaml#/IssueEvent'}
+    IssueSummary: {$ref: 'schemas/issue.yaml#/IssueSummary'}
+    IssueList: {$ref: 'schemas/issue.yaml#/IssueList'}
+    IssueDetail: {$ref: 'schemas/issue.yaml#/IssueDetail'}
+    SupportResult: {$ref: 'schemas/issue.yaml#/SupportResult'}
+    ReportCode: {$ref: 'schemas/report.yaml#/ReportCode'}
+    CreateReportForm: {$ref: 'schemas/report.yaml#/CreateReportForm'}
+    CreatedReport: {$ref: 'schemas/report.yaml#/CreatedReport'}
+    DuplicateQuery: {$ref: 'schemas/report.yaml#/DuplicateQuery'}
+    DuplicateSuggestion: {$ref: 'schemas/report.yaml#/DuplicateSuggestion'}
+    DuplicateSuggestionList: {$ref: 'schemas/report.yaml#/DuplicateSuggestionList'}
+    MyReportSummary: {$ref: 'schemas/report.yaml#/MyReportSummary'}
+    MyReportList: {$ref: 'schemas/report.yaml#/MyReportList'}
+    FeedbackState: {$ref: 'schemas/report.yaml#/FeedbackState'}
+    MyReportDetail: {$ref: 'schemas/report.yaml#/MyReportDetail'}
+    FeedbackRequest: {$ref: 'schemas/report.yaml#/FeedbackRequest'}
+    FeedbackResult: {$ref: 'schemas/report.yaml#/FeedbackResult'}
+    MyDataExport: {$ref: 'schemas/report.yaml#/MyDataExport'}
+    Profile: {$ref: 'schemas/user.yaml#/Profile'}
+    ChatMessage: {$ref: 'schemas/assistant.yaml#/ChatMessage'}
+    ChatRequest: {$ref: 'schemas/assistant.yaml#/ChatRequest'}
+    ChatSource: {$ref: 'schemas/assistant.yaml#/ChatSource'}
+    ChatReply: {$ref: 'schemas/assistant.yaml#/ChatReply'}
+    AiTriage: {$ref: 'schemas/agency.yaml#/AiTriage'}
+    AgencyReport: {$ref: 'schemas/agency.yaml#/AgencyReport'}
+    AgencyIssueSummary: {$ref: 'schemas/agency.yaml#/AgencyIssueSummary'}
+    AgencyIssueList: {$ref: 'schemas/agency.yaml#/AgencyIssueList'}
+    AgencyIssueDetail: {$ref: 'schemas/agency.yaml#/AgencyIssueDetail'}
+    TransitionRequest: {$ref: 'schemas/agency.yaml#/TransitionRequest'}
+    TransitionResult: {$ref: 'schemas/agency.yaml#/TransitionResult'}
+    EvidenceForm: {$ref: 'schemas/agency.yaml#/EvidenceForm'}
+    AgencyStats: {$ref: 'schemas/agency.yaml#/AgencyStats'}
+    AdminOverview: {$ref: 'schemas/admin-queue.yaml#/AdminOverview'}
+    AiSuggestion: {$ref: 'schemas/admin-queue.yaml#/AiSuggestion'}
+    VerificationItem: {$ref: 'schemas/admin-queue.yaml#/VerificationItem'}
+    VerificationList: {$ref: 'schemas/admin-queue.yaml#/VerificationList'}
+    RouteIssueRequest: {$ref: 'schemas/admin-queue.yaml#/RouteIssueRequest'}
+    RejectIssueRequest: {$ref: 'schemas/admin-queue.yaml#/RejectIssueRequest'}
+    IssueStatusResult: {$ref: 'schemas/admin-queue.yaml#/IssueStatusResult'}
+    AdminUser: {$ref: 'schemas/admin-users.yaml#/AdminUser'}
+    AdminUserList: {$ref: 'schemas/admin-users.yaml#/AdminUserList'}
+    CreateAgencyUser: {$ref: 'schemas/admin-users.yaml#/CreateAgencyUser'}
+    UpdateAgencyUser: {$ref: 'schemas/admin-users.yaml#/UpdateAgencyUser'}
+    CategoryDetail: {$ref: 'schemas/admin-master.yaml#/CategoryDetail'}
+    OpdDetail: {$ref: 'schemas/admin-master.yaml#/OpdDetail'}
+    OpdDetailList: {$ref: 'schemas/admin-master.yaml#/OpdDetailList'}
+    CreateOpd: {$ref: 'schemas/admin-master.yaml#/CreateOpd'}
+    UpdateOpd: {$ref: 'schemas/admin-master.yaml#/UpdateOpd'}
+    CreateCategory: {$ref: 'schemas/admin-master.yaml#/CreateCategory'}
+    UpdateCategory: {$ref: 'schemas/admin-master.yaml#/UpdateCategory'}
+    AreaName: {$ref: 'schemas/admin-master.yaml#/AreaName'}
+    ModerationReport: {$ref: 'schemas/admin-system.yaml#/ModerationReport'}
+    ModerationReportList: {$ref: 'schemas/admin-system.yaml#/ModerationReportList'}
+    HideReportRequest: {$ref: 'schemas/admin-system.yaml#/HideReportRequest'}
+    AuditLog: {$ref: 'schemas/admin-system.yaml#/AuditLog'}
+    AuditLogList: {$ref: 'schemas/admin-system.yaml#/AuditLogList'}

@@ -1,0 +1,11 @@
+description: Kesalahan. Objek di luar wewenang pemanggil selalu dijawab 404, bukan 403.
+content:
+  application/json:
+    schema:
+      $ref: '../schemas/common.yaml#/Error'
+    examples:
+      tidak_ditemukan:
+        value:
+          code: NOT_FOUND
+          message: Data tidak ditemukan.
+          request_id: 0197e000-0000-7000-8000-000000000001
