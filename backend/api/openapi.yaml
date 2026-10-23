@@ -1,9 +1,9 @@
 openapi: 3.1.0
 info:
-  title: Tilik API
+  title: Govra API
   version: 1.0.0
   description: >-
-    Kontrak API Tilik, platform transparansi proker pemerintah daerah dan pelaporan warga.
+    Kontrak API Govra, platform transparansi proker pemerintah daerah dan pelaporan warga.
     Seluruh data contoh adalah data simulasi.
 servers:
   - url: http://localhost:4010
@@ -53,7 +53,6 @@ paths:
   /admin/issues/{id}/reject: {$ref: 'paths/admin-queue.yaml#/reject'}
   /admin/users: {$ref: 'paths/admin-users.yaml#/users'}
   /admin/users/{id}: {$ref: 'paths/admin-users.yaml#/user'}
-  /admin/users/{id}/reset-mfa: {$ref: 'paths/admin-users.yaml#/resetMfa'}
   /admin/opds: {$ref: 'paths/admin-master.yaml#/opds'}
   /admin/opds/{code}: {$ref: 'paths/admin-master.yaml#/opd'}
   /admin/opds/{code}/categories: {$ref: 'paths/admin-master.yaml#/categories'}

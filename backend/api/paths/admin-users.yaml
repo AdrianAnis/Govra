@@ -23,7 +23,7 @@ users:
     operationId: createAgencyUser
     tags: [Admin]
     summary: Buat akun Dinas yang terikat ke satu OPD
-    description: Akun wajib enrol TOTP saat login pertama. Akun Admin tidak bisa dibuat lewat API.
+    description: Akun masuk dengan email dan kata sandi awal dari Admin. Akun Admin tidak bisa dibuat lewat API.
     security:
       - bffKey: []
         bearer: []
@@ -64,18 +64,4 @@ user:
             schema: {$ref: '../schemas/admin-users.yaml#/AdminUser'}
             examples:
               admin: {$ref: '../examples/admin.yaml#/AdminUser'}
-      default: {$ref: '../responses/error.yaml'}
-resetMfa:
-  post:
-    operationId: resetAgencyUserMfa
-    tags: [Admin]
-    summary: Reset MFA akun Dinas
-    security:
-      - bffKey: []
-        bearer: []
-    parameters:
-      - $ref: '../parameters/common.yaml#/IdPath'
-    responses:
-      '204':
-        description: MFA direset
       default: {$ref: '../responses/error.yaml'}

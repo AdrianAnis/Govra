@@ -1,12 +1,13 @@
 import { Info } from "lucide-react";
+import { Container } from "@/components/layout/container";
 
 function SimulationBanner() {
   return (
     <div role="note" className="bg-primary-soft">
-      <p className="mx-auto flex w-full max-w-content items-center gap-2 px-4 py-2 text-sm">
+      <Container className="flex items-center gap-2 py-2 text-sm">
         <Info aria-hidden className="size-4 shrink-0" />
-        Data simulasi untuk keperluan demonstrasi
-      </p>
+        <p>Data simulasi untuk keperluan demonstrasi</p>
+      </Container>
     </div>
   );
 }

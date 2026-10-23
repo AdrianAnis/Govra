@@ -1,6 +1,6 @@
 AdminUser:
   type: object
-  required: [id, email, display_name, role, opd, status, mfa_enrolled, last_sign_in_at]
+  required: [id, email, display_name, role, opd, status, last_sign_in_at]
   properties:
     id: {$ref: 'common.yaml#/Uuid'}
     email: {type: string, format: email}
@@ -11,7 +11,6 @@ AdminUser:
         - $ref: 'common.yaml#/OpdRef'
         - type: 'null'
     status: {$ref: 'enums.yaml#/UserStatus'}
-    mfa_enrolled: {type: boolean}
     last_sign_in_at:
       anyOf:
         - $ref: 'common.yaml#/DateTime'

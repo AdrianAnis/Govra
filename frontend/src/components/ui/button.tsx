@@ -10,11 +10,14 @@ const buttonVariants = cva(
         primary: "bg-primary text-primary-foreground hover:bg-primary-hover",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/90",
         ghost: "text-foreground hover:bg-primary-soft",
+        outline:
+          "border-border-strong bg-surface text-foreground hover:bg-primary-soft",
         accent: "bg-accent text-accent-foreground hover:bg-accent/90",
       },
       size: {
-        default: "h-11 px-5",
+        default: "h-11 px-6",
         sm: "h-9 px-3",
+        lg: "h-14 px-8 text-base",
         icon: "size-11",
       },
     },
@@ -40,4 +43,4 @@ function Button({
   );
 }
 
-export { Button };
+export { Button, buttonVariants };

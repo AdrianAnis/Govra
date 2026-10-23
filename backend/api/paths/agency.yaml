@@ -3,7 +3,7 @@ issues:
     operationId: listAgencyIssues
     tags: [Dinas]
     summary: Inbox isu milik OPD pemanggil
-    description: Urut berdasarkan urgensi, sisa waktu SLA, lalu jumlah pelapor. Wajib MFA aal2.
+    description: Urut berdasarkan urgensi, sisa waktu SLA, lalu jumlah pelapor.
     security:
       - bffKey: []
         bearer: []
