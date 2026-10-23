@@ -18,7 +18,7 @@ IssueEvent:
       items: {$ref: 'common.yaml#/Attachment'}
 IssueSummary:
   type: object
-  required: [id, title, opd, category, status, urgency, reporter_count, location, created_at, updated_at, response_overdue]
+  required: [id, title, opd, category, status, urgency, reporter_count, location, created_at, updated_at, response_overdue, cover_photo]
   properties:
     id: {$ref: 'common.yaml#/Uuid'}
     title:
@@ -33,6 +33,10 @@ IssueSummary:
     location: {$ref: 'common.yaml#/PublicLocation'}
     created_at: {$ref: 'common.yaml#/DateTime'}
     updated_at: {$ref: 'common.yaml#/DateTime'}
+    cover_photo:
+      anyOf:
+        - $ref: 'common.yaml#/CoverPhoto'
+        - type: 'null'
     response_overdue:
       type: boolean
       description: Melewati SLA tanggapan pertama. Tampil sebagai Terlambat Ditanggapi.

@@ -74,6 +74,15 @@ Attachment:
       type: string
       enum: [image/jpeg, image/png, image/webp]
     size_bytes: {type: integer, minimum: 1}
+CoverPhoto:
+  type: object
+  required: [url, mime]
+  description: Foto sampul isu dari laporan Publik. Sudah disaring (EXIF dihapus, wajah dan plat nomor diburamkan) dan memakai URL tetap.
+  properties:
+    url: {type: string, format: uri}
+    mime:
+      type: string
+      enum: [image/jpeg, image/png, image/webp]
 StatusCount:
   type: object
   required: [status, count]

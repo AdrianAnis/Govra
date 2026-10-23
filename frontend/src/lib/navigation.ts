@@ -27,11 +27,35 @@ export const MAIN_NAV: readonly NavLink[] = [
   { href: "/isu", label: "Isu" },
 ];
 
-export const FOOTER_NAV: readonly NavLink[] = [
-  { href: "/metodologi", label: "Metodologi" },
-  { href: "/privasi", label: "Kebijakan Privasi" },
-  { href: "/proker", label: "Proker" },
-  { href: "/rapor", label: "Rapor" },
+export interface FooterGroup {
+  title: string;
+  links: readonly NavLink[];
+}
+
+export const FOOTER_GROUPS: readonly FooterGroup[] = [
+  {
+    title: "Jelajahi",
+    links: [
+      { href: "/proker", label: "Program kerja" },
+      { href: "/rapor", label: "Rapor OPD" },
+      { href: "/isu", label: "Isu warga" },
+    ],
+  },
+  {
+    title: "Warga",
+    links: [
+      { href: "/lapor", label: "Buat laporan" },
+      { href: "/masuk", label: "Masuk" },
+      { href: "/daftar", label: "Daftar" },
+    ],
+  },
+  {
+    title: "Transparansi",
+    links: [
+      { href: "/metodologi", label: "Metodologi" },
+      { href: "/privasi", label: "Kebijakan privasi" },
+    ],
+  },
 ];
 
 export const PANEL_SECTIONS = {

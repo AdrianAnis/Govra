@@ -4,8 +4,7 @@ import {
   CircleCheck,
   CircleDashed,
   CircleDot,
-  CircleX,
-  ClockAlert,
+  Gauge,
   Inbox,
   Loader,
   Send,
@@ -34,8 +33,8 @@ export interface StatusMeta {
 export const PROGRAM_STATUS: Record<ProgramStatus, StatusMeta> = {
   BELUM_DIMULAI: { label: "Belum Dimulai", weight: "netral", icon: CircleDashed },
   SESUAI_JADWAL: { label: "Sesuai Jadwal", weight: "berjalan", icon: CircleDot },
-  TERLAMBAT: { label: "Terlambat", weight: "perhatian", icon: ClockAlert },
-  MELEWATI_TENGGAT: { label: "Melewati Tenggat", weight: "serius", icon: CircleX },
+  TERLAMBAT: { label: "Dalam Percepatan", weight: "berjalan", icon: Gauge },
+  MELEWATI_TENGGAT: { label: "Tahap Penyelesaian", weight: "berjalan", icon: Loader },
   SELESAI: { label: "Selesai", weight: "selesai", icon: CircleCheck },
 };
 
