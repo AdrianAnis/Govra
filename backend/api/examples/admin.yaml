@@ -53,7 +53,6 @@ AdminUserList:
         role: DINAS
         opd: {code: BMSDA, slug: dinas-bina-marga-sda, name: Dinas Bina Marga dan Sumber Daya Air}
         status: ACTIVE
-        mfa_enrolled: true
         last_sign_in_at: '2026-10-22T08:15:00Z'
 AdminUser:
   summary: Satu akun Dinas

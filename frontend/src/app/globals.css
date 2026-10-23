@@ -52,7 +52,8 @@
   --color-input: var(--border-strong);
   --color-ring: var(--primary);
   --font-sans: var(--font-inter), system-ui, sans-serif;
-  --container-content: 1200px;
+  --container-content: 1440px;
+  --container-auth: 1920px;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
@@ -73,6 +74,19 @@
     var(--secondary) 0 2px,
     transparent 2px 6px
   );
+}
+
+@utility bg-google {
+  background-image: url("/google.svg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+@utility bg-auth {
+  background-image: url("/auth-bg.jpg");
+  background-size: cover;
+  background-position: center;
 }
 
 body {

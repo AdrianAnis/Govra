@@ -386,7 +386,7 @@ export interface paths {
         };
         /**
          * Inbox isu milik OPD pemanggil
-         * @description Urut berdasarkan urgensi, sisa waktu SLA, lalu jumlah pelapor. Wajib MFA aal2.
+         * @description Urut berdasarkan urgensi, sisa waktu SLA, lalu jumlah pelapor.
          */
         get: operations["listAgencyIssues"];
         put?: never;
@@ -551,7 +551,7 @@ export interface paths {
         put?: never;
         /**
          * Buat akun Dinas yang terikat ke satu OPD
-         * @description Akun wajib enrol TOTP saat login pertama. Akun Admin tidak bisa dibuat lewat API.
+         * @description Akun masuk dengan email dan kata sandi awal dari Admin. Akun Admin tidak bisa dibuat lewat API.
          */
         post: operations["createAgencyUser"];
         delete?: never;
@@ -575,23 +575,6 @@ export interface paths {
         head?: never;
         /** Nonaktifkan akun atau ganti OPD */
         patch: operations["updateAgencyUser"];
-        trace?: never;
-    };
-    "/admin/users/{id}/reset-mfa": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Reset MFA akun Dinas */
-        post: operations["resetAgencyUserMfa"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/admin/opds": {
@@ -1288,7 +1271,6 @@ export interface components {
             role: components["schemas"]["Role"];
             opd: components["schemas"]["OpdRef"] | null;
             status: components["schemas"]["UserStatus"];
-            mfa_enrolled: boolean;
             last_sign_in_at: components["schemas"]["DateTime"] | null;
         };
         AdminUserList: components["schemas"]["Pagination"] & {
@@ -2218,27 +2200,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AdminUser"];
                 };
-            };
-            default: components["responses"]["error"];
-        };
-    };
-    resetAgencyUserMfa: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["IdPath"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description MFA direset */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
             default: components["responses"]["error"];
         };
