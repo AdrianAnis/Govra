@@ -45,6 +45,7 @@ export const FOOTER_GROUPS: readonly FooterGroup[] = [
     title: "Warga",
     links: [
       { href: "/lapor", label: "Buat laporan" },
+      { href: "/laporan-saya", label: "Laporan saya" },
       { href: "/masuk", label: "Masuk" },
       { href: "/daftar", label: "Daftar" },
     ],

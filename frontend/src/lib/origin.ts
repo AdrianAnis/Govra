@@ -1,3 +1,5 @@
+import { errorResponse } from "@/lib/api-response";
+
 const SAFE_METHODS: ReadonlySet<string> = new Set(["GET", "HEAD", "OPTIONS"]);
 const FORBIDDEN_STATUS = 403;
 
@@ -10,12 +12,5 @@ export function rejectCrossOrigin(request: Request): Response | null {
   if (SAFE_METHODS.has(request.method) || isSameOrigin(request)) {
     return null;
   }
-  return Response.json(
-    {
-      code: "FORBIDDEN_ORIGIN",
-      message: "Permintaan ditolak karena asalnya tidak dikenali.",
-      request_id: crypto.randomUUID(),
-    },
-    { status: FORBIDDEN_STATUS },
-  );
+  return errorResponse("FORBIDDEN_ORIGIN", "Permintaan ditolak karena asalnya tidak dikenali.", FORBIDDEN_STATUS);
 }

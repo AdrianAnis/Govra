@@ -1,8 +1,11 @@
-export default function ReportPage() {
-  return (
-    <>
-      <h1 className="text-3xl font-bold tracking-tight">Lapor masalah</h1>
-      <p className="mt-2 text-fg-muted">Formulir laporan akan tampil di sini.</p>
-    </>
-  );
+import type { Metadata } from "next";
+import { ReportWizard } from "@/components/report/report-wizard";
+import { getDistricts, getRegion } from "@/lib/data/reference";
+
+export const metadata: Metadata = { title: "Lapor Masalah" };
+
+export default async function ReportPage() {
+  const [districts, region] = await Promise.all([getDistricts(), getRegion()]);
+
+  return <ReportWizard districts={districts.items} bounds={region.bounds} />;
 }
