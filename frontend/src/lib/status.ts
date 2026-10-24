@@ -48,3 +48,7 @@ export const ISSUE_STATUS: Record<IssueStatus, StatusMeta> = {
   DITOLAK: { label: "Ditolak", weight: "serius", icon: Ban },
   SELESAI: { label: "Selesai", weight: "selesai", icon: BadgeCheck },
 };
+
+export function isIssueStatus(value: string): value is IssueStatus {
+  return value in ISSUE_STATUS;
+}

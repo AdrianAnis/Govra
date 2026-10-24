@@ -160,3 +160,20 @@ const UNVERIFIED: readonly Status[] = ["DIAJUKAN", "MENUNGGU_VERIFIKASI"];
 export const PUBLIC_ISSUES: Schema<"IssueDetail">[] = ISSUE_SEEDS.map(buildIssue).filter(
   (issue) => !UNVERIFIED.includes(issue.status),
 );
+
+export function toSummary(issue: Schema<"IssueDetail">): Schema<"IssueSummary"> {
+  return {
+    id: issue.id,
+    title: issue.title,
+    opd: issue.opd,
+    category: issue.category,
+    status: issue.status,
+    urgency: issue.urgency,
+    reporter_count: issue.reporter_count,
+    location: issue.location,
+    created_at: issue.created_at,
+    updated_at: issue.updated_at,
+    cover_photo: issue.cover_photo,
+    response_overdue: issue.response_overdue,
+  };
+}

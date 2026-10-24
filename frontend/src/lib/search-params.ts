@@ -81,3 +81,7 @@ export function parseIssueFilters(raw: RawSearchParams) {
 export function parseIssueView(raw: RawSearchParams) {
   return issueView.parse(firstValues(raw).tampil);
 }
+
+export function parsePage(raw: RawSearchParams) {
+  return page.parse(firstValues(raw).page);
+}

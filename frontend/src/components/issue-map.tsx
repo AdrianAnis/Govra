@@ -6,6 +6,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { cssColor, loadMapLibre, MAP_STYLE_URL } from "@/lib/map";
 import { ISSUE_STATUS, type IssueStatus } from "@/lib/status";
 
 export interface IssueMarker {
@@ -19,17 +20,12 @@ export interface IssueMarker {
   lng: number;
 }
 
-const STYLE_URL = "https://tiles.openfreemap.org/styles/positron";
 const SOURCE_ID = "issues";
 const FIT_PADDING = 64;
 const MAX_FIT_ZOOM = 13;
 const MAX_LEAVES = 50;
 const CLUSTER_RADIUS = 50;
 const CLUSTER_ZOOM_CAP = 13;
-
-function cssColor(name: string): string {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-}
 
 function IssueMap({ markers }: { markers: readonly IssueMarker[] }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -50,19 +46,16 @@ function IssueMap({ markers }: { markers: readonly IssueMarker[] }) {
     };
 
     const mount = async () => {
-      const { Map: MapLibreMap, NavigationControl, LngLatBounds, GeoJSONSource, setWorkerUrl } = await import(
-        "maplibre-gl"
-      );
+      const { Map: MapLibreMap, NavigationControl, LngLatBounds, GeoJSONSource } = await loadMapLibre();
       if (disposed) {
         return;
       }
-      setWorkerUrl(new URL("maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url).toString());
       const dark = cssColor("--secondary");
       const light = cssColor("--surface");
       const accent = cssColor("--primary");
       const instance = new MapLibreMap({
         container,
-        style: STYLE_URL,
+        style: MAP_STYLE_URL,
         attributionControl: { compact: true },
       });
       map = instance;
