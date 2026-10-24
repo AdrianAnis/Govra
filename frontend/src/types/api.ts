@@ -897,6 +897,13 @@ export interface components {
             mime: "image/jpeg" | "image/png" | "image/webp";
             size_bytes: number;
         };
+        /** @description Foto sampul isu dari laporan Publik. Sudah disaring (EXIF dihapus, wajah dan plat nomor diburamkan) dan memakai URL tetap. */
+        CoverPhoto: {
+            /** Format: uri */
+            url: string;
+            /** @enum {string} */
+            mime: "image/jpeg" | "image/png" | "image/webp";
+        };
         StatusCount: {
             status: components["schemas"]["IssueStatus"];
             count: number;
@@ -1071,6 +1078,7 @@ export interface components {
             location: components["schemas"]["PublicLocation"];
             created_at: components["schemas"]["DateTime"];
             updated_at: components["schemas"]["DateTime"];
+            cover_photo: components["schemas"]["CoverPhoto"] | null;
             /** @description Melewati SLA tanggapan pertama. Tampil sebagai Terlambat Ditanggapi. */
             response_overdue: boolean;
         };

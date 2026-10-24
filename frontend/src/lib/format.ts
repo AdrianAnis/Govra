@@ -1,3 +1,5 @@
+import type { Schema } from "@/lib/schema";
+
 const LOCALE = "id-ID";
 const TIME_ZONE = "Asia/Jakarta";
 const TIME_ZONE_LABEL = "WIB";
@@ -40,6 +42,26 @@ export function formatDateTime(iso: string): string {
   return `${date}, ${time} ${TIME_ZONE_LABEL}`;
 }
 
+const dateFormat = new Intl.DateTimeFormat(LOCALE, {
+  timeZone: TIME_ZONE,
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+const rupiahFormat = new Intl.NumberFormat(LOCALE, {
+  style: "currency",
+  currency: "IDR",
+  maximumFractionDigits: 0,
+});
+
+export function formatDate(isoDate: string): string {
+  return dateFormat.format(new Date(`${isoDate}T00:00:00+07:00`));
+}
+
+export function formatRupiah(value: number): string {
+  return rupiahFormat.format(value);
+}
+
 export function formatRelativeTime(iso: string, now: Date): string {
   const diff = new Date(iso).getTime() - now.getTime();
   const match = RELATIVE_UNITS.find(({ ms }) => Math.abs(diff) >= ms);
@@ -51,6 +73,28 @@ export function formatRelativeTime(iso: string, now: Date): string {
 
 export function formatNumber(value: number): string {
   return numberFormat.format(value);
+}
+
+const decimalFormat = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 1 });
+
+export function formatIndicator(value: number | null, unit: "PERCENT" | "HOURS"): string {
+  if (value === null) {
+    return "Belum ada data";
+  }
+  return `${decimalFormat.format(value)}${unit === "PERCENT" ? "%" : " jam"}`;
+}
+
+const THRESHOLD_UNITS: Record<Schema<"SettingUnit">, string> = {
+  POINTS: "poin",
+  RATIO: "",
+  METERS: "meter",
+  DAYS: "hari",
+  HOURS: "jam",
+  COUNT: "",
+};
+
+export function formatThreshold(value: number, unit: Schema<"SettingUnit">): string {
+  return `${decimalFormat.format(value)} ${THRESHOLD_UNITS[unit]}`.trim();
 }
 
 export function clampPercent(value: number): number {

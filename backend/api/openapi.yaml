@@ -110,6 +110,7 @@ components:
     GeoPoint: {$ref: 'schemas/common.yaml#/GeoPoint'}
     PublicLocation: {$ref: 'schemas/common.yaml#/PublicLocation'}
     Attachment: {$ref: 'schemas/common.yaml#/Attachment'}
+    CoverPhoto: {$ref: 'schemas/common.yaml#/CoverPhoto'}
     StatusCount: {$ref: 'schemas/common.yaml#/StatusCount'}
     Region: {$ref: 'schemas/reference.yaml#/Region'}
     District: {$ref: 'schemas/reference.yaml#/District'}
