@@ -35,6 +35,7 @@ export function buildContentSecurityPolicy(nonce: string, isDev: boolean): strin
       ...(isDev ? ["'unsafe-eval'"] : []),
     ],
     ["style-src", "'self'", isDev ? "'unsafe-inline'" : nonceSource],
+    ["style-src-attr", "'unsafe-inline'"],
     ["img-src", "'self'", "blob:", "data:", SUPABASE_HOSTS, MAP_TILES_HOST],
     ["connect-src", "'self'", MAP_TILES_HOST],
     ["frame-src", TURNSTILE_HOST],
