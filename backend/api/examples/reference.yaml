@@ -1,11 +1,11 @@
 Region:
   summary: Wilayah simulasi
   value:
-    name: Kabupaten Contoh
-    head_label: Bupati (data simulasi)
+    name: Kota Contoh
+    head_label: Wali Kota
     is_simulation: true
     period: {start_year: 2025, end_year: 2030}
-    bounds: [112.6, -7.6, 112.9, -7.3]
+    bounds: [107.52, -7.0, 107.75, -6.84]
 Districts:
   summary: Kecamatan beserta kelurahan atau desa
   value:

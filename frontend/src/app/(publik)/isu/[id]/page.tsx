@@ -1,16 +1,14 @@
-import { ArrowLeft, MapPin, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { DetailSection } from "@/components/detail-section";
+import { AsideCard } from "@/components/aside-card";
+import { IssueHero } from "@/components/issue-hero";
 import { IssueTimeline } from "@/components/issue-timeline";
 import { Container } from "@/components/layout/container";
-import { IssueStatusBadge } from "@/components/status-badge";
-import { TextLink } from "@/components/text-link";
-import { UrgencyMarker } from "@/components/urgency-marker";
 import { currentTime } from "@/lib/clock";
 import { getIssue } from "@/lib/data/issues";
-import { formatDateTime, formatNumber } from "@/lib/format";
+import { formatNumber } from "@/lib/format";
 
 export async function generateMetadata({ params }: PageProps<"/isu/[id]">): Promise<Metadata> {
   const issue = await getIssue((await params).id);
@@ -24,7 +22,7 @@ export default async function IssueDetailPage({ params }: PageProps<"/isu/[id]">
   }
 
   return (
-    <Container className="flex flex-col gap-6 py-10">
+    <Container className="flex flex-col gap-8 py-6 lg:py-8">
       <Link
         href="/isu"
         className="inline-flex min-h-11 w-fit items-center gap-2 text-sm font-medium text-fg-muted hover:text-primary"
@@ -32,34 +30,39 @@ export default async function IssueDetailPage({ params }: PageProps<"/isu/[id]">
         <ArrowLeft aria-hidden className="size-4" />
         Semua isu
       </Link>
-      <header className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <IssueStatusBadge status={issue.status} />
-          <UrgencyMarker urgency={issue.urgency} />
-        </div>
-        <h1 className="text-4xl font-bold tracking-tight">{issue.title}</h1>
-        <ul className="flex flex-wrap gap-x-6 gap-y-1 text-fg-muted">
-          <li className="inline-flex items-center gap-2">
-            <MapPin aria-hidden className="size-4" />
-            {issue.location.village.name}, {issue.location.district.name}
-          </li>
-          <li className="inline-flex items-center gap-2">
-            <Users aria-hidden className="size-4" />
-            {formatNumber(issue.reporter_count)} pelapor
-          </li>
-          <li>Dilaporkan {formatDateTime(issue.created_at)}</li>
-        </ul>
-        <p className="text-fg-muted">
-          Ditangani oleh{" "}
-          <TextLink href={`/opd/${issue.opd.slug}`} className="min-h-0">
-            {issue.opd.name}
-          </TextLink>{" "}
-          · Kategori {issue.category.name}
-        </p>
-      </header>
-      <DetailSection title="Perkembangan penanganan">
-        <IssueTimeline events={issue.timeline} now={currentTime()} />
-      </DetailSection>
+      <IssueHero issue={issue} />
+      <div className="grid gap-10 py-4 lg:grid-cols-3 lg:gap-12 lg:py-8">
+        <section className="flex flex-col gap-8 lg:col-span-2">
+          <h2 className="text-2xl font-bold tracking-tight">Perkembangan penanganan</h2>
+          <IssueTimeline events={issue.timeline} now={currentTime()} />
+        </section>
+        <aside className="flex flex-col gap-4">
+          <AsideCard title="Pelapor">
+            <p className="flex flex-col gap-1">
+              <span className="text-5xl leading-none font-bold tracking-tight tabular-nums">
+                {formatNumber(issue.reporter_count)}
+              </span>
+              <span className="text-sm text-fg-muted">warga melaporkan masalah yang sama</span>
+            </p>
+          </AsideCard>
+          <Link
+            href={`/opd/${issue.opd.slug}`}
+            className="group flex items-center justify-between gap-4 rounded-lg bg-surface-muted p-6 transition-colors duration-200 ease-ui hover:bg-primary-soft"
+          >
+            <span className="flex flex-col">
+              <span className="text-sm font-semibold text-fg-muted">Ditangani oleh</span>
+              <span className="text-lg font-semibold">{issue.opd.name}</span>
+            </span>
+            <ArrowRight
+              aria-hidden
+              className="size-5 shrink-0 text-primary transition-transform duration-200 ease-ui group-hover:translate-x-1"
+            />
+          </Link>
+          <AsideCard title="Kategori">
+            <p className="text-lg font-semibold">{issue.category.name}</p>
+          </AsideCard>
+        </aside>
+      </div>
     </Container>
   );
 }

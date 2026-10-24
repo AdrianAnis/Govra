@@ -6,7 +6,7 @@ import { formatNumber, formatRelativeTime } from "@/lib/format";
 import type { Schema } from "@/lib/schema";
 import { ISSUE_STATUS } from "@/lib/status";
 
-const URGENCY_LABEL: Partial<Record<Schema<"Urgency">, string>> = {
+export const URGENCY_LABEL: Partial<Record<Schema<"Urgency">, string>> = {
   URGENT: "Urgent",
   TINGGI: "Prioritas Tinggi",
 };

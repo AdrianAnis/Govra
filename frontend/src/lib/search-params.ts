@@ -58,6 +58,8 @@ const issueFilters = z.object({
   page,
 });
 
+const issueView = z.enum(["daftar", "peta"]).catch("daftar");
+
 function firstValues(raw: RawSearchParams): Record<string, string | undefined> {
   return Object.fromEntries(
     Object.entries(raw).map(([key, value]) => [key, Array.isArray(value) ? value[0] : value]),
@@ -74,4 +76,8 @@ export function parseDrillFilters(raw: RawSearchParams) {
 
 export function parseIssueFilters(raw: RawSearchParams) {
   return issueFilters.parse(firstValues(raw));
+}
+
+export function parseIssueView(raw: RawSearchParams) {
+  return issueView.parse(firstValues(raw).tampil);
 }

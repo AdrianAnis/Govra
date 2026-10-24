@@ -2,7 +2,7 @@ Scorecard:
   summary: Rapor periode 2025 sampai 2030
   value:
     period: {start_year: 2025, end_year: 2030}
-    head_label: Bupati (data simulasi)
+    head_label: Wali Kota
     is_simulation: true
     indicators:
       - {code: KETUNTASAN_PROKER, label: Ketuntasan proker, unit: PERCENT, value: 50, sample_size: 2}

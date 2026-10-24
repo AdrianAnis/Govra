@@ -35,42 +35,42 @@ const DISTRICT_SEEDS: readonly DistrictSeed[] = [
     id: DISTRICT_ID.utara,
     name: "Kecamatan Utara",
     villages: [
-      { id: VILLAGE_ID.melati, name: "Kelurahan Melati", point: { lat: -7.45, lng: 112.72 } },
-      { id: VILLAGE_ID.kenanga, name: "Desa Kenanga", point: { lat: -7.42, lng: 112.7 } },
+      { id: VILLAGE_ID.melati, name: "Kelurahan Melati", point: { lat: -6.865, lng: 107.61 } },
+      { id: VILLAGE_ID.kenanga, name: "Desa Kenanga", point: { lat: -6.875, lng: 107.635} },
     ],
   },
   {
     id: DISTRICT_ID.selatan,
     name: "Kecamatan Selatan",
     villages: [
-      { id: VILLAGE_ID.anggrek, name: "Kelurahan Anggrek", point: { lat: -7.51, lng: 112.73 } },
-      { id: VILLAGE_ID.teratai, name: "Desa Teratai", point: { lat: -7.54, lng: 112.75 } },
+      { id: VILLAGE_ID.anggrek, name: "Kelurahan Anggrek", point: { lat: -6.965, lng: 107.62 } },
+      { id: VILLAGE_ID.teratai, name: "Desa Teratai", point: { lat: -6.98, lng: 107.645 } },
     ],
   },
   {
     id: DISTRICT_ID.timur,
     name: "Kecamatan Timur",
     villages: [
-      { id: VILLAGE_ID.mawar, name: "Desa Mawar", point: { lat: -7.47, lng: 112.81 } },
-      { id: VILLAGE_ID.cempaka, name: "Kelurahan Cempaka", point: { lat: -7.44, lng: 112.84 } },
+      { id: VILLAGE_ID.mawar, name: "Desa Mawar", point: { lat: -6.91, lng: 107.68 } },
+      { id: VILLAGE_ID.cempaka, name: "Kelurahan Cempaka", point: { lat: -6.93, lng: 107.7 } },
     ],
   },
   {
     id: DISTRICT_ID.barat,
     name: "Kecamatan Barat",
     villages: [
-      { id: VILLAGE_ID.dahlia, name: "Kelurahan Dahlia", point: { lat: -7.49, lng: 112.64 } },
-      { id: VILLAGE_ID.flamboyan, name: "Desa Flamboyan", point: { lat: -7.52, lng: 112.66 } },
+      { id: VILLAGE_ID.dahlia, name: "Kelurahan Dahlia", point: { lat: -6.91, lng: 107.57 } },
+      { id: VILLAGE_ID.flamboyan, name: "Desa Flamboyan", point: { lat: -6.925, lng: 107.55 } },
     ],
   },
 ];
 
 export const REGION: Schema<"Region"> = {
-  name: "Kabupaten Contoh",
-  head_label: "Bupati (data simulasi)",
+  name: "Kota Contoh",
+  head_label: "Wali Kota",
   is_simulation: true,
   period: { start_year: 2025, end_year: 2030 },
-  bounds: [112.6, -7.6, 112.9, -7.3],
+  bounds: [107.52, -7.0, 107.75, -6.84],
 };
 
 export const DISTRICTS: Schema<"District">[] = DISTRICT_SEEDS.map((district) => ({

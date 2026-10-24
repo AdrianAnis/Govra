@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { DrillItemList } from "@/components/drill-item-list";
 import { FilterBar } from "@/components/filter-bar";
 import { Container } from "@/components/layout/container";
-import { PageHeader } from "@/components/page-header";
+import { IndicatorHero } from "@/components/indicator-hero";
 import { Pagination } from "@/components/pagination";
 import { EmptyState } from "@/components/state-message";
 import { getOpds } from "@/lib/data/reference";
@@ -50,26 +50,28 @@ export default async function IndicatorPage({
   const opdName = opds.items.find((opd) => opd.slug === filters.opd)?.name;
 
   return (
-    <>
-      <Container className="flex flex-col gap-6 py-10">
-        <Link
-          href="/rapor"
-          className="inline-flex min-h-11 w-fit items-center gap-2 text-sm font-medium text-fg-muted hover:text-primary"
-        >
-          <ArrowLeft aria-hidden className="size-4" />
-          Rapor periode
-        </Link>
-        <PageHeader title={entry.label} description={entry.description}>
-          <p className="text-sm text-fg-muted">Rumus: {entry.formula}.</p>
-          {value && (
-            <p className="text-3xl font-bold tabular-nums">
-              {formatIndicator(value.value, value.unit)}
-              <span className="ml-3 text-base font-normal text-fg-muted">
-                dari {formatNumber(value.sample_size)} data{opdName ? ` · ${opdName}` : " · semua OPD"}
-              </span>
-            </p>
-          )}
-        </PageHeader>
+    <Container className="flex flex-col gap-8 py-6 lg:py-8">
+      <Link
+        href="/rapor"
+        className="inline-flex min-h-11 w-fit items-center gap-2 text-sm font-medium text-fg-muted hover:text-primary"
+      >
+        <ArrowLeft aria-hidden className="size-4" />
+        Rapor periode
+      </Link>
+      <IndicatorHero
+        eyebrow="Indikator rapor"
+        title={entry.label}
+        description={entry.description}
+        formula={entry.formula}
+        value={value && value.value !== null ? formatIndicator(value.value, value.unit) : "–"}
+        caption={
+          value
+            ? `Dari ${formatNumber(value.sample_size)} data · ${opdName ?? "semua OPD"}`
+            : (opdName ?? "semua OPD")
+        }
+      />
+      <div className="flex flex-col gap-6 py-4 lg:py-8">
+        <h2 className="text-3xl font-bold tracking-tight">Data penyusun</h2>
         <FilterBar
           selects={[
             {
@@ -92,7 +94,7 @@ export default async function IndicatorPage({
           basePath={`/rapor/${indicatorSlug(code)}`}
           params={activeParams(filters)}
         />
-      </Container>
-    </>
+      </div>
+    </Container>
   );
 }

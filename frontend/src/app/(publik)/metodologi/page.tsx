@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { DataCell, DataRow, DataTable, RowHead } from "@/components/data-table";
 import { Container } from "@/components/layout/container";
-import { PageHeader } from "@/components/page-header";
+import { PageIntro } from "@/components/page-intro";
 import { PageSection } from "@/components/page-section";
 import { ProgramStatusBadge } from "@/components/status-badge";
 import { getMethodology } from "@/lib/data/scorecard";
@@ -17,54 +18,55 @@ const STATUS_RULES: ReadonlyArray<readonly [ProgramStatus, string]> = [
   ["SELESAI", "Progres sudah 100 persen."],
 ];
 
+const INDICATOR_HEADERS = ["Indikator", "Penjelasan", "Rumus"] as const;
+const STATUS_HEADERS = ["Status", "Kapan berlaku"] as const;
+const THRESHOLD_HEADERS = ["Ambang", "Nilai"] as const;
+
 export default async function MethodologyPage() {
   const methodology = await getMethodology();
 
   return (
-    <>
-      <Container className="flex flex-col gap-10 py-10">
-        <PageHeader
-          title="Metodologi"
-          description="Cara Govra menghitung status proker dan indikator rapor. Semua angka dihitung otomatis dari data, tidak diisi manual."
-        />
-        <PageSection title="Indikator rapor">
-          <ul className="grid gap-4 md:grid-cols-2">
-            {methodology.indicators.map((indicator) => (
-              <li key={indicator.code} className="flex flex-col gap-2 rounded-md border bg-surface p-5">
-                <h3 className="font-semibold">{indicator.label}</h3>
-                <p className="text-fg-muted">{indicator.description}</p>
-                <p className="text-sm">
-                  <span className="font-medium">Rumus:</span> {indicator.formula}.
-                </p>
-              </li>
-            ))}
-          </ul>
-        </PageSection>
-        <PageSection title="Status proker">
-          <ul className="flex flex-col gap-3">
-            {STATUS_RULES.map(([status, rule]) => (
-              <li key={status} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-                <div className="sm:w-52">
-                  <ProgramStatusBadge status={status} />
-                </div>
-                <p>{rule}</p>
-              </li>
-            ))}
-          </ul>
-        </PageSection>
-        <PageSection title="Ambang yang berlaku">
-          <dl className="grid gap-4 sm:grid-cols-2">
-            {methodology.thresholds.map((threshold) => (
-              <div key={threshold.key} className="flex flex-col gap-0.5 rounded-md border bg-surface p-4">
-                <dt className="text-sm text-fg-muted">{threshold.label}</dt>
-                <dd className="font-semibold tabular-nums">
-                  {formatThreshold(threshold.value, threshold.unit)}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </PageSection>
-      </Container>
-    </>
+    <Container className="flex flex-col gap-14 py-6 lg:gap-16 lg:py-8">
+      <PageIntro
+        eyebrow="Transparansi"
+        title="Metodologi"
+        description="Cara Govra menghitung status proker dan indikator rapor. Semua angka dihitung otomatis dari data, tidak diisi manual."
+      />
+      <PageSection title="Indikator rapor">
+        <DataTable caption="Indikator rapor dan rumusnya" headers={INDICATOR_HEADERS}>
+          {methodology.indicators.map((indicator) => (
+            <DataRow key={indicator.code}>
+              <RowHead>{indicator.label}</RowHead>
+              <DataCell className="text-sm text-fg-muted">{indicator.description}</DataCell>
+              <DataCell className="text-sm">{indicator.formula}.</DataCell>
+            </DataRow>
+          ))}
+        </DataTable>
+      </PageSection>
+      <PageSection title="Status proker">
+        <DataTable caption="Aturan status proker" headers={STATUS_HEADERS} className="min-w-lg">
+          {STATUS_RULES.map(([status, rule]) => (
+            <DataRow key={status}>
+              <RowHead>
+                <ProgramStatusBadge status={status} />
+              </RowHead>
+              <DataCell className="text-sm">{rule}</DataCell>
+            </DataRow>
+          ))}
+        </DataTable>
+      </PageSection>
+      <PageSection title="Ambang yang berlaku">
+        <DataTable caption="Ambang yang berlaku" headers={THRESHOLD_HEADERS} className="min-w-lg">
+          {methodology.thresholds.map((threshold) => (
+            <DataRow key={threshold.key}>
+              <RowHead>{threshold.label}</RowHead>
+              <DataCell className="text-lg font-semibold tabular-nums">
+                {formatThreshold(threshold.value, threshold.unit)}
+              </DataCell>
+            </DataRow>
+          ))}
+        </DataTable>
+      </PageSection>
+    </Container>
   );
 }
