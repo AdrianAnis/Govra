@@ -4,6 +4,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { currentTime } from "@/lib/clock";
 import { FOOTER_GROUPS } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
+import { REPORT_NEW } from "@/lib/routes";
 
 const LINK_CLASS =
   "inline-flex min-h-11 items-center text-secondary-fg/80 underline-offset-4 transition-colors duration-150 ease-ui hover:text-secondary-fg hover:underline";
@@ -19,7 +20,7 @@ function SiteFooter() {
               Platform transparansi program kerja pemerintah daerah dan pelaporan warga berbasis AI.
               Pantau proker, laporkan masalah, dan lacak penanganannya sampai selesai.
             </p>
-            <Link href="/lapor" className={cn(buttonVariants({ variant: "accent" }))}>
+            <Link href={REPORT_NEW} className={cn(buttonVariants({ variant: "accent" }))}>
               Lapor Sekarang
             </Link>
           </div>

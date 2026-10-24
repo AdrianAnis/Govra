@@ -3,6 +3,7 @@ import { BlurText } from "@/components/bits/blur-text";
 import { Container } from "@/components/layout/container";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { REPORT_NEW } from "@/lib/routes";
 
 function Hero() {
   return (
@@ -26,7 +27,7 @@ function Hero() {
             ke dinas yang tepat.
           </p>
           <div className="flex flex-wrap items-center gap-4">
-            <Link href="/lapor" className={cn(buttonVariants({ variant: "accent", size: "lg" }))}>
+            <Link href={REPORT_NEW} className={cn(buttonVariants({ variant: "accent", size: "lg" }))}>
               Lapor Sekarang
             </Link>
             <Link

@@ -1,6 +1,7 @@
 import { NavLink } from "@/components/layout/nav-link";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { REPORT_NEW } from "@/lib/routes";
 
 function HeaderActions({ onNavigate }: { onNavigate?: () => void }) {
   return (
@@ -13,7 +14,7 @@ function HeaderActions({ onNavigate }: { onNavigate?: () => void }) {
         Masuk
       </NavLink>
       <NavLink
-        href="/lapor"
+        href={REPORT_NEW}
         onFollow={onNavigate}
         className={cn(buttonVariants({ variant: "primary" }), "min-w-32 px-8")}
       >
