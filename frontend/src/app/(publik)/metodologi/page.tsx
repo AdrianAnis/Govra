@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { DataCell, DataRow, DataTable, RowHead } from "@/components/data-table";
 import { Container } from "@/components/layout/container";
-import { PageIntro } from "@/components/page-intro";
+import { PageHeader } from "@/components/page-header";
 import { PageSection } from "@/components/page-section";
 import { ProgramStatusBadge } from "@/components/status-badge";
 import { getMethodology } from "@/lib/data/scorecard";
@@ -26,9 +26,8 @@ export default async function MethodologyPage() {
   const methodology = await getMethodology();
 
   return (
-    <Container className="flex flex-col gap-14 py-6 lg:gap-16 lg:py-8">
-      <PageIntro
-        eyebrow="Transparansi"
+    <Container className="flex flex-col gap-10 py-10">
+      <PageHeader
         title="Metodologi"
         description="Cara Govra menghitung status proker dan indikator rapor. Semua angka dihitung otomatis dari data, tidak diisi manual."
       />

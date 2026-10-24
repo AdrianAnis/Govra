@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DataCell, DataRow, DataTable, RowHead } from "@/components/data-table";
 import { Container } from "@/components/layout/container";
+import { PageHeader } from "@/components/page-header";
 import { PageSection } from "@/components/page-section";
 import { ProgramCard } from "@/components/program-card";
 import { EmptyState } from "@/components/state-message";
@@ -30,8 +31,8 @@ export default async function OpdPage({ params }: PageProps<"/opd/[slug]">) {
   const programs = await listPrograms({ opd: slug, limit: PROGRAM_PREVIEW });
 
   return (
-    <Container className="flex flex-col gap-14 py-6 lg:gap-16 lg:py-8">
-      <div className="flex flex-col gap-8">
+    <Container className="flex flex-col gap-10 py-10">
+      <div className="flex flex-col gap-6">
         <Link
           href="/rapor"
           className="inline-flex min-h-11 w-fit items-center gap-2 text-sm font-medium text-fg-muted hover:text-primary"
@@ -39,15 +40,10 @@ export default async function OpdPage({ params }: PageProps<"/opd/[slug]">) {
           <ArrowLeft aria-hidden className="size-4" />
           Rapor periode
         </Link>
-        <header className="flex flex-col gap-4 border-b pb-10">
-          <p className="text-sm font-semibold text-primary">Organisasi Perangkat Daerah</p>
-          <h1 className="text-3xl leading-tight font-bold tracking-tighter lg:text-5xl">
-            {opd.name}
-          </h1>
-          <p className="max-w-prose text-lg text-fg-muted">
-            Kategori laporan: {opd.categories.map((category) => category.name).join(", ")}.
-          </p>
-        </header>
+        <PageHeader
+          title={opd.name}
+          description={`Kategori laporan: ${opd.categories.map((category) => category.name).join(", ")}.`}
+        />
       </div>
       <PageSection title="Kinerja">
         <DataTable caption={`Indikator rapor ${opd.name}`} headers={INDICATOR_HEADERS}>
