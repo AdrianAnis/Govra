@@ -20,7 +20,7 @@ function FormField({ id, label, hint, trailing, ...props }: FormFieldProps) {
           id={id}
           placeholder=" "
           aria-describedby={hint ? hintId : undefined}
-          className={cn("peer h-14 text-base", trailing && "pr-14")}
+          className={cn("peer h-12 text-base", trailing && "pr-14")}
         />
         <label
           htmlFor={id}

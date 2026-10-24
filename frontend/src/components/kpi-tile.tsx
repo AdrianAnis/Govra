@@ -1,9 +1,10 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface KpiTileProps {
   label: string;
-  value: string;
+  value: ReactNode;
   delta?: string;
   href?: string;
 }

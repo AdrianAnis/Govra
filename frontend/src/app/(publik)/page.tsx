@@ -1,12 +1,28 @@
-import { Container } from "@/components/layout/container";
+import { Hero } from "@/components/landing/hero";
+import { HowItWorks } from "@/components/landing/how-it-works";
+import { LatestIssues } from "@/components/landing/latest-issues";
+import { ProgramsSection } from "@/components/landing/programs-section";
+import { ReportCta } from "@/components/landing/report-cta";
+import { currentTime } from "@/lib/clock";
+import { listIssues } from "@/lib/data/issues";
+import { listPrograms } from "@/lib/data/programs";
 
-export default function HomePage() {
+const FEATURED_PROGRAMS = 3;
+const LATEST_ISSUES = 6;
+
+export default async function HomePage() {
+  const [latest, programs] = await Promise.all([
+    listIssues({ limit: LATEST_ISSUES }),
+    listPrograms({ limit: FEATURED_PROGRAMS }),
+  ]);
+
   return (
-    <Container className="py-16">
-      <h1 className="text-5xl font-bold tracking-tight">Govra</h1>
-      <p className="mt-4 text-fg-muted">
-        Pantau program kerja daerah dan laporkan masalah di sekitar Anda.
-      </p>
-    </Container>
+    <>
+      <Hero />
+      <ProgramsSection programs={programs.items} />
+      <LatestIssues issues={latest.items} now={currentTime()} />
+      <HowItWorks />
+      <ReportCta />
+    </>
   );
 }
