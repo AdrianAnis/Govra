@@ -2,10 +2,13 @@
 
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { FocusPage } from "@/components/layout/focus-page";
 import { DescriptionStep } from "@/components/report/description-step";
 import { DuplicateStep } from "@/components/report/duplicate-step";
 import { LocationStep } from "@/components/report/location-step";
+import { PreviewDialog } from "@/components/report/preview-dialog";
 import { ReportSuccess } from "@/components/report/report-success";
+import { Stepper } from "@/components/report/stepper";
 import { SubmitStep } from "@/components/report/submit-step";
 import { Button } from "@/components/ui/button";
 import { submitReport } from "@/lib/report-client";
@@ -17,7 +20,6 @@ import {
   type ReportDraft,
 } from "@/lib/report-draft";
 import type { Schema } from "@/lib/schema";
-import { cn } from "@/lib/utils";
 
 interface Step {
   label: string;
@@ -28,7 +30,7 @@ interface Step {
 const FIRST_STEP: Step = {
   label: "Cerita",
   title: "Ceritakan masalahnya",
-  hint: "Tulis apa yang terjadi dengan jelas, dan tambahkan foto bila ada. Anda tidak perlu tahu dinas mana yang menangani, sistem yang akan mengarahkannya.",
+  hint: "Tulis apa yang terjadi dengan jelas, dan tambahkan foto bila ada.",
 };
 
 const STEPS: readonly Step[] = [
@@ -36,17 +38,17 @@ const STEPS: readonly Step[] = [
   {
     label: "Lokasi",
     title: "Tandai lokasinya",
-    hint: "Pilih kecamatan dan kelurahan, lalu taruh pin di peta tepat di titik kejadian.",
+    hint: "Pilih kecamatan dan kelurahan, lalu taruh pin di titik kejadian.",
   },
   {
     label: "Serupa",
     title: "Cek isu serupa",
-    hint: "Mungkin warga lain sudah melaporkan hal yang sama di dekat lokasi Anda. Anda bisa mendukungnya.",
+    hint: "Mungkin sudah ada warga lain yang melaporkan hal yang sama.",
   },
   {
     label: "Kirim",
     title: "Atur privasi dan kirim",
-    hint: "Pilih apakah laporan tampil di halaman publik atau hanya dilihat dinas, lalu periksa dan kirim.",
+    hint: "Pilih siapa yang boleh melihat laporan, lalu periksa dan kirim.",
   },
 ];
 
@@ -74,6 +76,7 @@ function ReportWizard({ districts, bounds }: ReportWizardProps) {
   const [pending, setPending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const filesRef = useRef(draft.files);
   const current = stepAt(step);
@@ -116,7 +119,8 @@ function ReportWizard({ districts, bounds }: ReportWizardProps) {
   const advance = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (step === LAST_STEP) {
-      void send();
+      setSendError(null);
+      setPreviewOpen(true);
       return;
     }
     const found = step === 0 ? validateDescription(draft) : step === 1 ? validateLocation(draft, bounds) : {};
@@ -133,42 +137,20 @@ function ReportWizard({ districts, bounds }: ReportWizardProps) {
   };
 
   if (outcome) {
-    return <ReportSuccess code={outcome.code} reporters={outcome.reporters} />;
+    return (
+      <FocusPage>
+        <ReportSuccess code={outcome.code} reporters={outcome.reporters} />
+      </FocusPage>
+    );
   }
 
+  const progress = <Stepper labels={STEPS.map((item) => item.label)} current={step} />;
+
   return (
-    <div className="flex flex-col gap-10 lg:gap-14">
-      <header className="flex flex-col gap-5">
-        <div aria-hidden className="flex gap-1">
-          {STEPS.map((item, index) => (
-            <span
-              key={item.label}
-              className={cn("h-0.5 flex-1 rounded-full", index <= step ? "bg-primary" : "bg-border-strong")}
-            />
-          ))}
-        </div>
-        <ol className="flex items-center justify-center gap-6 text-sm sm:gap-12">
-          {STEPS.map((item, index) => (
-            <li
-              key={item.label}
-              aria-current={index === step ? "step" : undefined}
-              className={cn(
-                "flex items-center gap-2",
-                index === step ? "font-semibold text-primary" : index < step ? "text-fg" : "text-fg-subtle",
-              )}
-            >
-              <span
-                aria-hidden
-                className={cn("size-2 rounded-full", index <= step ? "bg-primary" : "bg-border-strong")}
-              />
-              {item.label}
-            </li>
-          ))}
-        </ol>
-      </header>
-      <form ref={formRef} noValidate onSubmit={advance} className="mx-auto flex w-full max-w-xl flex-col gap-8">
+    <FocusPage progress={progress}>
+      <form ref={formRef} noValidate onSubmit={advance} className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl leading-tight font-bold tracking-tight text-balance lg:text-4xl">{current.title}</h1>
+          <h1 className="text-2xl leading-tight font-bold tracking-tight text-balance lg:text-3xl">{current.title}</h1>
           <p className="text-fg-muted">{current.hint}</p>
         </div>
         <div key={step} className="animate-blur-in">
@@ -182,20 +164,29 @@ function ReportWizard({ districts, bounds }: ReportWizardProps) {
               onSupported={(code, reporters) => setOutcome({ code, reporters })}
             />
           )}
-          {step === LAST_STEP && <SubmitStep draft={draft} districts={districts} error={sendError} onChange={change} />}
+          {step === LAST_STEP && <SubmitStep draft={draft} onChange={change} />}
         </div>
-        <div className="flex items-center justify-between gap-4 border-t pt-6">
+        <div className="sticky bottom-0 z-20 mt-auto flex items-center justify-between gap-4 border-t bg-surface py-4">
           <Button type="button" variant="ghost" onClick={back} disabled={step === 0 || pending}>
             <ArrowLeft aria-hidden />
             Kembali
           </Button>
-          <Button type="submit" disabled={pending}>
-            {step === LAST_STEP ? (pending ? "Mengirim..." : "Kirim laporan") : "Lanjut"}
+          <Button type="submit" size="lg">
+            {step === LAST_STEP ? "Kirim laporan" : `Lanjut ke ${stepAt(step + 1).label}`}
             {step !== LAST_STEP && <ArrowRight aria-hidden />}
           </Button>
         </div>
       </form>
-    </div>
+      <PreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        draft={draft}
+        districts={districts}
+        pending={pending}
+        error={sendError}
+        onConfirm={send}
+      />
+    </FocusPage>
   );
 }
 

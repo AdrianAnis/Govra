@@ -1,6 +1,7 @@
-import { FormField } from "@/components/form-field";
 import { AttachmentsField } from "@/components/report/attachments-field";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { FIELD_CLASS, FIELD_HEIGHT } from "@/lib/field-style";
 import { BODY_MAX, BODY_MIN, TITLE_MAX, type FieldErrors, type ReportDraft } from "@/lib/report-draft";
 import { cn } from "@/lib/utils";
 
@@ -16,14 +17,17 @@ function DescriptionStep({ draft, errors, onChange }: DescriptionStepProps) {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
-        <FormField
+        <label htmlFor="title" className="font-semibold">
+          Judul singkat <span className="font-normal text-fg-muted">(opsional)</span>
+        </label>
+        <Input
           id="title"
-          label="Judul singkat (opsional)"
           value={draft.title}
           maxLength={TITLE_MAX + 20}
           aria-invalid={titleError ? true : undefined}
           aria-describedby={titleError ? "title-error" : undefined}
           onChange={(event) => onChange({ title: event.target.value })}
+          className={cn(FIELD_HEIGHT, FIELD_CLASS)}
         />
         {titleError && (
           <p id="title-error" role="alert" className="text-sm font-medium text-fg">
@@ -38,11 +42,11 @@ function DescriptionStep({ draft, errors, onChange }: DescriptionStepProps) {
         <Textarea
           id="body"
           value={draft.body}
-          rows={8}
+          rows={4}
           aria-invalid={bodyError ? true : undefined}
           aria-describedby={bodyError ? "body-error body-hint" : "body-hint"}
           onChange={(event) => onChange({ body: event.target.value })}
-          className="min-h-52 rounded-lg px-4 py-3 text-base"
+          className={cn(FIELD_CLASS, "min-h-32 py-3")}
         />
         <div className="flex items-start justify-between gap-4 text-sm">
           <p id="body-hint" className="text-fg-muted">

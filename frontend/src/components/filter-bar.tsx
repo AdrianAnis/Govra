@@ -12,13 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { FIELD_CLASS, FIELD_HEIGHT } from "@/lib/field-style";
 import { cn } from "@/lib/utils";
 
 const ALL = "semua";
 const VIEW_PARAM = "tampil";
 
-const FIELD_CLASS =
-  "h-12 rounded-lg border-border-strong bg-surface px-4 text-base transition-colors duration-150 ease-ui hover:border-fg-muted focus-visible:border-fg focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-border-strong";
 const ACTIVE_CLASS = "border-fg font-semibold";
 
 export interface FilterOption {
@@ -82,7 +81,7 @@ function FilterBar({ search, selects }: FilterBarProps) {
               defaultValue={params.get(search.name) ?? ""}
               aria-label={search.label}
               placeholder={search.label}
-              className={cn(FIELD_CLASS, "pl-12", params.get(search.name) && ACTIVE_CLASS)}
+              className={cn(FIELD_HEIGHT, FIELD_CLASS, "pl-12", params.get(search.name) && ACTIVE_CLASS)}
             />
           </form>
         )}
@@ -95,7 +94,7 @@ function FilterBar({ search, selects }: FilterBarProps) {
           >
             <SelectTrigger
               aria-label={select.label}
-              className={cn(FIELD_CLASS, params.get(select.name) && ACTIVE_CLASS)}
+              className={cn(FIELD_HEIGHT, FIELD_CLASS, params.get(select.name) && ACTIVE_CLASS)}
             >
               <SelectValue className="block min-w-0 flex-1 truncate" />
             </SelectTrigger>

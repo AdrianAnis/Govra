@@ -5,7 +5,9 @@ import { useState } from "react";
 import { AsideCard } from "@/components/aside-card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { FIELD_CLASS } from "@/lib/field-style";
 import { formatDateTime } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { sendFeedback } from "@/lib/report-client";
 import type { Schema } from "@/lib/schema";
 
@@ -66,7 +68,7 @@ function ResolutionFeedback({ code, feedback }: ResolutionFeedbackProps) {
           value={note}
           maxLength={NOTE_MAX}
           onChange={(event) => setNote(event.target.value)}
-          className="min-h-24 rounded-lg px-4 py-3"
+          className={cn(FIELD_CLASS, "min-h-24 py-3")}
         />
       </div>
       <div className="flex flex-wrap gap-3">

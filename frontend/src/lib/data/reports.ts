@@ -22,7 +22,8 @@ export interface DuplicateInput {
 }
 
 const MAX_SUGGESTIONS = 3;
-const SEARCH_RADIUS_M = 5000;
+const SEARCH_RADIUS_M = 10_000;
+const NEAR_RADIUS_M = 3000;
 const MIN_WORD_LENGTH = 4;
 const EARTH_RADIUS_M = 6_371_000;
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -116,7 +117,8 @@ export async function suggestDuplicates(query: DuplicateInput): Promise<Schema<"
   const matches = PUBLIC_ISSUES.filter((issue) => !CLOSED.includes(issue.status)).flatMap((issue) => {
     const distance = distanceMeters(query, issue.location.point);
     const overlap = [...wordsOf(issue.title)].filter((word) => bodyWords.has(word)).length;
-    return distance <= SEARCH_RADIUS_M && overlap > 0 ? [{ issue, distance, overlap }] : [];
+    const similar = overlap > 0 && distance <= SEARCH_RADIUS_M;
+    return similar || distance <= NEAR_RADIUS_M ? [{ issue, distance, overlap }] : [];
   });
   const items = matches
     .sort((a, b) => b.overlap - a.overlap || a.distance - b.distance)

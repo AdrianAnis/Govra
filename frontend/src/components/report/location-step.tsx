@@ -1,7 +1,9 @@
 import { CircleCheck } from "lucide-react";
 import { LocationPicker } from "@/components/report/location-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FIELD_CLASS, FIELD_HEIGHT } from "@/lib/field-style";
 import type { Schema } from "@/lib/schema";
+import { cn } from "@/lib/utils";
 import type { FieldErrors, ReportDraft } from "@/lib/report-draft";
 
 interface LocationStepProps {
@@ -36,7 +38,7 @@ function AreaSelect({ id, label, placeholder, value, items, error, disabled = fa
         disabled={disabled}
         onValueChange={(next) => onValueChange(next ?? "")}
       >
-        <SelectTrigger id={id} aria-invalid={error ? true : undefined} className="h-12 rounded-lg px-4 text-base">
+        <SelectTrigger id={id} aria-invalid={error ? true : undefined} className={cn(FIELD_HEIGHT, FIELD_CLASS)}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>

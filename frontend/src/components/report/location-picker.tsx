@@ -1,10 +1,8 @@
 "use client";
 
-import { Crosshair } from "lucide-react";
 import type { Map as MapInstance, Marker as MarkerInstance } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
 import type { DraftPoint } from "@/lib/report-draft";
 import { cssColor, loadMapLibre, MAP_STYLE_URL } from "@/lib/map";
 
@@ -85,22 +83,9 @@ function LocationPicker({ bounds, point, onPick }: LocationPickerProps) {
     }
   }, [point, ready]);
 
-  const pickCenter = () => {
-    const center = mapRef.current?.getCenter();
-    if (center) {
-      onPick({ lat: center.lat, lng: center.lng });
-    }
-  };
-
   return (
-    <div className="flex flex-col gap-3">
-      <div className="relative h-80 overflow-hidden rounded-lg border bg-surface-muted lg:h-96">
-        <div ref={containerRef} role="application" aria-label="Peta untuk menandai lokasi" className="size-full" />
-      </div>
-      <Button type="button" variant="outline" onClick={pickCenter} className="w-fit">
-        <Crosshair aria-hidden />
-        Tandai titik tengah peta
-      </Button>
+    <div className="relative h-80 overflow-hidden rounded-lg border bg-surface-muted lg:h-96">
+      <div ref={containerRef} role="application" aria-label="Peta untuk menandai lokasi" className="size-full" />
     </div>
   );
 }

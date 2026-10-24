@@ -1,15 +1,15 @@
-import type { Schema } from "@/lib/schema";
+import { CircleCheck, Globe, Lock, type LucideIcon } from "lucide-react";
 import type { ReportDraft } from "@/lib/report-draft";
+import type { Schema } from "@/lib/schema";
 
 interface SubmitStepProps {
   draft: ReportDraft;
-  districts: readonly Schema<"District">[];
-  error: string | null;
   onChange: (patch: Partial<ReportDraft>) => void;
 }
 
 interface VisibilityOption {
   value: Schema<"Visibility">;
+  icon: LucideIcon;
   label: string;
   text: string;
 }
@@ -17,33 +17,27 @@ interface VisibilityOption {
 const OPTIONS: readonly VisibilityOption[] = [
   {
     value: "PUBLIK",
+    icon: Globe,
     label: "Publik",
     text: "Laporan boleh tampil di halaman isu. Identitas Anda selalu disamarkan.",
   },
   {
     value: "RAHASIA",
+    icon: Lock,
     label: "Rahasia",
     text: "Isi laporan hanya terlihat oleh dinas dan Admin, tetapi tetap dihitung di statistik.",
   },
 ];
 
-function SubmitStep({ draft, districts, error, onChange }: SubmitStepProps) {
-  const district = districts.find((item) => item.id === draft.districtId);
-  const village = district?.villages.find((item) => item.id === draft.villageId);
-  const rows: ReadonlyArray<readonly [string, string]> = [
-    ["Judul", draft.title.trim() || "Tanpa judul"],
-    ["Isi", draft.body.trim()],
-    ["Lokasi", [village?.name, district?.name].filter(Boolean).join(", ")],
-    ["Foto", draft.files.length > 0 ? `${draft.files.length} foto` : "Tanpa foto"],
-  ];
+function SubmitStep({ draft, onChange }: SubmitStepProps) {
   return (
-    <div className="flex flex-col gap-8">
-      <fieldset className="flex flex-col gap-3">
-        <legend className="mb-1 font-semibold">Siapa yang boleh melihat laporan ini?</legend>
+    <fieldset className="flex flex-col gap-3">
+      <legend className="mb-1 font-semibold">Siapa yang boleh melihat laporan ini?</legend>
+      <div className="grid gap-4 sm:grid-cols-2">
         {OPTIONS.map((option) => (
           <label
             key={option.value}
-            className="flex cursor-pointer gap-4 rounded-lg border p-4 transition-colors duration-200 ease-ui hover:bg-surface-muted has-checked:border-fg has-checked:bg-surface-muted has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-primary"
+            className="group relative flex cursor-pointer flex-col gap-4 rounded-lg border p-5 transition-all duration-200 ease-ui hover:border-fg-muted has-checked:border-primary has-checked:ring-4 has-checked:ring-primary-soft has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-primary"
           >
             <input
               type="radio"
@@ -51,7 +45,14 @@ function SubmitStep({ draft, districts, error, onChange }: SubmitStepProps) {
               value={option.value}
               checked={draft.visibility === option.value}
               onChange={() => onChange({ visibility: option.value })}
-              className="mt-1 size-4 accent-primary"
+              className="sr-only"
+            />
+            <span className="grid size-10 place-items-center rounded-full bg-primary-soft text-primary">
+              <option.icon aria-hidden className="size-5" />
+            </span>
+            <CircleCheck
+              aria-hidden
+              className="absolute top-5 right-5 size-5 text-primary opacity-0 transition-opacity duration-200 group-has-checked:opacity-100"
             />
             <span className="flex flex-col gap-1">
               <span className="font-semibold">{option.label}</span>
@@ -59,21 +60,8 @@ function SubmitStep({ draft, districts, error, onChange }: SubmitStepProps) {
             </span>
           </label>
         ))}
-      </fieldset>
-      <dl className="flex flex-col divide-y rounded-lg border">
-        {rows.map(([term, detail]) => (
-          <div key={term} className="grid gap-1 p-4 sm:grid-cols-4 sm:gap-4">
-            <dt className="text-sm font-semibold text-fg-muted">{term}</dt>
-            <dd className="line-clamp-3 sm:col-span-3">{detail}</dd>
-          </div>
-        ))}
-      </dl>
-      {error && (
-        <p role="alert" className="text-sm font-medium text-fg">
-          {error}
-        </p>
-      )}
-    </div>
+      </div>
+    </fieldset>
   );
 }
 
