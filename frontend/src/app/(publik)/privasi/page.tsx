@@ -1,7 +1,7 @@
 import { ChevronDown } from "lucide-react";
 import type { Metadata } from "next";
 import { Container } from "@/components/layout/container";
-import { PageIntro } from "@/components/page-intro";
+import { PageHeader } from "@/components/page-header";
 
 export const metadata: Metadata = { title: "Kebijakan Privasi" };
 
@@ -53,9 +53,8 @@ const QUESTIONS: readonly Question[] = [
 
 export default function PrivacyPage() {
   return (
-    <Container className="flex flex-col gap-10 py-6 lg:py-8">
-      <PageIntro
-        eyebrow="Transparansi"
+    <Container className="flex flex-col gap-10 py-10">
+      <PageHeader
         title="Kebijakan Privasi"
         description="Jawaban singkat tentang data apa yang kami proses, untuk apa, dan hak Anda atas data tersebut."
       />
