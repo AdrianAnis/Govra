@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { reportHref, REPORTER_HOME } from "@/lib/routes";
 
 interface ReportSuccessProps {
   code: string;
@@ -49,11 +50,11 @@ function ReportSuccess({ code, reporters }: ReportSuccessProps) {
         </Button>
       </div>
       <div className="flex flex-wrap justify-center gap-3">
-        <Link href={`/laporan-saya/${code}`} className={buttonVariants()}>
+        <Link href={reportHref(code)} className={buttonVariants()}>
           Lacak laporan
         </Link>
-        <Link href="/" className={cn(buttonVariants({ variant: "outline" }))}>
-          Kembali ke beranda
+        <Link href={REPORTER_HOME} className={cn(buttonVariants({ variant: "outline" }))}>
+          Semua laporan saya
         </Link>
       </div>
     </div>

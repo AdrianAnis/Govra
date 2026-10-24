@@ -1,9 +1,9 @@
 import Link from "next/link";
 
-function Wordmark() {
+function Wordmark({ href = "/" }: { href?: string }) {
   return (
     <Link
-      href="/"
+      href={href}
       className="inline-flex min-h-11 items-center text-xl font-bold tracking-tight"
     >
       Govra

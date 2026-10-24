@@ -10,21 +10,28 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import { REPORT_DETAIL_PREFIX, REPORTER_HOME, REPORT_NEW } from "@/lib/routes";
 
 export interface NavLink {
   href: string;
   label: string;
+  exact?: boolean;
+  alsoActive?: readonly string[];
 }
 
 export interface PanelNavItem extends NavLink {
   icon: LucideIcon;
-  exact?: boolean;
 }
 
 export const MAIN_NAV: readonly NavLink[] = [
   { href: "/proker", label: "Proker" },
   { href: "/rapor", label: "Rapor" },
   { href: "/isu", label: "Isu" },
+];
+
+export const MEMBER_NAV: readonly NavLink[] = [
+  { href: REPORTER_HOME, label: "Laporan saya", exact: true, alsoActive: [REPORT_DETAIL_PREFIX] },
+  ...MAIN_NAV,
 ];
 
 export interface FooterGroup {
@@ -44,8 +51,8 @@ export const FOOTER_GROUPS: readonly FooterGroup[] = [
   {
     title: "Warga",
     links: [
-      { href: "/lapor", label: "Buat laporan" },
-      { href: "/laporan-saya", label: "Laporan saya" },
+      { href: REPORT_NEW, label: "Buat laporan" },
+      { href: REPORTER_HOME, label: "Laporan saya" },
       { href: "/masuk", label: "Masuk" },
       { href: "/daftar", label: "Daftar" },
     ],

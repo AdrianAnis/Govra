@@ -8,8 +8,10 @@ import { EmptyState } from "@/components/state-message";
 import { IssueStatusBadge } from "@/components/status-badge";
 import { buttonVariants } from "@/components/ui/button";
 import { listMyReports } from "@/lib/data/reports";
+import { getSessionUser } from "@/lib/data/session";
 import { formatDateTime } from "@/lib/format";
 import { parsePage } from "@/lib/search-params";
+import { REPORT_NEW, reportHref, REPORTER_HOME } from "@/lib/routes";
 
 export const metadata: Metadata = { title: "Laporan Saya" };
 
@@ -18,15 +20,19 @@ const HEADERS = ["Kode", "Laporan", "Status", "Dikirim"] as const;
 
 const VISIBILITY_LABEL = { PUBLIK: "Publik", RAHASIA: "Rahasia" } as const;
 
-export default async function MyReportsPage({ searchParams }: PageProps<"/laporan-saya">) {
+export default async function MyReportsPage({ searchParams }: PageProps<"/pelapor">) {
   const page = parsePage(await searchParams);
-  const reports = await listMyReports({ page, limit: PAGE_SIZE });
+  const [reports, user] = await Promise.all([listMyReports({ page, limit: PAGE_SIZE }), getSessionUser()]);
+  const firstName = user?.name.split(/\s+/)[0];
 
   return (
     <Container className="flex flex-col gap-10 py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <PageHeader title="Laporan Saya" description="Pantau status laporan yang pernah Anda kirim." />
-        <Link href="/lapor" className={buttonVariants()}>
+        <PageHeader
+          title="Laporan Saya"
+          description={`${firstName ? `Halo, ${firstName}. ` : ""}Pantau status laporan yang pernah Anda kirim.`}
+        />
+        <Link href={REPORT_NEW} className={buttonVariants()}>
           Buat laporan baru
         </Link>
       </div>
@@ -41,7 +47,7 @@ export default async function MyReportsPage({ searchParams }: PageProps<"/lapora
             <DataRow key={report.code}>
               <RowHead>
                 <Link
-                  href={`/laporan-saya/${report.code}`}
+                  href={reportHref(report.code)}
                   className="tabular-nums underline-offset-4 hover:text-primary hover:underline"
                 >
                   {report.code}
@@ -65,7 +71,7 @@ export default async function MyReportsPage({ searchParams }: PageProps<"/lapora
         page={reports.page}
         limit={reports.limit}
         total={reports.total}
-        basePath="/laporan-saya"
+        basePath={REPORTER_HOME}
         params={{}}
       />
     </Container>

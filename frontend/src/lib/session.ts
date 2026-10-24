@@ -1,6 +1,7 @@
+import { REPORTER_HOME } from "@/lib/routes";
 export const SESSION_COOKIE = "govra_session";
 
-const PROTECTED_PATHS: readonly string[] = ["/lapor", "/laporan-saya"];
+const PROTECTED_PATHS: readonly string[] = [REPORTER_HOME];
 const HOME = "/";
 
 export function isProtectedPath(pathname: string): boolean {

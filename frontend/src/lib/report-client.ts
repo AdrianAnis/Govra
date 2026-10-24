@@ -1,9 +1,9 @@
 import { z } from "zod";
+import { jsonInit, request } from "@/lib/http";
 import type { ReportDraft } from "@/lib/report-draft";
 
 const TURNSTILE_PLACEHOLDER = "pending-turnstile";
 
-const errorSchema = z.object({ message: z.string() });
 const createdSchema = z.object({ code: z.string() });
 const supportSchema = z.object({ report_code: z.string(), reporter_count: z.number() });
 const feedbackResultSchema = z.object({ issue_status: z.string() });
@@ -25,30 +25,6 @@ const suggestionSchema = z.object({
 const suggestionListSchema = z.object({ items: z.array(suggestionSchema) });
 
 export type Suggestion = z.infer<typeof suggestionSchema>;
-
-const FALLBACK_MESSAGE = "Terjadi kendala. Coba lagi sebentar lagi.";
-
-async function request<T>(url: string, init: RequestInit, schema: z.ZodType<T>): Promise<T> {
-  const response = await fetch(url, init);
-  const payload: unknown = await response.json().catch(() => null);
-  if (!response.ok) {
-    const failure = errorSchema.safeParse(payload);
-    throw new Error(failure.success ? failure.data.message : FALLBACK_MESSAGE);
-  }
-  const parsed = schema.safeParse(payload);
-  if (!parsed.success) {
-    throw new Error(FALLBACK_MESSAGE);
-  }
-  return parsed.data;
-}
-
-function jsonInit(body: unknown): RequestInit {
-  return {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  };
-}
 
 export function submitReport(draft: ReportDraft) {
   const form = new FormData();

@@ -10,15 +10,16 @@ import { IssueStatusBadge } from "@/components/status-badge";
 import { currentTime } from "@/lib/clock";
 import { getMyReport } from "@/lib/data/reports";
 import { formatDateTime } from "@/lib/format";
+import { REPORTER_HOME } from "@/lib/routes";
 
 const VISIBILITY_LABEL = { PUBLIK: "Publik", RAHASIA: "Rahasia" } as const;
 
-export async function generateMetadata({ params }: PageProps<"/laporan-saya/[kode]">): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps<"/pelapor/laporan/[kode]">): Promise<Metadata> {
   const report = await getMyReport((await params).kode);
   return { title: report ? `Laporan ${report.code}` : "Laporan tidak ditemukan" };
 }
 
-export default async function MyReportPage({ params }: PageProps<"/laporan-saya/[kode]">) {
+export default async function MyReportPage({ params }: PageProps<"/pelapor/laporan/[kode]">) {
   const report = await getMyReport((await params).kode);
   if (!report) {
     notFound();
@@ -27,7 +28,7 @@ export default async function MyReportPage({ params }: PageProps<"/laporan-saya/
   return (
     <Container className="flex flex-col gap-8 py-10">
       <Link
-        href="/laporan-saya"
+        href={REPORTER_HOME}
         className="inline-flex min-h-11 w-fit items-center gap-2 text-sm font-medium text-fg-muted hover:text-primary"
       >
         <ArrowLeft aria-hidden className="size-4" />

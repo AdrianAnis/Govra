@@ -2,22 +2,25 @@
 
 import { usePathname } from "next/navigation";
 import { NavLink } from "@/components/layout/nav-link";
-import { isActivePath, MAIN_NAV } from "@/lib/navigation";
+import { isActivePath, MAIN_NAV, type NavLink as NavItem } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
 interface MainNavProps {
   orientation: "row" | "column";
+  items?: readonly NavItem[];
   onNavigate?: () => void;
 }
 
-function MainNav({ orientation, onNavigate }: MainNavProps) {
+function MainNav({ orientation, items = MAIN_NAV, onNavigate }: MainNavProps) {
   const pathname = usePathname();
 
   return (
     <nav aria-label="Navigasi utama">
       <ul className={cn("flex gap-1", orientation === "column" && "flex-col")}>
-        {MAIN_NAV.map((item) => {
-          const active = isActivePath(pathname, item.href);
+        {items.map((item) => {
+          const active =
+            isActivePath(pathname, item.href, item.exact) ||
+            (item.alsoActive ?? []).some((prefix) => isActivePath(pathname, prefix));
           return (
             <li key={item.href}>
               <NavLink
