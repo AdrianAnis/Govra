@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/brand/logo";
 import { Container } from "@/components/layout/container";
 import { buttonVariants } from "@/components/ui/button";
 import { currentTime } from "@/lib/clock";
@@ -15,7 +16,7 @@ function SiteFooter() {
       <Container className="flex flex-col gap-16 pt-16 pb-6 lg:pt-20">
         <div className="grid gap-12 lg:grid-cols-12">
           <div className="flex flex-col items-start gap-6 lg:col-span-5">
-            <p className="text-2xl font-bold tracking-tight">Govra</p>
+            <Logo tone="light" className="h-9" />
             <p className="max-w-md text-secondary-fg/80">
               Platform transparansi program kerja pemerintah daerah dan pelaporan warga berbasis AI.
               Pantau proker, laporkan masalah, dan lacak penanganannya sampai selesai.

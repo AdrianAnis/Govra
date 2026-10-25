@@ -2,6 +2,7 @@
 
 import { LogOut, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { Logo } from "@/components/brand/logo";
 import { PanelNav } from "@/components/layout/panel-nav";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -18,6 +19,10 @@ import {
   type PanelSection,
 } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
+
+function sectionLabel(title: string): string {
+  return title.split(" · ")[1] ?? title;
+}
 
 const ON_DARK_BUTTON = "text-secondary-fg hover:bg-secondary-fg/10";
 
@@ -39,7 +44,12 @@ function PanelSidebar({ title, items, user }: PanelSectionProps) {
       )}
     >
       <div className={cn("flex items-center gap-2", collapsed ? "justify-center" : "justify-between")}>
-        {!collapsed && <span className="px-3 font-bold">{title}</span>}
+        {!collapsed && (
+          <span className="flex min-w-0 flex-col gap-1 px-3">
+            <Logo tone="light" className="h-6" />
+            <span className="text-xs font-semibold text-secondary-fg/70">{sectionLabel(title)}</span>
+          </span>
+        )}
         <Button
           variant="ghost"
           size="icon"
@@ -104,7 +114,10 @@ function PanelMobileBar({ title, items, user }: PanelSectionProps) {
           </div>
         </SheetContent>
       </Sheet>
-      <span className="font-bold">{title}</span>
+      <span className="flex items-center gap-3">
+        <Logo className="h-6" />
+        <span className="text-sm font-semibold text-fg-muted">{sectionLabel(title)}</span>
+      </span>
     </header>
   );
 }

@@ -1,3 +1,4 @@
+import { Logo } from "@/components/brand/logo";
 import { BackdropImage } from "@/components/backdrop-image";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -6,17 +7,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 function AuthBrand() {
-  return (
-    <div className="flex items-center gap-3">
-      <span
-        aria-hidden
-        className="grid size-10 place-items-center rounded-md bg-surface text-xl font-bold text-secondary"
-      >
-        G
-      </span>
-      <span className="text-2xl font-bold tracking-tight">Govra</span>
-    </div>
-  );
+  return <Logo tone="light" className="h-9 self-start" />;
 }
 
 function AuthShell({ children }: { children: ReactNode }) {
