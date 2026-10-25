@@ -172,10 +172,13 @@ func (r *repository) CreateUser(ctx context.Context, u *User) error {
 			ru.OpdID = &u.OpdID
 		}
 		if err := r.db.PostgRESTPost(ctx, "profiles", ru, nil); err == nil {
+			fmt.Printf("[AUTH DB SUCCESS] Profile saved to Supabase: %s\n", u.Email)
 			r.mu.Lock()
 			r.users[u.Email] = u
 			r.mu.Unlock()
 			return nil
+		} else {
+			fmt.Printf("[AUTH DB ERROR] Failed to save profile to Supabase: %v\n", err)
 		}
 	}
 
@@ -374,7 +377,7 @@ func (r *repository) SaveOTP(ctx context.Context, otp *OTPVerification) error {
 			ExpiresAt      time.Time       `json:"expires_at"`
 			IsUsed         bool            `json:"is_used"`
 		}
-		_ = r.db.PostgRESTPost(ctx, "otp_verifications", restOTP{
+		err := r.db.PostgRESTPost(ctx, "otp_verifications", restOTP{
 			ID:             otp.ID,
 			Email:          otp.Email,
 			Code:           otp.Code,
@@ -386,6 +389,11 @@ func (r *repository) SaveOTP(ctx context.Context, otp *OTPVerification) error {
 			ExpiresAt:      otp.ExpiresAt,
 			IsUsed:         otp.IsUsed,
 		}, nil)
+		if err == nil {
+			fmt.Printf("[AUTH DB SUCCESS] OTP saved to Supabase: %s (code: %s)\n", otp.Email, otp.Code)
+		} else {
+			fmt.Printf("[AUTH DB ERROR] Failed to save OTP to Supabase: %v\n", err)
+		}
 	}
 
 	r.mu.Lock()
