@@ -13,7 +13,8 @@ function ErrorPage({ code, title, description, children }: ErrorPageProps) {
   return (
     <main
       id="konten"
-      className="mx-auto flex min-h-dvh w-full max-w-content flex-col items-center justify-center gap-3 px-4 py-16 text-center sm:px-6 lg:px-10"
+      tabIndex={-1}
+      className="mx-auto flex min-h-dvh w-full max-w-content outline-none flex-col items-center justify-center gap-3 px-4 py-16 text-center sm:px-6 lg:px-10"
     >
       <p className="text-sm font-semibold tracking-wide text-fg-subtle">{code}</p>
       <h1 className="text-3xl font-bold tracking-tight">{title}</h1>

@@ -1,3 +1,4 @@
+import "@/lib/zod-config";
 import { z } from "zod";
 import { jsonInit, request } from "@/lib/http";
 import type { ReportDraft } from "@/lib/report-draft";

@@ -1,3 +1,4 @@
+import { BackdropImage } from "@/components/backdrop-image";
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { formatNumber } from "@/lib/format";
@@ -14,7 +15,8 @@ const STAGGER_MS = 100;
 
 function RaporHero({ eyebrow, period, indicators }: RaporHeroProps) {
   return (
-    <section className="relative isolate overflow-hidden rounded-sheet bg-secondary bg-cityscape text-secondary-fg">
+    <section className="relative isolate overflow-hidden rounded-sheet bg-secondary text-secondary-fg">
+      <BackdropImage src="/cityscape.jpg" />
       <div aria-hidden className="absolute inset-0 -z-10 bg-linear-to-t from-secondary via-secondary/75 to-secondary/40" />
       <div className="flex flex-col gap-16 p-8 pt-12 sm:p-10 sm:pt-14 lg:gap-14 lg:p-12 lg:pt-14">
         <div className="flex flex-col gap-6">

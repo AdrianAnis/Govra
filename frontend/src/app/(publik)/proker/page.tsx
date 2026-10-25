@@ -70,7 +70,7 @@ export default async function ProgramsPage({ searchParams }: PageProps<"/proker"
           <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {programs.items.map((program) => (
               <li key={program.code}>
-                <ProgramCard program={program} />
+                <ProgramCard program={program} heading="h2" />
               </li>
             ))}
           </ul>

@@ -1,6 +1,6 @@
 import { forbidden, redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { ChatWidget } from "@/components/chat/chat-widget";
+import { LazyChatWidget } from "@/components/chat/lazy-chat-widget";
 import { SiteHeader } from "@/components/layout/site-header";
 import { listNotifications } from "@/lib/data/notifications";
 import { getSessionUser } from "@/lib/data/session";
@@ -20,10 +20,10 @@ export default async function ReporterLayout({ children }: { children: ReactNode
   return (
     <>
       <SiteHeader user={user} notifications={notifications} />
-      <main id="konten" className="flex-1">
+      <main id="konten" tabIndex={-1} className="outline-none flex-1">
         {children}
       </main>
-      <ChatWidget signedIn />
+      <LazyChatWidget signedIn />
     </>
   );
 }

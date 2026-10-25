@@ -1,3 +1,4 @@
+import { BackdropImage } from "@/components/backdrop-image";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -20,7 +21,8 @@ function AuthBrand() {
 
 function AuthShell({ children }: { children: ReactNode }) {
   return (
-    <div className="relative isolate flex min-h-dvh flex-col bg-secondary bg-cityscape text-secondary-fg">
+    <div className="relative isolate flex min-h-dvh flex-col bg-secondary text-secondary-fg">
+      <BackdropImage src="/cityscape.jpg" />
       <div
         aria-hidden
         className="absolute inset-0 -z-10 bg-linear-to-t from-secondary/90 via-secondary/60 to-secondary/50"
@@ -48,7 +50,7 @@ function AuthShell({ children }: { children: ReactNode }) {
             </p>
           </div>
         </div>
-        <main id="konten" className="flex items-center justify-center lg:justify-end">
+        <main id="konten" tabIndex={-1} className="outline-none flex items-center justify-center lg:justify-end">
           <div className="w-full max-w-md rounded-lg bg-surface p-6 text-fg shadow-lg sm:p-8">
             {children}
           </div>

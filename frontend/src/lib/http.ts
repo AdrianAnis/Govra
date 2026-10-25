@@ -1,3 +1,4 @@
+import "@/lib/zod-config";
 import { z } from "zod";
 
 const errorSchema = z.object({ code: z.string().optional(), message: z.string() });

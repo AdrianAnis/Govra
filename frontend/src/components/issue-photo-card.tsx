@@ -15,9 +15,10 @@ interface IssuePhotoCardProps {
   issue: Schema<"IssueSummary">;
   now: Date;
   eager?: boolean;
+  heading?: "h2" | "h3";
 }
 
-function IssuePhotoCard({ issue, now, eager = false }: IssuePhotoCardProps) {
+function IssuePhotoCard({ issue, now, eager = false, heading: Heading = "h3" }: IssuePhotoCardProps) {
   const { label, icon: StatusIcon } = ISSUE_STATUS[issue.status];
   const urgency = URGENCY_LABEL[issue.urgency];
   return (
@@ -28,6 +29,7 @@ function IssuePhotoCard({ issue, now, eager = false }: IssuePhotoCardProps) {
           alt=""
           fill
           loading={eager ? "eager" : "lazy"}
+          fetchPriority={eager ? "high" : "low"}
           sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 80vw"
           className="-z-20 object-cover transition-transform duration-500 ease-ui group-hover:scale-105"
         />
@@ -42,11 +44,11 @@ function IssuePhotoCard({ issue, now, eager = false }: IssuePhotoCardProps) {
         {urgency && <span className="rounded-sm border border-secondary-fg/60 bg-secondary/60 px-2 py-1 font-semibold">{urgency}</span>}
       </div>
       <div className="flex flex-col gap-3">
-        <h3 className="text-2xl leading-snug font-semibold">
+        <Heading className="text-2xl leading-snug font-semibold">
           <Link href={`/isu/${issue.id}`} className="outline-none after:absolute after:inset-0">
             {issue.title}
           </Link>
-        </h3>
+        </Heading>
         <p className="flex items-center gap-1.5 text-sm text-secondary-fg/80">
           <MapPin aria-hidden className="size-4 shrink-0" />
           {issue.location.village.name}, {issue.location.district.name}

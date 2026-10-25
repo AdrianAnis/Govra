@@ -10,7 +10,12 @@ interface DataTableProps {
 
 function DataTable({ caption, headers, children, className }: DataTableProps) {
   return (
-    <div className="overflow-x-auto rounded-lg border bg-surface">
+    <div
+      role="region"
+      aria-label={caption}
+      tabIndex={0}
+      className="overflow-x-auto rounded-lg border bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+    >
       <table className={cn("w-full min-w-2xl border-collapse text-left", className)}>
         <caption className="sr-only">{caption}</caption>
         <thead className="bg-secondary text-secondary-fg">

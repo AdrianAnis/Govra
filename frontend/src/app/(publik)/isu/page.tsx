@@ -97,7 +97,7 @@ export default async function IssuesPage({ searchParams }: PageProps<"/isu">) {
         <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {issues.items.map((issue, index) => (
             <li key={issue.id}>
-              <IssuePhotoCard issue={issue} now={now} eager={index < FIRST_ROW} />
+              <IssuePhotoCard issue={issue} now={now} eager={index < FIRST_ROW} heading="h2" />
             </li>
           ))}
         </ul>

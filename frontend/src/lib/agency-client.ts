@@ -1,3 +1,4 @@
+import "@/lib/zod-config";
 import { z } from "zod";
 import type { TransitionInput } from "@/lib/agency";
 import { jsonInit, request } from "@/lib/http";

@@ -53,7 +53,7 @@ function StepCard({ step, index }: { step: Step; index: number }) {
     >
       {index === 0 && <RingDecor />}
       <div className="flex items-start justify-between gap-4">
-        <p className={cn("text-7xl leading-none font-bold tracking-tight tabular-nums", dark ? "opacity-30" : "text-border-strong")}>
+        <p aria-hidden className={cn("text-7xl leading-none font-bold tracking-tight tabular-nums", dark ? "opacity-75" : "text-fg-subtle/85")}>
           {String(index + 1).padStart(2, "0")}
         </p>
         <span
@@ -67,7 +67,7 @@ function StepCard({ step, index }: { step: Step; index: number }) {
       </div>
       <div className="flex max-w-xl flex-col gap-3">
         <h3 className="text-3xl font-bold tracking-tight">{step.title}</h3>
-        <p className={dark ? "opacity-85" : "text-fg-muted"}>{step.text}</p>
+        <p className={dark ? undefined : "text-fg-muted"}>{step.text}</p>
       </div>
     </article>
   );
