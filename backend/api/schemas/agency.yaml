@@ -6,6 +6,18 @@ AiTriage:
     confidence: {type: number, minimum: 0, maximum: 1}
     safety_risk: {$ref: 'enums.yaml#/SafetyRisk'}
     sensitive: {type: boolean}
+AgencyAttachment:
+  allOf:
+    - $ref: 'common.yaml#/Attachment'
+    - type: object
+      required: [public_ok, is_cover]
+      description: >-
+        public_ok berarti Dinas menilai foto layak ditampilkan di publik. is_cover berarti foto
+        itu dipakai sebagai sampul isu, hanya satu per isu. Lampiran laporan Rahasia selalu
+        false pada keduanya dan tidak bisa diubah.
+      properties:
+        public_ok: {type: boolean}
+        is_cover: {type: boolean}
 AgencyReport:
   type: object
   required: [code, body, visibility, created_at, location, attachments]
@@ -18,7 +30,7 @@ AgencyReport:
     location: {$ref: 'common.yaml#/PublicLocation'}
     attachments:
       type: array
-      items: {$ref: 'common.yaml#/Attachment'}
+      items: {$ref: '#/AgencyAttachment'}
 AgencyIssueSummary:
   allOf:
     - $ref: 'issue.yaml#/IssueSummary'
@@ -81,6 +93,15 @@ EvidenceForm:
   required: [file]
   properties:
     file: {type: string, format: binary}
+PublicationRequest:
+  type: object
+  required: [public_ok, is_cover]
+  description: >-
+    is_cover true mewajibkan public_ok true. Menunjuk sampul baru otomatis mencabut sampul
+    lama pada isu yang sama. Mengubah public_ok menjadi false otomatis mencabut is_cover.
+  properties:
+    public_ok: {type: boolean}
+    is_cover: {type: boolean}
 AgencyStats:
   type: object
   required: [total_open, by_status, sla_compliance_percent, median_response_hours]

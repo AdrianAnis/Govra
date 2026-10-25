@@ -41,6 +41,8 @@ AgencyIssueDetail:
             url: https://example.org/signed/lubang-jalan.webp
             mime: image/webp
             size_bytes: 482113
+            public_ok: true
+            is_cover: true
     timeline:
       - id: 0197e000-0000-7000-8000-000000000003
         at: '2026-10-16T04:00:00Z'
@@ -73,6 +75,15 @@ EvidenceAttachment:
     url: https://example.org/signed/bukti-tambal.webp
     mime: image/webp
     size_bytes: 390221
+AgencyAttachmentPublished:
+  summary: Foto ditandai layak publik dan dijadikan sampul
+  value:
+    id: 0197d000-0000-7000-8000-000000000001
+    url: https://example.org/signed/lubang-jalan.webp
+    mime: image/webp
+    size_bytes: 482113
+    public_ok: true
+    is_cover: true
 AgencyStats:
   summary: Statistik OPD
   value:

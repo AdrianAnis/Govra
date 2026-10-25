@@ -57,6 +57,11 @@ IdPath:
   in: path
   required: true
   schema: {$ref: '../schemas/common.yaml#/Uuid'}
+AttachmentIdPath:
+  name: attachment_id
+  in: path
+  required: true
+  schema: {$ref: '../schemas/common.yaml#/Uuid'}
 SettingKeyPath:
   name: key
   in: path

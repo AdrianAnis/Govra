@@ -89,6 +89,35 @@ evidence:
             examples:
               dinas: {$ref: '../examples/agency.yaml#/EvidenceAttachment'}
       default: {$ref: '../responses/error.yaml'}
+publication:
+  put:
+    operationId: setAttachmentPublication
+    tags: [Dinas]
+    summary: Tandai foto layak publik dan pilih sampul isu
+    description: >-
+      Hanya untuk lampiran laporan Publik pada isu milik OPD pemanggil. Foto yang layak publik
+      boleh tampil di halaman publik. Satu foto layak dapat dipilih sebagai sampul isu. Jika
+      belum ada sampul yang dipilih, backend memakai foto layak tertua sebagai sampul sementara.
+    security:
+      - bffKey: []
+        bearer: []
+    parameters:
+      - $ref: '../parameters/common.yaml#/IdPath'
+      - $ref: '../parameters/common.yaml#/AttachmentIdPath'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '../schemas/agency.yaml#/PublicationRequest'}
+    responses:
+      '200':
+        description: Status publikasi foto setelah diubah
+        content:
+          application/json:
+            schema: {$ref: '../schemas/agency.yaml#/AgencyAttachment'}
+            examples:
+              dinas: {$ref: '../examples/agency.yaml#/AgencyAttachmentPublished'}
+      default: {$ref: '../responses/error.yaml'}
 stats:
   get:
     operationId: getAgencyStats
