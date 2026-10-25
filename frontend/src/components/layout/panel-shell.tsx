@@ -1,9 +1,9 @@
 "use client";
 
-import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { LogOut, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { PanelNav } from "@/components/layout/panel-nav";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -11,6 +11,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import type { SessionUser } from "@/lib/data/session";
 import {
   PANEL_SECTIONS,
   type PanelNavItem,
@@ -23,9 +24,10 @@ const ON_DARK_BUTTON = "text-secondary-fg hover:bg-secondary-fg/10";
 interface PanelSectionProps {
   title: string;
   items: readonly PanelNavItem[];
+  user: SessionUser;
 }
 
-function PanelSidebar({ title, items }: PanelSectionProps) {
+function PanelSidebar({ title, items, user }: PanelSectionProps) {
   const [collapsed, setCollapsed] = useState(false);
   const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
 
@@ -50,11 +52,31 @@ function PanelSidebar({ title, items }: PanelSectionProps) {
         </Button>
       </div>
       <PanelNav items={items} tone="dark" collapsed={collapsed} />
+      <div className="mt-auto flex flex-col gap-2 border-t border-secondary-fg/20 pt-3">
+        <div className={cn("flex items-center gap-3 px-2", collapsed && "justify-center px-0")}>
+          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-secondary-fg/15 text-sm font-semibold">
+            {user.initials}
+          </span>
+          {!collapsed && (
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate text-sm font-semibold">{user.name}</span>
+              <span className="truncate text-xs text-secondary-fg/70">{user.opdName ?? user.email}</span>
+            </span>
+          )}
+        </div>
+        <a
+          href="/api/mock/keluar"
+          className={cn(buttonVariants({ variant: "ghost" }), ON_DARK_BUTTON, "justify-start", collapsed && "justify-center px-0")}
+        >
+          <LogOut aria-hidden />
+          <span className={cn(collapsed && "sr-only")}>Keluar</span>
+        </a>
+      </div>
     </aside>
   );
 }
 
-function PanelMobileBar({ title, items }: PanelSectionProps) {
+function PanelMobileBar({ title, items, user }: PanelSectionProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -73,6 +95,13 @@ function PanelMobileBar({ title, items }: PanelSectionProps) {
           <div className="px-3">
             <PanelNav items={items} tone="light" onNavigate={() => setOpen(false)} />
           </div>
+          <div className="mt-auto flex flex-col gap-2 border-t p-3">
+            <p className="px-2 text-sm font-semibold">{user.name}</p>
+            <a href="/api/mock/keluar" className={cn(buttonVariants({ variant: "ghost" }), "justify-start")}>
+              <LogOut aria-hidden />
+              Keluar
+            </a>
+          </div>
         </SheetContent>
       </Sheet>
       <span className="font-bold">{title}</span>
@@ -80,14 +109,14 @@ function PanelMobileBar({ title, items }: PanelSectionProps) {
   );
 }
 
-function PanelShell({ section, children }: { section: PanelSection; children: ReactNode }) {
+function PanelShell({ section, user, children }: { section: PanelSection; user: SessionUser; children: ReactNode }) {
   const { title, items } = PANEL_SECTIONS[section];
 
   return (
     <div className="flex min-h-dvh">
-      <PanelSidebar title={title} items={items} />
+      <PanelSidebar title={title} items={items} user={user} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <PanelMobileBar title={title} items={items} />
+        <PanelMobileBar title={title} items={items} user={user} />
         <main id="konten" className="flex-1 p-4 md:p-6">
           {children}
         </main>

@@ -1,12 +1,21 @@
+import { forbidden, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { ChatWidget } from "@/components/chat/chat-widget";
 import { SiteHeader } from "@/components/layout/site-header";
 import { listNotifications } from "@/lib/data/notifications";
 import { getSessionUser } from "@/lib/data/session";
+import { REPORTER_HOME } from "@/lib/routes";
+import { loginHref } from "@/lib/session";
 
 export default async function ReporterLayout({ children }: { children: ReactNode }) {
   const user = await getSessionUser();
-  const notifications = user ? await listNotifications() : [];
+  if (!user) {
+    redirect(loginHref(REPORTER_HOME));
+  }
+  if (user.role !== "pelapor") {
+    forbidden();
+  }
+  const notifications = await listNotifications();
 
   return (
     <>

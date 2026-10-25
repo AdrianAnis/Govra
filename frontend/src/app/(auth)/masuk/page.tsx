@@ -52,11 +52,6 @@ export default async function LoginPage({ searchParams }: PageProps<"/masuk">) {
         <Button type={demo ? "submit" : "button"} size="lg">
           Masuk
         </Button>
-        {demo && (
-          <p className="text-center text-xs text-fg-muted">
-            Mode demo: tombol Masuk membuat sesi contoh tanpa memeriksa kata sandi.
-          </p>
-        )}
       </form>
     </AuthCard>
   );
