@@ -15,7 +15,7 @@ import (
 )
 
 func setupFeedApp() (*fiber.App, feed.Service, *pauth.TokenManager) {
-	database, _ := db.New("")
+	database, _ := db.New("", "", "")
 	repo := feed.NewRepository(database)
 	svc := feed.NewService(repo)
 	handler := feed.NewHandler(svc)

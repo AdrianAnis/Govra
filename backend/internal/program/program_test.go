@@ -15,7 +15,7 @@ import (
 )
 
 func setupProgramApp() (*fiber.App, program.Service, *pauth.TokenManager) {
-	database, _ := db.New("")
+	database, _ := db.New("", "", "")
 	repo := program.NewRepository(database)
 	svc := program.NewService(repo)
 	handler := program.NewHandler(svc)

@@ -1,33 +1,33 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { AuthCard } from "@/components/auth-card";
 import { ResetForm } from "@/components/auth/reset-form";
 import { buttonVariants } from "@/components/ui/button";
-import { RESET_COOKIE } from "@/lib/auth-flow";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Atur Kata Sandi Baru" };
 
-export default async function ResetPasswordPage() {
-  const jar = await cookies();
-  if (!jar.has(RESET_COOKIE)) {
-    redirect("/lupa-sandi");
-  }
+interface ResetPageProps {
+  searchParams: Promise<{ token?: string; email?: string }>;
+}
+
+export default async function ResetPasswordPage({ searchParams }: ResetPageProps) {
+  const params = await searchParams;
+  const token = params.token || "";
+  const email = params.email || "";
 
   return (
     <AuthCard
       title="Kata Sandi Baru"
-      description="Buat kata sandi baru untuk akun Anda."
+      description="Buat kata sandi baru untuk akun Govra Anda."
       alternate={
         <Link href="/masuk" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}>
           Kembali ke halaman masuk
         </Link>
       }
-      note={<p>Gunakan kata sandi yang belum pernah Anda pakai di tempat lain.</p>}
+      note={<p>Gunakan minimal 8 karakter dengan kombinasi huruf dan angka.</p>}
     >
-      <ResetForm />
+      <ResetForm token={token} email={email} />
     </AuthCard>
   );
 }

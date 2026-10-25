@@ -5,8 +5,7 @@ import { redirect } from "next/navigation";
 import { AuthCard } from "@/components/auth-card";
 import { VerifyForm } from "@/components/auth/verify-form";
 import { buttonVariants } from "@/components/ui/button";
-import { CODE_LENGTH, CODE_MINUTES, maskEmail, parsePending, PENDING_COOKIE } from "@/lib/auth-flow";
-import { DEMO_CODE } from "@/lib/mock-guard";
+import { CODE_LENGTH, CODE_MINUTES, parsePending, PENDING_COOKIE } from "@/lib/auth-flow";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Verifikasi Email" };
@@ -14,16 +13,16 @@ export const metadata: Metadata = { title: "Verifikasi Email" };
 export default async function VerifyPage() {
   const jar = await cookies();
   const pending = parsePending(jar.get(PENDING_COOKIE)?.value);
-  if (!pending) {
+  const email = jar.get("govra_pending_email")?.value || pending?.email;
+  if (!email) {
     redirect("/daftar");
   }
-  const reset = pending.purpose === "reset";
-  const demo = process.env.NODE_ENV !== "production";
+  const reset = pending?.purpose === "reset";
 
   return (
     <AuthCard
-      title="Masukkan Kode"
-      description={`Kami mengirim kode ${CODE_LENGTH} digit ke ${maskEmail(pending.email)}.`}
+      title="Verifikasi Email"
+      description={`Kami mengirim kode verifikasi ${CODE_LENGTH} digit ke ${email}.`}
       alternate={
         <Link
           href={reset ? "/lupa-sandi" : "/daftar"}
@@ -32,9 +31,9 @@ export default async function VerifyPage() {
           Ubah email
         </Link>
       }
-      note={<p>Kode berlaku {CODE_MINUTES} menit. Periksa juga folder spam.</p>}
+      note={<p>Kode berlaku selama {CODE_MINUTES} menit. Silakan periksa kotak masuk (inbox) atau folder spam email Anda.</p>}
     >
-      <VerifyForm demoCode={demo ? DEMO_CODE : null} />
+      <VerifyForm demoCode={null} />
     </AuthCard>
   );
 }

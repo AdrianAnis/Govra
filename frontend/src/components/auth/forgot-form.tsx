@@ -1,16 +1,17 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { FieldError } from "@/components/auth/field-error";
 import { FormField } from "@/components/form-field";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { requestReset } from "@/lib/auth-client";
 import { emailSchema } from "@/lib/auth-flow";
+import { cn } from "@/lib/utils";
 
 function ForgotForm() {
-  const router = useRouter();
   const [error, setError] = useState<string | undefined>();
+  const [success, setSuccess] = useState<string | undefined>();
   const [pending, setPending] = useState(false);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -21,10 +22,12 @@ function ForgotForm() {
       return;
     }
     setError(undefined);
+    setSuccess(undefined);
     setPending(true);
     try {
       await requestReset(parsed.data.email);
-      router.push("/verifikasi");
+      setSuccess("Tautan pembaruan kata sandi telah dikirim ke email Anda! Silakan periksa kotak masuk (inbox) atau folder spam Gmail Anda.");
+      setPending(false);
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "Terjadi kendala. Coba lagi.");
       setPending(false);
@@ -32,22 +35,48 @@ function ForgotForm() {
   };
 
   return (
-    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <FormField
-          id="email"
-          name="email"
-          type="email"
-          label="Alamat Email"
-          autoComplete="email"
-          aria-invalid={error ? true : undefined}
-        />
-        <FieldError message={error} />
-      </div>
-      <Button type="submit" size="lg" disabled={pending}>
-        {pending ? "Mengirim kode..." : "Kirim Kode"}
-      </Button>
-    </form>
+    <div className="flex flex-col gap-4">
+      {success && (
+        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-800 dark:text-emerald-300">
+          <p className="font-semibold mb-1">Berhasil Terkirim</p>
+          <p>{success}</p>
+          <div className="mt-3">
+            <Link
+              href="/masuk"
+              className={cn(buttonVariants({ size: "sm" }), "bg-emerald-600 hover:bg-emerald-700 text-white")}
+            >
+              Ke Halaman Masuk
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-800 dark:text-red-300">
+          <p className="font-semibold mb-1">Gagal</p>
+          <p>{error}</p>
+        </div>
+      )}
+
+      {!success && (
+        <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <FormField
+              id="email"
+              name="email"
+              type="email"
+              label="Alamat Email Akun"
+              autoComplete="email"
+              aria-invalid={error ? true : undefined}
+            />
+            <FieldError message={error} />
+          </div>
+          <Button type="submit" size="lg" disabled={pending}>
+            {pending ? "Memeriksa email..." : "Kirim Tautan Atur Ulang"}
+          </Button>
+        </form>
+      )}
+    </div>
   );
 }
 

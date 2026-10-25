@@ -27,7 +27,7 @@ type Application struct {
 }
 
 func New(cfg *config.Config) (*Application, error) {
-	database, err := db.New(cfg.DatabaseURL)
+	database, err := db.New(cfg.DatabaseURL, cfg.SupabaseURL, cfg.SupabaseServiceKey)
 	if err != nil {
 		return nil, err
 	}

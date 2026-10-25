@@ -16,7 +16,7 @@ import (
 )
 
 func setupReportApp() (*fiber.App, report.Service, *pauth.TokenManager) {
-	database, _ := db.New("")
+	database, _ := db.New("", "", "")
 	repo := report.NewRepository(database)
 	aiClient := ai.NewClient("test-gemini-key", "gemini-2.5-flash")
 	svc := report.NewService(repo, aiClient)

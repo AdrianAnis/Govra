@@ -17,6 +17,7 @@ func NewHandler(s Service) *Handler {
 func (h *Handler) RegisterRoutes(app fiber.Router) {
 	g := app.Group("/auth")
 	g.Post("/register", h.Register)
+	g.Post("/verify-registration", h.VerifyRegistration)
 	g.Post("/login", h.Login)
 	g.Post("/send-otp", h.SendOTP)
 	g.Post("/verify-otp", h.VerifyOTP)
@@ -36,7 +37,21 @@ func (h *Handler) Register(c *fiber.Ctx) error {
 	if err != nil {
 		return httpx.NewAppError(fiber.StatusBadRequest, "REGISTER_FAILED", err.Error())
 	}
-	return c.Status(fiber.StatusCreated).JSON(res)
+	return c.Status(fiber.StatusOK).JSON(res)
+}
+
+func (h *Handler) VerifyRegistration(c *fiber.Ctx) error {
+	var req VerifyOTPRequest
+	if err := c.BodyParser(&req); err != nil {
+		return httpx.NewAppError(fiber.StatusBadRequest, "BAD_REQUEST", "Format permintaan tidak valid")
+	}
+	if err := h.service.VerifyRegisterOTP(c.Context(), req); err != nil {
+		return httpx.NewAppError(fiber.StatusBadRequest, "VERIFY_FAILED", err.Error())
+	}
+	return c.JSON(fiber.Map{
+		"verified": true,
+		"message":  "Akun berhasil diaktifkan. Silakan masuk.",
+	})
 }
 
 func (h *Handler) Login(c *fiber.Ctx) error {
@@ -57,7 +72,7 @@ func (h *Handler) SendOTP(c *fiber.Ctx) error {
 		return httpx.NewAppError(fiber.StatusBadRequest, "BAD_REQUEST", "Format permintaan tidak valid")
 	}
 	if err := h.service.SendOTP(c.Context(), req.Email, req.Purpose); err != nil {
-		return httpx.NewAppError(fiber.StatusInternalServerError, "SEND_OTP_FAILED", err.Error())
+		return httpx.NewAppError(fiber.StatusBadRequest, "SEND_OTP_FAILED", err.Error())
 	}
 	return c.JSON(fiber.Map{"message": "Kode OTP berhasil dikirimkan ke email anda"})
 }
@@ -74,14 +89,15 @@ func (h *Handler) VerifyOTP(c *fiber.Ctx) error {
 }
 
 func (h *Handler) ForgotPassword(c *fiber.Ctx) error {
-	var req struct {
-		Email string `json:"email"`
-	}
+	var req ForgotPasswordRequest
 	if err := c.BodyParser(&req); err != nil {
 		return httpx.NewAppError(fiber.StatusBadRequest, "BAD_REQUEST", "Format permintaan tidak valid")
 	}
-	_ = h.service.SendOTP(c.Context(), req.Email, "PASSWORD_RESET")
-	return c.JSON(fiber.Map{"message": "Jika email terdaftar, kode verifikasi reset kata sandi telah dikirimkan"})
+	res, err := h.service.ForgotPassword(c.Context(), req.Email)
+	if err != nil {
+		return httpx.NewAppError(fiber.StatusBadRequest, "FORGOT_PASSWORD_FAILED", err.Error())
+	}
+	return c.JSON(res)
 }
 
 func (h *Handler) ResetPassword(c *fiber.Ctx) error {

@@ -26,14 +26,30 @@ type User struct {
 }
 
 type OTPVerification struct {
-	ID        string    `json:"id"`
-	Email     string    `json:"email"`
-	Code      string    `json:"code"`
-	Purpose   string    `json:"purpose"`
-	Attempts  int       `json:"attempts"`
-	ExpiresAt time.Time `json:"expires_at"`
-	IsUsed    bool      `json:"is_used"`
-	CreatedAt time.Time `json:"created_at"`
+	ID             string     `json:"id"`
+	Email          string     `json:"email"`
+	Code           string     `json:"code"`
+	Purpose        string     `json:"purpose"`
+	Token          string     `json:"token,omitempty"`
+	PendingPayload string     `json:"pending_payload,omitempty"`
+	Attempts       int        `json:"attempts"`
+	SendCount      int        `json:"send_count"`
+	LockLevel      int        `json:"lock_level"`
+	LockUntil      *time.Time `json:"lock_until,omitempty"`
+	ExpiresAt      time.Time  `json:"expires_at"`
+	IsUsed         bool       `json:"is_used"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
+}
+
+type AuthRateLimit struct {
+	ID            string     `json:"id"`
+	Identifier    string     `json:"identifier"`
+	Action        string     `json:"action"`
+	Attempts      int        `json:"attempts"`
+	LockLevel     int        `json:"lock_level"`
+	LockUntil     *time.Time `json:"lock_until,omitempty"`
+	LastAttemptAt time.Time  `json:"last_attempt_at"`
 }
 
 type RegisterRequest struct {
@@ -59,9 +75,14 @@ type VerifyOTPRequest struct {
 	Purpose string `json:"purpose"`
 }
 
+type ForgotPasswordRequest struct {
+	Email string `json:"email"`
+}
+
 type ResetPasswordRequest struct {
 	Email       string `json:"email"`
-	Code        string `json:"code"`
+	Token       string `json:"token,omitempty"`
+	Code        string `json:"code,omitempty"`
 	NewPassword string `json:"new_password"`
 }
 

@@ -15,7 +15,7 @@ import (
 )
 
 func setupIssueApp() (*fiber.App, issue.Service, *pauth.TokenManager) {
-	database, _ := db.New("")
+	database, _ := db.New("", "", "")
 	repo := issue.NewRepository(database)
 	svc := issue.NewService(repo)
 	handler := issue.NewHandler(svc)

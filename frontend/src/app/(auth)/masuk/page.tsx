@@ -9,9 +9,17 @@ import { safeNext } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Masuk" };
 
-export default async function LoginPage({ searchParams }: PageProps<"/masuk">) {
-  const raw = (await searchParams).lanjut;
+interface LoginPageProps {
+  searchParams: Promise<{ lanjut?: string | string[]; registered?: string; reset?: string; error?: string }>;
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const params = await searchParams;
+  const raw = params.lanjut;
   const next = safeNext(Array.isArray(raw) ? raw[0] : raw);
+  const registered = params.registered === "sukses";
+  const reset = params.reset === "sukses";
+  const error = params.error === "gagal";
 
   return (
     <AuthCard
@@ -24,6 +32,24 @@ export default async function LoginPage({ searchParams }: PageProps<"/masuk">) {
         </p>
       }
     >
+      {registered && (
+        <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-800 dark:text-emerald-300">
+          <p className="font-semibold">Pendaftaran Berhasil!</p>
+          <p>Akun Anda telah aktif. Silakan masuk menggunakan email dan kata sandi Anda.</p>
+        </div>
+      )}
+      {reset && (
+        <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-800 dark:text-emerald-300">
+          <p className="font-semibold">Kata Sandi Diperbarui!</p>
+          <p>Kata sandi Anda berhasil diubah. Silakan masuk dengan kata sandi baru Anda.</p>
+        </div>
+      )}
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-800 dark:text-red-300">
+          <p className="font-semibold">Gagal Masuk</p>
+          <p>Email atau kata sandi tidak valid. Silakan periksa kembali.</p>
+        </div>
+      )}
       <form
         className="flex flex-col gap-4"
         action="/api/auth/masuk"
