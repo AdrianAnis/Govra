@@ -405,8 +405,8 @@ ON CONFLICT DO NOTHING;
 INSERT INTO app.goals (id, region_id, code, name, description)
 VALUES
     ('d0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', 'SAS-01', 'Infrastruktur Mantap dan Berkelanjutan', 'Pembangunan dan perbaikan fasilitas jalan, jembatan, dan drainase'),
-    ('d0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000002', 'SAS-02', 'Kesehatan dan Kesejahteraan Masyarakat', 'Peningkatan layanan faskes dan perlindungan sosial'),
-    ('d0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000003', 'SAS-03', 'Kota Tanggap dan Bersih', 'Pengelolaan persampahan modern dan mitigasi bencana')
+    ('d0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000001', 'SAS-02', 'Kesehatan dan Kesejahteraan Masyarakat', 'Peningkatan layanan faskes dan perlindungan sosial'),
+    ('d0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001', 'SAS-03', 'Kota Tanggap dan Bersih', 'Pengelolaan persampahan modern dan mitigasi bencana')
 ON CONFLICT (code) DO NOTHING;
 
 INSERT INTO app.opds (id, region_id, code, name, slug, phone, email, address)
