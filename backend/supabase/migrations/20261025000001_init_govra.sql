@@ -341,23 +341,52 @@ ALTER TABLE app.feed_likes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.audit_logs ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS region_read_all ON app.regions;
 CREATE POLICY region_read_all ON app.regions FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS district_read_all ON app.districts;
 CREATE POLICY district_read_all ON app.districts FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS village_read_all ON app.villages;
 CREATE POLICY village_read_all ON app.villages FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS goal_read_all ON app.goals;
 CREATE POLICY goal_read_all ON app.goals FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS opd_read_all ON app.opds;
 CREATE POLICY opd_read_all ON app.opds FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS category_read_all ON app.categories;
 CREATE POLICY category_read_all ON app.categories FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS program_read_all ON app.programs;
 CREATE POLICY program_read_all ON app.programs FOR SELECT USING (approval_status = 'APPROVED' OR app.current_role() IN ('admin', 'dinas', 'kepala_daerah'));
+
+DROP POLICY IF EXISTS milestone_read_all ON app.program_milestones;
 CREATE POLICY milestone_read_all ON app.program_milestones FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS program_updates_read_all ON app.program_updates;
 CREATE POLICY program_updates_read_all ON app.program_updates FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS program_documents_read_all ON app.program_documents;
 CREATE POLICY program_documents_read_all ON app.program_documents FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS issues_read_all ON app.issues;
 CREATE POLICY issues_read_all ON app.issues FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS feeds_read_all ON app.feeds;
 CREATE POLICY feeds_read_all ON app.feeds FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS settings_read_all ON app.settings;
 CREATE POLICY settings_read_all ON app.settings FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS profile_read_own ON app.profiles;
 CREATE POLICY profile_read_own ON app.profiles FOR SELECT USING (id = app.current_user_id() OR app.current_role() = 'admin');
+
+DROP POLICY IF EXISTS profile_update_own ON app.profiles;
 CREATE POLICY profile_update_own ON app.profiles FOR UPDATE USING (id = app.current_user_id());
 
+DROP POLICY IF EXISTS reports_read_policy ON app.reports;
 CREATE POLICY reports_read_policy ON app.reports FOR SELECT USING (
     (visibility = 'PUBLIC' AND is_hidden = false)
     OR reporter_id = app.current_user_id()
@@ -365,10 +394,12 @@ CREATE POLICY reports_read_policy ON app.reports FOR SELECT USING (
     OR app.current_role() = 'admin'
 );
 
+DROP POLICY IF EXISTS reports_insert_policy ON app.reports;
 CREATE POLICY reports_insert_policy ON app.reports FOR INSERT WITH CHECK (
     reporter_id = app.current_user_id() OR reporter_id IS NULL
 );
 
+DROP POLICY IF EXISTS audit_logs_read_policy ON app.audit_logs;
 CREATE POLICY audit_logs_read_policy ON app.audit_logs FOR SELECT USING (
     app.current_role() = 'admin'
 );
@@ -390,7 +421,7 @@ VALUES
     ('b0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', 'Kecamatan Tengah', -6.2000000, 106.8400000, '{"type": "Polygon", "coordinates": [[[106.82, -6.22], [106.86, -6.22], [106.86, -6.18], [106.82, -6.18], [106.82, -6.22]]]}'::jsonb),
     ('b0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000001', 'Kecamatan Utara', -6.1600000, 106.8400000, '{"type": "Polygon", "coordinates": [[[106.82, -6.18], [106.86, -6.18], [106.86, -6.14], [106.82, -6.14], [106.82, -6.18]]]}'::jsonb),
     ('b0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001', 'Kecamatan Selatan', -6.2400000, 106.8400000, '{"type": "Polygon", "coordinates": [[[106.82, -6.26], [106.86, -6.26], [106.86, -6.22], [106.82, -6.22], [106.82, -6.26]]]}'::jsonb)
-ON CONFLICT DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO app.villages (id, district_id, name, center_lat, center_lng, polygon_geojson)
 VALUES
@@ -400,7 +431,7 @@ VALUES
     ('c0000000-0000-0000-0000-000000000004', 'b0000000-0000-0000-0000-000000000002', 'Kelurahan Sunter', -6.1650000, 106.8450000, '{"type": "Polygon", "coordinates": [[[106.84, -6.18], [106.86, -6.18], [106.86, -6.15], [106.84, -6.15], [106.84, -6.18]]]}'::jsonb),
     ('c0000000-0000-0000-0000-000000000005', 'b0000000-0000-0000-0000-000000000003', 'Kelurahan Cilandak', -6.2350000, 106.8350000, '{"type": "Polygon", "coordinates": [[[106.82, -6.25], [106.84, -6.25], [106.84, -6.22], [106.82, -6.22], [106.82, -6.25]]]}'::jsonb),
     ('c0000000-0000-0000-0000-000000000006', 'b0000000-0000-0000-0000-000000000003', 'Kelurahan Pondok Indah', -6.2450000, 106.8450000, '{"type": "Polygon", "coordinates": [[[106.84, -6.26], [106.86, -6.26], [106.86, -6.23], [106.84, -6.23], [106.84, -6.26]]]}'::jsonb)
-ON CONFLICT DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO app.goals (id, region_id, code, name, description)
 VALUES

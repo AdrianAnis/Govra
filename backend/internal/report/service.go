@@ -1,0 +1,164 @@
+package report
+
+import (
+	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"strings"
+	"time"
+
+	"govra/internal/platform/ai"
+)
+
+type Service interface {
+	CreateReport(ctx context.Context, req CreateReportRequest, reporterID, reporterName string) (*Report, error)
+	GetReportByCode(ctx context.Context, code, requesterID, role string) (*Report, error)
+	ListMyReports(ctx context.Context, reporterID string) ([]Report, error)
+	GetDuplicateSuggestions(ctx context.Context, query DuplicateQuery) ([]DuplicateSuggestion, error)
+	TranscribeVoiceNote(ctx context.Context, audioBase64, mimeType string) (string, error)
+	SubmitFeedback(ctx context.Context, code string, req FeedbackRequest) error
+}
+
+type service struct {
+	repo     Repository
+	aiClient *ai.Client
+}
+
+func NewService(repo Repository, aiClient *ai.Client) Service {
+	return &service{
+		repo:     repo,
+		aiClient: aiClient,
+	}
+}
+
+func (s *service) generateCode() string {
+	now := time.Now()
+	b := make([]byte, 2)
+	_, _ = rand.Read(b)
+	randSuffix := strings.ToUpper(hex.EncodeToString(b))
+	return fmt.Sprintf("GVR-%02d%02d-%s", now.Year()%100, now.Month(), randSuffix)
+}
+
+func (s *service) CreateReport(ctx context.Context, req CreateReportRequest, reporterID, reporterName string) (*Report, error) {
+	if req.Description == "" && req.VoiceNoteData == "" {
+		return nil, errors.New("deskripsi laporan atau rekaman suara wajib disertakan")
+	}
+
+	transcript := ""
+	if req.VoiceNoteData != "" {
+		t, err := s.aiClient.TranscribeAudio(ctx, req.VoiceNoteData, req.VoiceMimeType)
+		if err == nil && t != "" {
+			transcript = t
+			if req.Description == "" {
+				req.Description = t
+			}
+		}
+	}
+
+	if req.Title == "" {
+		words := strings.Fields(req.Description)
+		if len(words) > 6 {
+			req.Title = strings.Join(words[:6], " ") + "..."
+		} else {
+			req.Title = req.Description
+		}
+	}
+
+	rep := &Report{
+		Code:                s.generateCode(),
+		ReporterID:          reporterID,
+		ReporterName:        reporterName,
+		DistrictID:          req.DistrictID,
+		DistrictName:        "Kecamatan Terpilih",
+		VillageID:           req.VillageID,
+		VillageName:         "Kelurahan Terpilih",
+		Title:               req.Title,
+		Description:         req.Description,
+		VoiceNoteTranscript: transcript,
+		Lat:                 req.Lat,
+		Lng:                 req.Lng,
+		AddressDetail:       req.AddressDetail,
+		Visibility:          req.Visibility,
+		Status:              StatusDiajukan,
+		Attachments:         req.Attachments,
+		Timeline: []TimelineEvent{
+			{
+				Status:    "DIAJUKAN",
+				Title:     "Laporan Berhasil Diajukan",
+				Note:      "Laporan telah tersimpan dan masuk ke antrean triage sistem.",
+				CreatedAt: time.Now(),
+			},
+		},
+	}
+
+	triageRes, err := s.aiClient.ClassifyReport(ctx, rep.Title, rep.Description, rep.DistrictName, rep.VillageName)
+	if err == nil && triageRes != nil {
+		rep.OpdID = triageRes.OpdCode
+		rep.OpdName = "Dinas Terkait (" + triageRes.OpdCode + ")"
+		rep.CategoryID = triageRes.CategoryCode
+		if triageRes.Confidence >= 0.75 && !triageRes.IsSensitive {
+			rep.Status = StatusDiteruskan
+			rep.Timeline = append(rep.Timeline, TimelineEvent{
+				Status:    "DITERUSKAN",
+				Title:     "Diteruskan ke " + triageRes.OpdCode,
+				Note:      triageRes.RecommendedAction,
+				CreatedAt: time.Now(),
+			})
+		}
+	}
+
+	if err := s.repo.SaveReport(ctx, rep); err != nil {
+		return nil, err
+	}
+	return rep, nil
+}
+
+func (s *service) GetReportByCode(ctx context.Context, code, requesterID, role string) (*Report, error) {
+	rep, err := s.repo.GetReportByCode(ctx, code)
+	if err != nil {
+		return nil, err
+	}
+	if rep.Visibility == VisibilityConfidential && role != "admin" && rep.ReporterID != requesterID {
+		return nil, errors.New("laporan bersifat rahasia")
+	}
+	return rep, nil
+}
+
+func (s *service) ListMyReports(ctx context.Context, reporterID string) ([]Report, error) {
+	return s.repo.ListReportsByReporter(ctx, reporterID)
+}
+
+func (s *service) GetDuplicateSuggestions(ctx context.Context, query DuplicateQuery) ([]DuplicateSuggestion, error) {
+	openReps, err := s.repo.ListOpenReports(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var res []DuplicateSuggestion
+	for _, r := range openReps {
+		if query.DistrictID != "" && r.DistrictID == query.DistrictID {
+			res = append(res, DuplicateSuggestion{
+				IssueID:         r.ID,
+				IssueCode:       r.Code,
+				Title:           r.Title,
+				Summary:         r.Description,
+				SimilarityScore: 0.88,
+				DistanceMeters:  120.0,
+				ReportersCount:  3,
+			})
+			if len(res) >= 3 {
+				break
+			}
+		}
+	}
+	return res, nil
+}
+
+func (s *service) TranscribeVoiceNote(ctx context.Context, audioBase64, mimeType string) (string, error) {
+	return s.aiClient.TranscribeAudio(ctx, audioBase64, mimeType)
+}
+
+func (s *service) SubmitFeedback(ctx context.Context, code string, req FeedbackRequest) error {
+	return s.repo.SaveFeedback(ctx, code, req.Confirmed, req.Note)
+}
