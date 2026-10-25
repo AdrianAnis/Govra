@@ -2,20 +2,48 @@ package config
 
 import (
 	"os"
+	"strings"
 )
 
 type Config struct {
-	Port                 string
-	DatabaseURL          string
-	SupabaseURL          string
-	SupabaseAnonKey      string
-	SupabaseServiceKey   string
-	SupabaseJWTSecret    string
-	BFFSharedKey         string
-	ResendAPIKey         string
-	GeminiAPIKeyTriage   string
-	GeminiAPIKeyAsst     string
-	GeminiModel          string
+	Port               string
+	DatabaseURL        string
+	SupabaseURL        string
+	SupabaseAnonKey    string
+	SupabaseServiceKey string
+	SupabaseJWTSecret  string
+	BFFSharedKey       string
+	ResendAPIKey       string
+	GeminiAPIKeyTriage string
+	GeminiAPIKeyAsst   string
+	GeminiModel        string
+}
+
+func loadDotEnv() {
+	paths := []string{".env", "../.env", "../../.env"}
+	for _, p := range paths {
+		data, err := os.ReadFile(p)
+		if err != nil {
+			continue
+		}
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line == "" || strings.HasPrefix(line, "#") {
+				continue
+			}
+			parts := strings.SplitN(line, "=", 2)
+			if len(parts) == 2 {
+				key := strings.TrimSpace(parts[0])
+				val := strings.TrimSpace(parts[1])
+				val = strings.Trim(val, `"'`)
+				if os.Getenv(key) == "" {
+					_ = os.Setenv(key, val)
+				}
+			}
+		}
+		break
+	}
 }
 
 func getEnv(key, fallback string) string {
@@ -27,6 +55,8 @@ func getEnv(key, fallback string) string {
 }
 
 func Load() *Config {
+	loadDotEnv()
+
 	return &Config{
 		Port:               getEnv("PORT", "8080"),
 		DatabaseURL:        getEnv("DATABASE_URL", ""),

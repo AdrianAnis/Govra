@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -35,6 +36,7 @@ func (c *Client) SendOTP(ctx context.Context, toEmail, code, purpose string) err
 	if c.apiKey == "" || strings.HasPrefix(c.apiKey, "test-") {
 		return nil
 	}
+
 	subject := "Kode Verifikasi Govra: " + code
 	htmlContent := fmt.Sprintf(`
 		<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
@@ -73,9 +75,12 @@ func (c *Client) SendOTP(ctx context.Context, toEmail, code, purpose string) err
 	}
 	defer res.Body.Close()
 
+	body, _ := io.ReadAll(res.Body)
 	if res.StatusCode >= 400 {
-		return fmt.Errorf("resend api error status %d", res.StatusCode)
+		fmt.Printf("[RESEND ERROR] Status %d for %s: %s\n", res.StatusCode, toEmail, string(body))
+		return fmt.Errorf("resend api error status %d: %s", res.StatusCode, string(body))
 	}
+	fmt.Printf("[RESEND SUCCESS] Email OTP delivered to %s\n", toEmail)
 	return nil
 }
 
@@ -83,6 +88,7 @@ func (c *Client) SendPasswordResetLink(ctx context.Context, toEmail, resetLink s
 	if c.apiKey == "" || strings.HasPrefix(c.apiKey, "test-") {
 		return nil
 	}
+
 	subject := "Atur Ulang Kata Sandi Akun Govra"
 	htmlContent := fmt.Sprintf(`
 		<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
@@ -121,8 +127,11 @@ func (c *Client) SendPasswordResetLink(ctx context.Context, toEmail, resetLink s
 	}
 	defer res.Body.Close()
 
+	body, _ := io.ReadAll(res.Body)
 	if res.StatusCode >= 400 {
-		return fmt.Errorf("resend api error status %d", res.StatusCode)
+		fmt.Printf("[RESEND ERROR] Status %d for %s: %s\n", res.StatusCode, toEmail, string(body))
+		return fmt.Errorf("resend api error status %d: %s", res.StatusCode, string(body))
 	}
+	fmt.Printf("[RESEND SUCCESS] Reset link delivered to %s\n", toEmail)
 	return nil
 }

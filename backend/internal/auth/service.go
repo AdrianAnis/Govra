@@ -102,6 +102,7 @@ func (s *service) Register(ctx context.Context, req RegisterRequest) (map[string
 		return nil, err
 	}
 
+	fmt.Printf("[AUTH OTP] Generated OTP for %s: %s (purpose: REGISTRATION)\n", req.Email, code)
 	_ = s.emailClient.SendOTP(ctx, req.Email, code, "Pendaftaran Akun Baru Govra")
 
 	return map[string]any{
@@ -278,6 +279,7 @@ func (s *service) ForgotPassword(ctx context.Context, emailAddress string) (map[
 	}
 
 	resetLink := fmt.Sprintf("http://localhost:3000/atur-sandi?token=%s&email=%s", resetToken, url.QueryEscape(emailAddress))
+	fmt.Printf("[AUTH RESET] Generated reset link for %s: %s | code: %s\n", emailAddress, resetLink, code)
 	_ = s.emailClient.SendPasswordResetLink(ctx, emailAddress, resetLink)
 
 	return map[string]any{
