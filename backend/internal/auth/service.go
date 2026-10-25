@@ -92,7 +92,7 @@ func (s *service) Register(ctx context.Context, req RegisterRequest) (map[string
 		Email:          req.Email,
 		Code:           code,
 		Purpose:        "REGISTRATION",
-		PendingPayload: string(payloadBytes),
+		PendingPayload: json.RawMessage(payloadBytes),
 		Attempts:       0,
 		SendCount:      1,
 		ExpiresAt:      time.Now().Add(10 * time.Minute),
@@ -135,7 +135,11 @@ func (s *service) VerifyRegisterOTP(ctx context.Context, req VerifyOTPRequest) e
 	}
 
 	var payload pendingReg
-	if err := json.Unmarshal([]byte(otp.PendingPayload), &payload); err != nil {
+	if len(otp.PendingPayload) == 0 || string(otp.PendingPayload) == "null" {
+		return errors.New("data pendaftaran tidak ditemukan. Silakan daftar kembali.")
+	}
+	if err := json.Unmarshal(otp.PendingPayload, &payload); err != nil {
+		fmt.Printf("[AUTH VERIFY ERROR] Unmarshal pending payload failed for %s: %v | raw: %s\n", req.Email, err, string(otp.PendingPayload))
 		return errors.New("data pendaftaran tidak valid")
 	}
 

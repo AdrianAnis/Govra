@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -351,33 +352,39 @@ func (r *repository) SaveOTP(ctx context.Context, otp *OTPVerification) error {
 	otp.UpdatedAt = time.Now()
 
 	if r.db != nil && r.db.Pool != nil {
+		var payloadArg any = nil
+		if len(otp.PendingPayload) > 0 && string(otp.PendingPayload) != "null" {
+			payloadArg = otp.PendingPayload
+		}
 		query := `INSERT INTO public.otp_verifications (id, email, code, purpose, token, pending_payload, attempts, send_count, lock_level, lock_until, expires_at, is_used, created_at, updated_at)
-		          VALUES ($1, $2, $3, $4, $5, NULLIF($6, '')::jsonb, $7, $8, $9, $10, $11, $12, $13, $14)`
-		_, _ = r.db.Pool.Exec(ctx, query, otp.ID, otp.Email, otp.Code, otp.Purpose, otp.Token, otp.PendingPayload, otp.Attempts, otp.SendCount, otp.LockLevel, otp.LockUntil, otp.ExpiresAt, otp.IsUsed, otp.CreatedAt, otp.UpdatedAt)
+		          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`
+		_, _ = r.db.Pool.Exec(ctx, query, otp.ID, otp.Email, otp.Code, otp.Purpose, otp.Token, payloadArg, otp.Attempts, otp.SendCount, otp.LockLevel, otp.LockUntil, otp.ExpiresAt, otp.IsUsed, otp.CreatedAt, otp.UpdatedAt)
 	}
 
 	if r.db != nil && r.db.HasREST() {
 		type restOTP struct {
-			ID        string     `json:"id"`
-			Email     string     `json:"email"`
-			Code      string     `json:"code"`
-			Purpose   string     `json:"purpose"`
-			Token     string     `json:"token,omitempty"`
-			Attempts  int        `json:"attempts"`
-			SendCount int        `json:"send_count"`
-			ExpiresAt time.Time  `json:"expires_at"`
-			IsUsed    bool       `json:"is_used"`
+			ID             string          `json:"id"`
+			Email          string          `json:"email"`
+			Code           string          `json:"code"`
+			Purpose        string          `json:"purpose"`
+			Token          string          `json:"token,omitempty"`
+			PendingPayload json.RawMessage `json:"pending_payload,omitempty"`
+			Attempts       int             `json:"attempts"`
+			SendCount      int             `json:"send_count"`
+			ExpiresAt      time.Time       `json:"expires_at"`
+			IsUsed         bool            `json:"is_used"`
 		}
 		_ = r.db.PostgRESTPost(ctx, "otp_verifications", restOTP{
-			ID:        otp.ID,
-			Email:     otp.Email,
-			Code:      otp.Code,
-			Purpose:   otp.Purpose,
-			Token:     otp.Token,
-			Attempts:  otp.Attempts,
-			SendCount: otp.SendCount,
-			ExpiresAt: otp.ExpiresAt,
-			IsUsed:    otp.IsUsed,
+			ID:             otp.ID,
+			Email:          otp.Email,
+			Code:           otp.Code,
+			Purpose:        otp.Purpose,
+			Token:          otp.Token,
+			PendingPayload: otp.PendingPayload,
+			Attempts:       otp.Attempts,
+			SendCount:      otp.SendCount,
+			ExpiresAt:      otp.ExpiresAt,
+			IsUsed:         otp.IsUsed,
 		}, nil)
 	}
 
@@ -393,7 +400,7 @@ func (r *repository) SaveOTP(ctx context.Context, otp *OTPVerification) error {
 
 func (r *repository) GetLatestOTP(ctx context.Context, email, purpose string) (*OTPVerification, error) {
 	if r.db != nil && r.db.Pool != nil {
-		query := `SELECT id, email, code, purpose, COALESCE(token, ''), COALESCE(pending_payload::text, ''), attempts, send_count, lock_level, lock_until, expires_at, is_used, created_at, updated_at
+		query := `SELECT id, email, code, purpose, COALESCE(token, ''), COALESCE(pending_payload, '{}'::jsonb), attempts, send_count, lock_level, lock_until, expires_at, is_used, created_at, updated_at
 		          FROM public.otp_verifications WHERE email = $1 AND purpose = $2 AND is_used = false ORDER BY created_at DESC LIMIT 1`
 		var otp OTPVerification
 		err := r.db.Pool.QueryRow(ctx, query, email, purpose).Scan(&otp.ID, &otp.Email, &otp.Code, &otp.Purpose, &otp.Token, &otp.PendingPayload, &otp.Attempts, &otp.SendCount, &otp.LockLevel, &otp.LockUntil, &otp.ExpiresAt, &otp.IsUsed, &otp.CreatedAt, &otp.UpdatedAt)
@@ -422,7 +429,7 @@ func (r *repository) GetLatestOTP(ctx context.Context, email, purpose string) (*
 
 func (r *repository) GetOTPByToken(ctx context.Context, token string) (*OTPVerification, error) {
 	if r.db != nil && r.db.Pool != nil {
-		query := `SELECT id, email, code, purpose, COALESCE(token, ''), COALESCE(pending_payload::text, ''), attempts, send_count, lock_level, lock_until, expires_at, is_used, created_at, updated_at
+		query := `SELECT id, email, code, purpose, COALESCE(token, ''), COALESCE(pending_payload, '{}'::jsonb), attempts, send_count, lock_level, lock_until, expires_at, is_used, created_at, updated_at
 		          FROM public.otp_verifications WHERE token = $1 AND is_used = false ORDER BY created_at DESC LIMIT 1`
 		var otp OTPVerification
 		err := r.db.Pool.QueryRow(ctx, query, token).Scan(&otp.ID, &otp.Email, &otp.Code, &otp.Purpose, &otp.Token, &otp.PendingPayload, &otp.Attempts, &otp.SendCount, &otp.LockLevel, &otp.LockUntil, &otp.ExpiresAt, &otp.IsUsed, &otp.CreatedAt, &otp.UpdatedAt)
