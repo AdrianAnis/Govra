@@ -29,55 +29,50 @@ type repository struct {
 }
 
 func NewRepository(database *db.Database) Repository {
-	r := &repository{
+	return &repository{
 		db:    database,
 		users: make(map[string]*User),
 		otps:  make(map[string]*OTPVerification),
 	}
-	r.seedDefaultUsers()
-	return r
-}
-
-func (r *repository) seedDefaultUsers() {
-	r.users["admin@kotacontoh.go.id"] = &User{
-		ID:           "u0000000-0000-0000-0000-000000000001",
-		Email:        "admin@kotacontoh.go.id",
-		DisplayName:  "Administrator Utama",
-		Role:         RoleAdmin,
-		Status:       "ACTIVE",
-		PasswordHash: "$2a$10$7EqJtq98hPqEX7fNZaFWoO.81bkyXfHj4c.1lY01v04f7V2oU6w.2",
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
-	}
-	r.users["dinas@kotacontoh.go.id"] = &User{
-		ID:           "u0000000-0000-0000-0000-000000000002",
-		Email:        "dinas@kotacontoh.go.id",
-		DisplayName:  "Petugas DBM-SDA",
-		Role:         RoleDinas,
-		OpdID:        "e0000000-0000-0000-0000-000000000001",
-		Status:       "ACTIVE",
-		PasswordHash: "$2a$10$7EqJtq98hPqEX7fNZaFWoO.81bkyXfHj4c.1lY01v04f7V2oU6w.2",
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
-	}
 }
 
 func (r *repository) CreateUser(ctx context.Context, u *User) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if _, exists := r.users[u.Email]; exists {
-		return errors.New("email sudah terdaftar")
-	}
 	if u.ID == "" {
 		u.ID = uuid.New().String()
 	}
 	u.CreatedAt = time.Now()
 	u.UpdatedAt = time.Now()
+
+	if r.db != nil && r.db.Pool != nil {
+		query := `INSERT INTO app.profiles (id, email, password_hash, display_name, role, opd_id, status, phone, created_at, updated_at) 
+		          VALUES ($1, $2, $3, $4, $5, NULLIF($6, '')::uuid, $7, $8, $9, $10)`
+		_, err := r.db.Pool.Exec(ctx, query, u.ID, u.Email, u.PasswordHash, u.DisplayName, string(u.Role), u.OpdID, u.Status, u.Phone, u.CreatedAt, u.UpdatedAt)
+		return err
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, exists := r.users[u.Email]; exists {
+		return errors.New("email sudah terdaftar")
+	}
 	r.users[u.Email] = u
 	return nil
 }
 
 func (r *repository) GetUserByEmail(ctx context.Context, email string) (*User, error) {
+	if r.db != nil && r.db.Pool != nil {
+		query := `SELECT id, email, password_hash, display_name, role, COALESCE(opd_id::text, ''), status, COALESCE(phone, ''), COALESCE(avatar_url, ''), created_at, updated_at 
+		          FROM app.profiles WHERE email = $1`
+		var u User
+		var roleStr string
+		err := r.db.Pool.QueryRow(ctx, query, email).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.DisplayName, &roleStr, &u.OpdID, &u.Status, &u.Phone, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt)
+		if err != nil {
+			return nil, errors.New("pengguna tidak ditemukan")
+		}
+		u.Role = Role(roleStr)
+		return &u, nil
+	}
+
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	u, ok := r.users[email]
@@ -88,6 +83,19 @@ func (r *repository) GetUserByEmail(ctx context.Context, email string) (*User, e
 }
 
 func (r *repository) GetUserByID(ctx context.Context, id string) (*User, error) {
+	if r.db != nil && r.db.Pool != nil {
+		query := `SELECT id, email, password_hash, display_name, role, COALESCE(opd_id::text, ''), status, COALESCE(phone, ''), COALESCE(avatar_url, ''), created_at, updated_at 
+		          FROM app.profiles WHERE id = $1`
+		var u User
+		var roleStr string
+		err := r.db.Pool.QueryRow(ctx, query, id).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.DisplayName, &roleStr, &u.OpdID, &u.Status, &u.Phone, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt)
+		if err != nil {
+			return nil, errors.New("pengguna tidak ditemukan")
+		}
+		u.Role = Role(roleStr)
+		return &u, nil
+	}
+
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	for _, u := range r.users {
@@ -99,6 +107,18 @@ func (r *repository) GetUserByID(ctx context.Context, id string) (*User, error) 
 }
 
 func (r *repository) UpdatePassword(ctx context.Context, email, newPasswordHash string) error {
+	if r.db != nil && r.db.Pool != nil {
+		query := `UPDATE app.profiles SET password_hash = $2, updated_at = now() WHERE email = $1`
+		tag, err := r.db.Pool.Exec(ctx, query, email, newPasswordHash)
+		if err != nil {
+			return err
+		}
+		if tag.RowsAffected() == 0 {
+			return errors.New("pengguna tidak ditemukan")
+		}
+		return nil
+	}
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	u, ok := r.users[email]
@@ -111,17 +131,38 @@ func (r *repository) UpdatePassword(ctx context.Context, email, newPasswordHash 
 }
 
 func (r *repository) SaveOTP(ctx context.Context, otp *OTPVerification) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	if otp.ID == "" {
 		otp.ID = uuid.New().String()
 	}
 	otp.CreatedAt = time.Now()
+
+	if r.db != nil && r.db.Pool != nil {
+		query := `INSERT INTO app.otp_verifications (id, email, code, purpose, attempts, expires_at, is_used, created_at) 
+		          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+		_, err := r.db.Pool.Exec(ctx, query, otp.ID, otp.Email, otp.Code, otp.Purpose, otp.Attempts, otp.ExpiresAt, otp.IsUsed, otp.CreatedAt)
+		return err
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.otps[otp.ID] = otp
 	return nil
 }
 
 func (r *repository) GetLatestOTP(ctx context.Context, email, purpose string) (*OTPVerification, error) {
+	if r.db != nil && r.db.Pool != nil {
+		query := `SELECT id, email, code, purpose, attempts, expires_at, is_used, created_at 
+		          FROM app.otp_verifications 
+		          WHERE email = $1 AND purpose = $2 AND is_used = false 
+		          ORDER BY created_at DESC LIMIT 1`
+		var otp OTPVerification
+		err := r.db.Pool.QueryRow(ctx, query, email, purpose).Scan(&otp.ID, &otp.Email, &otp.Code, &otp.Purpose, &otp.Attempts, &otp.ExpiresAt, &otp.IsUsed, &otp.CreatedAt)
+		if err != nil {
+			return nil, errors.New("kode otp tidak ditemukan")
+		}
+		return &otp, nil
+	}
+
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	var latest *OTPVerification
@@ -139,6 +180,12 @@ func (r *repository) GetLatestOTP(ctx context.Context, email, purpose string) (*
 }
 
 func (r *repository) MarkOTPUsed(ctx context.Context, id string) error {
+	if r.db != nil && r.db.Pool != nil {
+		query := `UPDATE app.otp_verifications SET is_used = true WHERE id = $1`
+		_, err := r.db.Pool.Exec(ctx, query, id)
+		return err
+	}
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	otp, ok := r.otps[id]
@@ -150,6 +197,12 @@ func (r *repository) MarkOTPUsed(ctx context.Context, id string) error {
 }
 
 func (r *repository) IncrementOTPAttempts(ctx context.Context, id string) error {
+	if r.db != nil && r.db.Pool != nil {
+		query := `UPDATE app.otp_verifications SET attempts = attempts + 1 WHERE id = $1`
+		_, err := r.db.Pool.Exec(ctx, query, id)
+		return err
+	}
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	otp, ok := r.otps[id]

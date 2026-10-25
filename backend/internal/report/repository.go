@@ -26,66 +26,79 @@ type repository struct {
 }
 
 func NewRepository(database *db.Database) Repository {
-	r := &repository{
+	return &repository{
 		db:      database,
 		reports: make(map[string]*Report),
 	}
-	r.seedReports()
-	return r
-}
-
-func (r *repository) seedReports() {
-	sample := &Report{
-		ID:           "r0000000-0000-0000-0000-000000000001",
-		Code:         "GVR-2610-8F3K",
-		ReporterID:   "u0000000-0000-0000-0000-000000000003",
-		ReporterName: "Budi Santoso",
-		OpdID:        "e0000000-0000-0000-0000-000000000001",
-		OpdName:      "Dinas Bina Marga & SDA",
-		DistrictID:   "b0000000-0000-0000-0000-000000000001",
-		DistrictName: "Kecamatan Tengah",
-		VillageID:    "c0000000-0000-0000-0000-000000000001",
-		VillageName:  "Kelurahan Gambir",
-		Title:        "Jalan Berlubang di Depan Balai Kota",
-		Description:  "Terdapat lubang berdiameter 60 cm cukup dalam yang membahayakan pengendara motor saat hujan.",
-		Lat:          -6.1950,
-		Lng:          106.8350,
-		Visibility:   VisibilityPublic,
-		Status:       StatusDiproses,
-		Attachments: []Attachment{
-			{
-				ID:       "att-1",
-				FileURL:  "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&w=800&q=80",
-				MimeType: "image/jpeg",
-				FileSize: 1048576,
-				IsCover:  true,
-				PublicOK: true,
-			},
-		},
-		Timeline: []TimelineEvent{
-			{Status: "DIAJUKAN", Title: "Laporan Diajukan", Note: "Laporan berhasil diterima oleh sistem", CreatedAt: time.Now().Add(-24 * time.Hour)},
-			{Status: "DITERUSKAN", Title: "Diteruskan ke Dinas Bina Marga & SDA", Note: "Hasil klasifikasi otomatis AI", CreatedAt: time.Now().Add(-20 * time.Hour)},
-			{Status: "DIPROSES", Title: "Sedang Ditangani oleh Tim Reaksi Cepat", Note: "Material aspal hotmix sedang dimobilisasi ke lokasi", CreatedAt: time.Now().Add(-2 * time.Hour)},
-		},
-		CreatedAt: time.Now().Add(-24 * time.Hour),
-		UpdatedAt: time.Now().Add(-2 * time.Hour),
-	}
-	r.reports[sample.Code] = sample
 }
 
 func (r *repository) SaveReport(ctx context.Context, report *Report) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
 	if report.ID == "" {
 		report.ID = uuid.New().String()
 	}
 	report.CreatedAt = time.Now()
 	report.UpdatedAt = time.Now()
+
+	if r.db != nil && r.db.Pool != nil {
+		query := `INSERT INTO app.reports (id, code, reporter_id, title, description, voice_note_url, voice_note_transcript, lat, lng, address_detail, visibility, status, district_id, village_id, opd_id, category_id, created_at, updated_at) 
+		          VALUES ($1, $2, NULLIF($3,'')::uuid, $4, $5, $6, $7, $8, $9, $10, $11, $12, NULLIF($13,'')::uuid, NULLIF($14,'')::uuid, NULLIF($15,'')::uuid, NULLIF($16,'')::uuid, $17, $18)`
+		_, err := r.db.Pool.Exec(ctx, query, report.ID, report.Code, report.ReporterID, report.Title, report.Description, report.VoiceNoteURL, report.VoiceNoteTranscript, report.Lat, report.Lng, report.AddressDetail, string(report.Visibility), string(report.Status), report.DistrictID, report.VillageID, report.OpdID, report.CategoryID, report.CreatedAt, report.UpdatedAt)
+		if err != nil {
+			return err
+		}
+		for _, att := range report.Attachments {
+			_, _ = r.db.Pool.Exec(ctx, `INSERT INTO app.report_attachments (id, report_id, file_url, mime_type, file_size, is_public_ok, is_cover, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, now())`, uuid.New().String(), report.ID, att.FileURL, att.MimeType, att.FileSize, att.PublicOK, att.IsCover)
+		}
+		return nil
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.reports[report.Code] = report
 	return nil
 }
 
 func (r *repository) GetReportByCode(ctx context.Context, code string) (*Report, error) {
+	if r.db != nil && r.db.Pool != nil {
+		query := `SELECT r.id, r.code, COALESCE(r.reporter_id::text,''), COALESCE(p.display_name,'Warga'), 
+		          COALESCE(r.issue_id::text,''), COALESCE(r.opd_id::text,''), COALESCE(o.name,''), 
+		          COALESCE(r.category_id::text,''), COALESCE(c.name,''), 
+		          COALESCE(r.district_id::text,''), COALESCE(d.name,''), 
+		          COALESCE(r.village_id::text,''), COALESCE(v.name,''), 
+		          COALESCE(r.title,''), r.description, COALESCE(r.voice_note_url,''), COALESCE(r.voice_note_transcript,''), 
+		          r.lat, r.lng, COALESCE(r.address_detail,''), r.visibility, r.status, r.created_at, r.updated_at 
+		          FROM app.reports r 
+		          LEFT JOIN app.profiles p ON r.reporter_id = p.id 
+		          LEFT JOIN app.opds o ON r.opd_id = o.id 
+		          LEFT JOIN app.categories c ON r.category_id = c.id 
+		          LEFT JOIN app.districts d ON r.district_id = d.id 
+		          LEFT JOIN app.villages v ON r.village_id = v.id 
+		          WHERE r.code = $1`
+		var rep Report
+		var visStr, statusStr string
+		err := r.db.Pool.QueryRow(ctx, query, code).Scan(&rep.ID, &rep.Code, &rep.ReporterID, &rep.ReporterName, &rep.IssueID, &rep.OpdID, &rep.OpdName, &rep.CategoryID, &rep.CategoryName, &rep.DistrictID, &rep.DistrictName, &rep.VillageID, &rep.VillageName, &rep.Title, &rep.Description, &rep.VoiceNoteURL, &rep.VoiceNoteTranscript, &rep.Lat, &rep.Lng, &rep.AddressDetail, &visStr, &statusStr, &rep.CreatedAt, &rep.UpdatedAt)
+		if err == nil {
+			rep.Visibility = Visibility(visStr)
+			rep.Status = ReportStatus(statusStr)
+			aRows, aErr := r.db.Pool.Query(ctx, `SELECT id, file_url, mime_type, file_size, is_cover, is_public_ok FROM app.report_attachments WHERE report_id = $1`, rep.ID)
+			if aErr == nil {
+				for aRows.Next() {
+					var att Attachment
+					if err := aRows.Scan(&att.ID, &att.FileURL, &att.MimeType, &att.FileSize, &att.IsCover, &att.PublicOK); err == nil {
+						rep.Attachments = append(rep.Attachments, att)
+					}
+				}
+				aRows.Close()
+			}
+			rep.Timeline = append(rep.Timeline, TimelineEvent{
+				Status:    string(rep.Status),
+				Title:     "Laporan " + string(rep.Status),
+				CreatedAt: rep.CreatedAt,
+			})
+			return &rep, nil
+		}
+	}
+
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	report, ok := r.reports[code]
@@ -96,6 +109,26 @@ func (r *repository) GetReportByCode(ctx context.Context, code string) (*Report,
 }
 
 func (r *repository) ListReportsByReporter(ctx context.Context, reporterID string) ([]Report, error) {
+	if r.db != nil && r.db.Pool != nil {
+		query := `SELECT r.id, r.code, COALESCE(r.title,''), r.description, r.visibility, r.status, r.created_at, r.updated_at 
+		          FROM app.reports r WHERE r.reporter_id = $1::uuid ORDER BY r.created_at DESC`
+		rows, err := r.db.Pool.Query(ctx, query, reporterID)
+		if err == nil {
+			defer rows.Close()
+			var list []Report
+			for rows.Next() {
+				var rep Report
+				var visStr, statusStr string
+				if err := rows.Scan(&rep.ID, &rep.Code, &rep.Title, &rep.Description, &visStr, &statusStr, &rep.CreatedAt, &rep.UpdatedAt); err == nil {
+					rep.Visibility = Visibility(visStr)
+					rep.Status = ReportStatus(statusStr)
+					list = append(list, rep)
+				}
+			}
+			return list, nil
+		}
+	}
+
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	var list []Report
@@ -108,6 +141,25 @@ func (r *repository) ListReportsByReporter(ctx context.Context, reporterID strin
 }
 
 func (r *repository) ListOpenReports(ctx context.Context) ([]Report, error) {
+	if r.db != nil && r.db.Pool != nil {
+		query := `SELECT r.id, r.code, COALESCE(r.title,''), r.description, r.lat, r.lng, COALESCE(r.district_id::text,''), r.status 
+		          FROM app.reports r ORDER BY r.created_at DESC LIMIT 50`
+		rows, err := r.db.Pool.Query(ctx, query)
+		if err == nil {
+			defer rows.Close()
+			var list []Report
+			for rows.Next() {
+				var rep Report
+				var statusStr string
+				if err := rows.Scan(&rep.ID, &rep.Code, &rep.Title, &rep.Description, &rep.Lat, &rep.Lng, &rep.DistrictID, &statusStr); err == nil {
+					rep.Status = ReportStatus(statusStr)
+					list = append(list, rep)
+				}
+			}
+			return list, nil
+		}
+	}
+
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	var list []Report
@@ -118,6 +170,12 @@ func (r *repository) ListOpenReports(ctx context.Context) ([]Report, error) {
 }
 
 func (r *repository) UpdateReportStatus(ctx context.Context, code string, status ReportStatus, note string) error {
+	if r.db != nil && r.db.Pool != nil {
+		query := `UPDATE app.reports SET status = $2, updated_at = now() WHERE code = $1`
+		_, err := r.db.Pool.Exec(ctx, query, code, string(status))
+		return err
+	}
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	rep, ok := r.reports[code]
@@ -136,6 +194,15 @@ func (r *repository) UpdateReportStatus(ctx context.Context, code string, status
 }
 
 func (r *repository) SaveFeedback(ctx context.Context, code string, confirmed bool, note string) error {
+	if r.db != nil && r.db.Pool != nil {
+		newStatus := "SELESAI"
+		if !confirmed {
+			newStatus = "DIBUKA_ULANG"
+		}
+		_, err := r.db.Pool.Exec(ctx, `UPDATE app.reports SET status = $2, updated_at = now() WHERE code = $1`, code, newStatus)
+		return err
+	}
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	rep, ok := r.reports[code]

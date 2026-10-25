@@ -24,6 +24,21 @@ function initialsOf(name: string): string {
 
 export async function getSessionUser(): Promise<SessionUser | null> {
   const jar = await cookies();
+  const profileRaw = jar.get("govra_profile")?.value;
+  if (profileRaw) {
+    try {
+      const p = JSON.parse(decodeURIComponent(profileRaw));
+      const name = p.display_name || FALLBACK_NAME;
+      const role = parseRole(p.role) ?? "pelapor";
+      return {
+        name,
+        email: p.email,
+        initials: initialsOf(name),
+        role,
+        opdName: p.opd_name ?? null,
+      };
+    } catch {}
+  }
   const role = parseRole(jar.get(SESSION_COOKIE)?.value);
   if (!role) {
     return null;

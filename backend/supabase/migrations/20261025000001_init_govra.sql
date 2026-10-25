@@ -467,3 +467,64 @@ VALUES
     ('SLA_HOURS_HIGH', '72', 'JAM', 'Batas respon tanggapan pertama untuk isu tinggi'),
     ('SLA_HOURS_NORMAL', '120', 'JAM', 'Batas respon tanggapan pertama untuk isu normal')
 ON CONFLICT (key) DO NOTHING;
+
+
+INSERT INTO app.profiles (id, email, password_hash, display_name, role, opd_id, status, phone)
+VALUES
+    ('a0000000-0000-0000-0000-000000000001', 'admin@kotacontoh.go.id', '$2a$10$pVl/dR63gsumKnvGeIH5IeppTQzigYEcIPyxFZxvVkOmpBcliRudu', 'Administrator Utama', 'admin', NULL, 'ACTIVE', '081100000001'),
+    ('a0000000-0000-0000-0000-000000000002', 'walikota@kotacontoh.go.id', '$2a$10$pVl/dR63gsumKnvGeIH5IeppTQzigYEcIPyxFZxvVkOmpBcliRudu', 'Bapak Wali Kota', 'kepala_daerah', NULL, 'ACTIVE', '081100000002'),
+    ('a0000000-0000-0000-0000-000000000003', 'dbmsda@kotacontoh.go.id', '$2a$10$pVl/dR63gsumKnvGeIH5IeppTQzigYEcIPyxFZxvVkOmpBcliRudu', 'Admin Dinas Bina Marga & SDA', 'dinas', 'e0000000-0000-0000-0000-000000000001', 'ACTIVE', '081100000003'),
+    ('a0000000-0000-0000-0000-000000000004', 'dlhk@kotacontoh.go.id', '$2a$10$pVl/dR63gsumKnvGeIH5IeppTQzigYEcIPyxFZxvVkOmpBcliRudu', 'Admin Dinas Lingkungan Hidup', 'dinas', 'e0000000-0000-0000-0000-000000000002', 'ACTIVE', '081100000004'),
+    ('a0000000-0000-0000-0000-000000000005', 'dishub@kotacontoh.go.id', '$2a$10$pVl/dR63gsumKnvGeIH5IeppTQzigYEcIPyxFZxvVkOmpBcliRudu', 'Admin Dinas Perhubungan', 'dinas', 'e0000000-0000-0000-0000-000000000003', 'ACTIVE', '081100000005'),
+    ('a0000000-0000-0000-0000-000000000006', 'warga@example.com', '$2a$10$pVl/dR63gsumKnvGeIH5IeppTQzigYEcIPyxFZxvVkOmpBcliRudu', 'Ahmad Dahlan (Warga)', 'pelapor', NULL, 'ACTIVE', '081100000006'),
+    ('a0000000-0000-0000-0000-000000000007', 'rina.pelapor@gmail.com', '$2a$10$pVl/dR63gsumKnvGeIH5IeppTQzigYEcIPyxFZxvVkOmpBcliRudu', 'Rina Pelapor', 'pelapor', NULL, 'ACTIVE', '081100000007'),
+    ('a0000000-0000-0000-0000-000000000008', 'bmsda@example.org', '$2a$10$pVl/dR63gsumKnvGeIH5IeppTQzigYEcIPyxFZxvVkOmpBcliRudu', 'Admin Bina Marga (Demo)', 'dinas', 'e0000000-0000-0000-0000-000000000001', 'ACTIVE', '081100000008'),
+    ('a0000000-0000-0000-0000-000000000009', 'admin@example.org', '$2a$10$pVl/dR63gsumKnvGeIH5IeppTQzigYEcIPyxFZxvVkOmpBcliRudu', 'Admin Govra (Demo)', 'admin', NULL, 'ACTIVE', '081100000009')
+ON CONFLICT (email) DO NOTHING;
+
+INSERT INTO app.programs (id, region_id, opd_id, goal_id, district_id, code, name, description, budget_allocated, budget_spent, start_date, end_date, status, progress_percent, expected_percent, proposal_status, proposed_by, cover_image_url)
+VALUES
+    ('e1000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', 'e0000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000001', 'PRG-2026-001', 'Rekonstruksi Jalan Arteri & Saluran Utama Sudirman', 'Peninggian badan jalan dan perbaikan gorong-gorong beton untuk pencegahan genangan', 4500000000, 2700000000, '2026-01-10', '2026-11-30', 'BERJALAN', 65.00, 60.00, 'APPROVED', 'a0000000-0000-0000-0000-000000000002', 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6'),
+    ('e1000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000001', 'e0000000-0000-0000-0000-000000000002', 'd0000000-0000-0000-0000-000000000003', 'b0000000-0000-0000-0000-000000000002', 'PRG-2026-002', 'Modernisasi TPS 3R & Pengadaan Armada Truk Listrik', 'Pengembangan tempat pengolahan sampah mandiri terpadu tingkat kecamatan', 2800000000, 1120000000, '2026-02-01', '2026-09-30', 'BERJALAN', 40.00, 45.00, 'APPROVED', 'a0000000-0000-0000-0000-000000000002', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b'),
+    ('e1000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001', 'e0000000-0000-0000-0000-000000000003', 'd0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000003', 'PRG-2026-003', 'Penerangan Jalan Pintar (Smart PJU) Berbasis IoT', 'Instalasi 400 titik tiang smart lighting dengan sensor otomatis dan CCTV monitoring', 1900000000, 1520000000, '2026-01-15', '2026-06-30', 'BERJALAN', 80.00, 75.00, 'APPROVED', 'a0000000-0000-0000-0000-000000000002', 'https://images.unsplash.com/photo-1519501025264-65ba15a82390')
+ON CONFLICT (code) DO NOTHING;
+
+INSERT INTO app.program_milestones (id, program_id, title, target_date, status)
+VALUES
+    ('e2000000-0000-0000-0000-000000000001', 'e1000000-0000-0000-0000-000000000001', 'Penyelesaian Drainase Sisi Barat', '2026-04-15', 'COMPLETED'),
+    ('e2000000-0000-0000-0000-000000000002', 'e1000000-0000-0000-0000-000000000001', 'Pemasangan Box Culvert Utama', '2026-07-30', 'IN_PROGRESS'),
+    ('e2000000-0000-0000-0000-000000000003', 'e1000000-0000-0000-0000-000000000001', 'Pengaspalan Hotmix Tahap Akhir', '2026-11-15', 'PENDING'),
+    ('e2000000-0000-0000-0000-000000000004', 'e1000000-0000-0000-0000-000000000002', 'Konstruksi Gedung Pemilah Sampah', '2026-05-30', 'IN_PROGRESS'),
+    ('e2000000-0000-0000-0000-000000000005', 'e1000000-0000-0000-0000-000000000003', 'Pemasangan Tiang & Modul IoT', '2026-04-30', 'COMPLETED')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO app.program_updates (id, program_id, opd_id, title, description, photos_json, progress_delta, created_by)
+VALUES
+    ('e3000000-0000-0000-0000-000000000001', 'e1000000-0000-0000-0000-000000000001', 'e0000000-0000-0000-0000-000000000001', 'Pengecoran Beton Gorong-gorong Tahap II Selesai', 'Pengerjaan sisi barat Jl. Sudirman mencapai 65%. Arus lalu lintas tetap dibuka 1 lajur dengan pengawalan petugas.', '["https://images.unsplash.com/photo-1541888946425-d0fbb18086f6"]'::jsonb, 15.00, 'a0000000-0000-0000-0000-000000000003'),
+    ('e3000000-0000-0000-0000-000000000002', 'e1000000-0000-0000-0000-000000000003', 'e0000000-0000-0000-0000-000000000003', 'Uji Coba Sistem Otomatisasi Smart PJU', 'Sebanyak 320 titik lampu sudah terintegrasi ke Command Center Dishub.', '["https://images.unsplash.com/photo-1519501025264-65ba15a82390"]'::jsonb, 25.00, 'a0000000-0000-0000-0000-000000000005')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO app.issues (id, code, opd_id, category_id, district_id, village_id, title, summary, status, urgency, safety_risk, center_lat, center_lng, address_detail, cover_photo_url, unique_reporters_count, sla_due_at)
+VALUES
+    ('i0000000-0000-0000-0000-000000000001', 'ISU-2026-0001', 'e0000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'Jalan Berlubang di Dekat Bundaran Patung Kuda', 'Lubang sedalam 15cm membahayakan pengendara roda dua terutama saat hujan', 'DIPROSES', 'TINGGI', 'sedang', -6.2088000, 106.8456000, 'Jl. Medan Merdeka Barat No. 12', 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6', 8, now() + interval '48 hours'),
+    ('i0000000-0000-0000-0000-000000000002', 'ISU-2026-0002', 'e0000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000003', 'b0000000-0000-0000-0000-000000000002', 'c0000000-0000-0000-0000-000000000003', 'Tumpukan Sampah Menumpuk di Bantaran Kali Ancol', 'Sampah liar menumpuk dan menimbulkan bau tidak sedap serta menyumbat aliran air', 'DITERUSKAN', 'URGENT', 'tinggi', -6.1550000, 106.8350000, 'Bantaran Kali Ancol Samping Jembatan Merah', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b', 14, now() + interval '18 hours'),
+    ('i0000000-0000-0000-0000-000000000003', 'ISU-2026-0003', 'e0000000-0000-0000-0000-000000000003', 'f0000000-0000-0000-0000-000000000004', 'b0000000-0000-0000-0000-000000000003', 'c0000000-0000-0000-0000-000000000005', 'Lampu PJU Padam di Sepanjang Koridor Cilandak', 'Sebanyak 6 tiang penerangan padam total menyebabkan area gelap rawan kecelakaan', 'MENUNGGU_VERIFIKASI', 'NORMAL', 'rendah', -6.2350000, 106.8350000, 'Jl. TB Simatupang Koridor Cilandak', 'https://images.unsplash.com/photo-1519501025264-65ba15a82390', 3, now() + interval '96 hours')
+ON CONFLICT (code) DO NOTHING;
+
+INSERT INTO app.issue_events (id, issue_id, author_id, from_status, to_status, note, evidence_photos)
+VALUES
+    ('i1000000-0000-0000-0000-000000000001', 'i0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', 'MENUNGGU_VERIFIKASI', 'DITERUSKAN', 'Isu telah diverifikasi dan diteruskan ke Dinas Bina Marga & SDA', '[]'::jsonb),
+    ('i1000000-0000-0000-0000-000000000002', 'i0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000003', 'DITERUSKAN', 'DIPROSES', 'Petugas UPT Pemeliharaan Jalan sedang melakukan penambalan aspal coldmix', '["https://images.unsplash.com/photo-1541888946425-d0fbb18086f6"]'::jsonb)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO app.reports (id, code, issue_id, reporter_id, opd_id, category_id, district_id, village_id, title, description, address_text, lat, lng, visibility, status)
+VALUES
+    ('r0000000-0000-0000-0000-000000000001', 'LAP-2026-0001', 'i0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000006', 'e0000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'Aspal Amblas di Depan Halte', 'Aspal amblas sekitar kedalaman 15cm sangat berbahaya', 'Jl. Medan Merdeka Barat No. 12', -6.2088000, 106.8456000, 'PUBLIC', 'IN_PROGRESS'),
+    ('r0000000-0000-0000-0000-000000000002', 'LAP-2026-0002', 'i0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000007', 'e0000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000003', 'b0000000-0000-0000-0000-000000000002', 'c0000000-0000-0000-0000-000000000003', 'Tumpukan Sampah Bau Menyengat di Dekat Pasar', 'Banyak sampah plastik dan sisa makanan menumpuk belum diangkut', 'Bantaran Kali Ancol', -6.1550000, 106.8350000, 'PUBLIC', 'VERIFIED')
+ON CONFLICT (code) DO NOTHING;
+
+INSERT INTO app.feeds (id, author_id, report_id, issue_id, content, media_type, media_url, likes_count, shares_count)
+VALUES
+    ('fd000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000006', 'r0000000-0000-0000-0000-000000000001', 'i0000000-0000-0000-0000-000000000001', 'Jalan berlubang di Jl. Medan Merdeka Barat sudah mulai ditambal oleh Dinas Bina Marga! Terima kasih respon cepatnya.', 'IMAGE', 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6', 24, 7),
+    ('fd000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000007', 'r0000000-0000-0000-0000-000000000002', 'i0000000-0000-0000-0000-000000000002', 'Warga Kali Ancol kompak bantu petugas kebersihan membersihkan bantaran sungai pagi ini.', 'IMAGE', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b', 42, 15)
+ON CONFLICT (id) DO NOTHING;

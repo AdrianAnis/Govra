@@ -76,7 +76,7 @@ func New(cfg *config.Config) (*Application, error) {
 	feedHandler := feed.NewHandler(feedSvc)
 	feedHandler.RegisterRoutes(fiberApp)
 
-	adminSvc := admin.NewService()
+	adminSvc := admin.NewService(database)
 	adminHandler := admin.NewHandler(adminSvc)
 	adminHandler.RegisterRoutes(fiberApp)
 

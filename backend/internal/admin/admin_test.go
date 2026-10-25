@@ -12,7 +12,7 @@ import (
 )
 
 func setupAdminApp() (*fiber.App, admin.Service, *pauth.TokenManager) {
-	svc := admin.NewService()
+	svc := admin.NewService(nil)
 	handler := admin.NewHandler(svc)
 	tm := pauth.NewTokenManager("test-jwt-secret-key-at-least-32-chars-long")
 

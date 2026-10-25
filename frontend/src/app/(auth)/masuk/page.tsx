@@ -12,7 +12,6 @@ export const metadata: Metadata = { title: "Masuk" };
 export default async function LoginPage({ searchParams }: PageProps<"/masuk">) {
   const raw = (await searchParams).lanjut;
   const next = safeNext(Array.isArray(raw) ? raw[0] : raw);
-  const demo = process.env.NODE_ENV !== "production";
 
   return (
     <AuthCard
@@ -27,10 +26,10 @@ export default async function LoginPage({ searchParams }: PageProps<"/masuk">) {
     >
       <form
         className="flex flex-col gap-4"
-        action={demo ? "/api/mock/masuk" : undefined}
-        method={demo ? "post" : undefined}
+        action="/api/auth/masuk"
+        method="post"
       >
-        {demo && <input type="hidden" name="lanjut" value={next} />}
+        <input type="hidden" name="lanjut" value={next} />
         <FormField
           id="email"
           name="email"
@@ -49,7 +48,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/masuk">) {
             Lupa Kata Sandi?
           </AuthLink>
         </div>
-        <Button type={demo ? "submit" : "button"} size="lg">
+        <Button type="submit" size="lg">
           Masuk
         </Button>
       </form>

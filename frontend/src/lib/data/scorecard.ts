@@ -8,10 +8,30 @@ export interface IndicatorItemFilters extends PageParams {
 }
 
 export async function getScorecard(): Promise<Schema<"Scorecard">> {
+  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  try {
+    const res = await fetch(`${apiBase}/scorecard`, { next: { revalidate: 60 } });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.period) {
+        return data;
+      }
+    }
+  } catch {}
   return SCORECARD;
 }
 
 export async function getMethodology(): Promise<Schema<"Methodology">> {
+  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  try {
+    const res = await fetch(`${apiBase}/methodology`, { next: { revalidate: 3600 } });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.indicators) {
+        return data;
+      }
+    }
+  } catch {}
   return METHODOLOGY;
 }
 

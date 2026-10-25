@@ -6,6 +6,14 @@ import type { Schema } from "@/lib/schema";
 
 type OpdSeed = (typeof OPDS)[number];
 
+interface ApiOpd {
+  id: string;
+  code: string;
+  name: string;
+  slug: string;
+  total_proker?: number;
+}
+
 const CLOSED_STATUSES: readonly Schema<"IssueStatus">[] = ["SELESAI", "DITOLAK"];
 
 function summarize({ ref, categories }: OpdSeed): Schema<"OpdSummary"> {
@@ -30,22 +38,97 @@ function issueStats(opdCode: string): Schema<"StatusCount">[] {
 }
 
 export async function getRegion(): Promise<Schema<"Region">> {
+  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  try {
+    const res = await fetch(`${apiBase}/region`, { next: { revalidate: 60 } });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.name) {
+        return {
+          name: data.name,
+          head_label: data.head_label || REGION.head_label,
+          is_simulation: REGION.is_simulation,
+          period: REGION.period,
+          bounds: REGION.bounds,
+        };
+      }
+    }
+  } catch {}
   return REGION;
 }
 
 export async function getDistricts(): Promise<Schema<"DistrictList">> {
+  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  try {
+    const res = await fetch(`${apiBase}/districts`, { next: { revalidate: 60 } });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        return { items: data };
+      }
+    }
+  } catch {}
   return { items: DISTRICTS };
 }
 
 export async function getGoals(): Promise<Schema<"GoalList">> {
+  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  try {
+    const res = await fetch(`${apiBase}/goals`, { next: { revalidate: 60 } });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        return { items: data };
+      }
+    }
+  } catch {}
   return { items: GOALS };
 }
 
 export async function getOpds(): Promise<Schema<"OpdSummaryList">> {
+  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  try {
+    const res = await fetch(`${apiBase}/opds`, { next: { revalidate: 60 } });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        return {
+          items: data.map((o: ApiOpd) => ({
+            code: o.code,
+            name: o.name,
+            slug: o.slug,
+            categories: [],
+            program_count: o.total_proker ?? 0,
+            open_issue_count: 0,
+          })),
+        };
+      }
+    }
+  } catch {}
   return { items: OPDS.map(summarize) };
 }
 
 export async function getOpd(slug: string): Promise<Schema<"OpdProfile"> | null> {
+  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  try {
+    const res = await fetch(`${apiBase}/opds/${encodeURIComponent(slug)}`, { next: { revalidate: 60 } });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.code) {
+        return {
+          code: data.code,
+          name: data.name,
+          slug: data.slug,
+          categories: [],
+          program_count: data.total_proker ?? 0,
+          open_issue_count: 0,
+          indicators: [],
+          issue_stats: [],
+        };
+      }
+    }
+  } catch {}
+
   const opd = OPDS.find((item) => item.ref.slug === slug);
   if (!opd) {
     return null;

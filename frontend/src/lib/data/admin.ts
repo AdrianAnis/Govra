@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { currentTime } from "@/lib/clock";
 import {
   MODERATION_LABEL,
@@ -50,7 +51,7 @@ function pending(): Schema<"VerificationItem">[] {
       transfer_note: null,
     }),
   );
-  const transfer = PUBLIC_ISSUES.filter((issue) => issue.status === "DIALIHKAN" && !decided.has(issue.id)).map(
+  const transfer = PUBLIC_ISSUES.filter((issue: Issue) => issue.status === "DIALIHKAN" && !decided.has(issue.id)).map(
     (issue: Issue): Schema<"VerificationItem"> => ({
       issue_id: issue.id,
       kind: "PENGALIHAN",
@@ -67,6 +68,26 @@ function pending(): Schema<"VerificationItem">[] {
 }
 
 export async function getAdminOverview(): Promise<Schema<"AdminOverview">> {
+  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  try {
+    const jar = await cookies();
+    const token = jar.get("govra_token")?.value;
+    const res = await fetch(`${apiBase}/admin/overview`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      next: { revalidate: 10 },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        pending_verification: data.pending_verification ?? 0,
+        pending_transfer: data.pending_transfer ?? 0,
+        dead_letter_jobs: data.dead_letter_jobs ?? 0,
+        reports_today: data.reports_today ?? 0,
+        active_agency_users: data.active_agency_users ?? 0,
+      };
+    }
+  } catch {}
+
   const queue = pending();
   const store = adminStore();
   const today = currentTime().toISOString().slice(0, 10);
