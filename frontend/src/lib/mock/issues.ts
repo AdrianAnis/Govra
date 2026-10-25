@@ -157,8 +157,14 @@ function buildIssue(seed: IssueSeed, index: number): Schema<"IssueDetail"> {
 
 const UNVERIFIED: readonly Status[] = ["DIAJUKAN", "MENUNGGU_VERIFIKASI"];
 
-export const PUBLIC_ISSUES: Schema<"IssueDetail">[] = ISSUE_SEEDS.map(buildIssue).filter(
+const ALL_ISSUES: Schema<"IssueDetail">[] = ISSUE_SEEDS.map(buildIssue);
+
+export const PUBLIC_ISSUES: Schema<"IssueDetail">[] = ALL_ISSUES.filter(
   (issue) => !UNVERIFIED.includes(issue.status),
+);
+
+export const UNVERIFIED_ISSUES: Schema<"IssueDetail">[] = ALL_ISSUES.filter((issue) =>
+  UNVERIFIED.includes(issue.status),
 );
 
 export function toSummary(issue: Schema<"IssueDetail">): Schema<"IssueSummary"> {

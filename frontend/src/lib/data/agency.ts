@@ -1,4 +1,5 @@
 import { currentTime } from "@/lib/clock";
+import type { Outcome } from "@/lib/data/outcome";
 import { paginate, type PageParams } from "@/lib/data/paging";
 import {
   REJECTION_LABEL,
@@ -22,8 +23,6 @@ export interface AgencyFilters extends PageParams {
   status?: Status | undefined;
   urgency?: Urgency | undefined;
 }
-
-type Outcome<T> = { ok: true; value: T } | { ok: false; status: number; message: string };
 
 const MS_PER_HOUR = 3_600_000;
 const NO_DUE = Number.MAX_SAFE_INTEGER;
