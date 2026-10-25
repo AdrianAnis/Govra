@@ -37,10 +37,15 @@ function issueStats(opdCode: string): Schema<"StatusCount">[] {
   return [...counts].map(([status, count]) => ({ status, count }));
 }
 
+const BFF_KEY = process.env.BFF_SHARED_KEY || "413016c9d4970e8030a87654f65c11321dd77c97ecf9f4d95d1beca837faddb2";
+
 export async function getRegion(): Promise<Schema<"Region">> {
   const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
   try {
-    const res = await fetch(`${apiBase}/region`, { next: { revalidate: 60 } });
+    const res = await fetch(`${apiBase}/region`, {
+      headers: { "X-BFF-Key": BFF_KEY },
+      next: { revalidate: 60 },
+    });
     if (res.ok) {
       const data = await res.json();
       if (data && data.name) {
@@ -60,7 +65,10 @@ export async function getRegion(): Promise<Schema<"Region">> {
 export async function getDistricts(): Promise<Schema<"DistrictList">> {
   const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
   try {
-    const res = await fetch(`${apiBase}/districts`, { next: { revalidate: 60 } });
+    const res = await fetch(`${apiBase}/districts`, {
+      headers: { "X-BFF-Key": BFF_KEY },
+      next: { revalidate: 60 },
+    });
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
@@ -74,7 +82,10 @@ export async function getDistricts(): Promise<Schema<"DistrictList">> {
 export async function getGoals(): Promise<Schema<"GoalList">> {
   const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
   try {
-    const res = await fetch(`${apiBase}/goals`, { next: { revalidate: 60 } });
+    const res = await fetch(`${apiBase}/goals`, {
+      headers: { "X-BFF-Key": BFF_KEY },
+      next: { revalidate: 60 },
+    });
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
@@ -88,7 +99,10 @@ export async function getGoals(): Promise<Schema<"GoalList">> {
 export async function getOpds(): Promise<Schema<"OpdSummaryList">> {
   const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
   try {
-    const res = await fetch(`${apiBase}/opds`, { next: { revalidate: 60 } });
+    const res = await fetch(`${apiBase}/opds`, {
+      headers: { "X-BFF-Key": BFF_KEY },
+      next: { revalidate: 60 },
+    });
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
@@ -111,7 +125,10 @@ export async function getOpds(): Promise<Schema<"OpdSummaryList">> {
 export async function getOpd(slug: string): Promise<Schema<"OpdProfile"> | null> {
   const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
   try {
-    const res = await fetch(`${apiBase}/opds/${encodeURIComponent(slug)}`, { next: { revalidate: 60 } });
+    const res = await fetch(`${apiBase}/opds/${encodeURIComponent(slug)}`, {
+      headers: { "X-BFF-Key": BFF_KEY },
+      next: { revalidate: 60 },
+    });
     if (res.ok) {
       const data = await res.json();
       if (data && data.code) {

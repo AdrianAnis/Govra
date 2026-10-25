@@ -2,6 +2,8 @@ import { matchesQuery, paginate, type PageParams } from "@/lib/data/paging";
 import { PROGRAM_DETAILS } from "@/lib/mock/programs";
 import type { Schema } from "@/lib/schema";
 
+const BFF_KEY = process.env.BFF_SHARED_KEY || "413016c9d4970e8030a87654f65c11321dd77c97ecf9f4d95d1beca837faddb2";
+
 export interface ProgramFilters extends PageParams {
   q?: string | undefined;
   opd?: string | undefined;
@@ -127,7 +129,10 @@ function mapApiToDetail(item: ApiProgram): Program {
 export async function listPrograms(filters: ProgramFilters = {}): Promise<Schema<"ProgramList">> {
   const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
   try {
-    const res = await fetch(`${apiBase}/programs`, { next: { revalidate: 10 } });
+    const res = await fetch(`${apiBase}/programs`, {
+      headers: { "X-BFF-Key": BFF_KEY },
+      next: { revalidate: 10 },
+    });
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
@@ -144,7 +149,10 @@ export async function listPrograms(filters: ProgramFilters = {}): Promise<Schema
 export async function getProgram(code: string): Promise<Program | null> {
   const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
   try {
-    const res = await fetch(`${apiBase}/programs/${encodeURIComponent(code)}`, { next: { revalidate: 10 } });
+    const res = await fetch(`${apiBase}/programs/${encodeURIComponent(code)}`, {
+      headers: { "X-BFF-Key": BFF_KEY },
+      next: { revalidate: 10 },
+    });
     if (res.ok) {
       const data = await res.json();
       if (data && data.code) {

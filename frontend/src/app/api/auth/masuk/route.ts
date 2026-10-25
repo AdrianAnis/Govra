@@ -1,6 +1,7 @@
 import { type Role, ROLE_HOME, safeNext, SESSION_COOKIE } from "@/lib/session";
 
 const SEE_OTHER_STATUS = 303;
+const BFF_KEY = process.env.BFF_SHARED_KEY || "413016c9d4970e8030a87654f65c11321dd77c97ecf9f4d95d1beca837faddb2";
 
 function mapRole(role: string): Role {
   if (role === "admin" || role === "kepala_daerah") {
@@ -13,18 +14,38 @@ function mapRole(role: string): Role {
 }
 
 export async function POST(request: Request) {
-  const form = await request.formData();
-  const email = String(form.get("email") ?? "").trim();
-  const password = String(form.get("password") ?? "");
-  const raw = form.get("lanjut");
-  const next = safeNext(typeof raw === "string" ? raw : null);
+  const contentType = request.headers.get("content-type") || "";
+  let email = "";
+  let password = "";
+  let next = "/";
+  const isJson = contentType.includes("application/json");
+
+  if (isJson) {
+    try {
+      const json = await request.json();
+      email = String(json.email || json.identifier || "").trim();
+      password = String(json.password || "");
+      next = safeNext(typeof json.lanjut === "string" ? json.lanjut : null);
+    } catch {}
+  } else {
+    try {
+      const form = await request.formData();
+      email = String(form.get("email") ?? "").trim();
+      password = String(form.get("password") ?? "");
+      const raw = form.get("lanjut");
+      next = safeNext(typeof raw === "string" ? raw : null);
+    } catch {}
+  }
 
   const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
 
   try {
     const res = await fetch(`${apiBase}/auth/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-BFF-Key": BFF_KEY,
+      },
       body: JSON.stringify({ email, password }),
     });
 

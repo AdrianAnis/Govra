@@ -37,7 +37,7 @@ func TestAuthRegisterAndLogin(t *testing.T) {
 	app, _, _ := setupTestApp()
 
 	regBody, _ := json.Marshal(auth.RegisterRequest{
-		Email:       "warga@example.com",
+		Email:       "warga.baru@example.com",
 		Password:    "password123",
 		DisplayName: "Ahmad Dahlan",
 		Phone:       "081234567890",
@@ -53,7 +53,7 @@ func TestAuthRegisterAndLogin(t *testing.T) {
 	}
 
 	loginBody, _ := json.Marshal(auth.LoginRequest{
-		Email:    "warga@example.com",
+		Email:    "warga.baru@example.com",
 		Password: "password123",
 	})
 	loginReq := httptest.NewRequest(http.MethodPost, "/auth/login", bytes.NewReader(loginBody))

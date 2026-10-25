@@ -2,6 +2,8 @@ import { matchesQuery, paginate, type PageParams } from "@/lib/data/paging";
 import { PUBLIC_ISSUES, toSummary } from "@/lib/mock/issues";
 import type { Schema } from "@/lib/schema";
 
+const BFF_KEY = process.env.BFF_SHARED_KEY || "413016c9d4970e8030a87654f65c11321dd77c97ecf9f4d95d1beca837faddb2";
+
 export interface IssueFilters extends PageParams {
   q?: string | undefined;
   opd?: string | undefined;
@@ -116,7 +118,10 @@ function mapApiToIssue(item: ApiIssue): Issue {
 export async function listIssues(filters: IssueFilters = {}): Promise<Schema<"IssueList">> {
   const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
   try {
-    const res = await fetch(`${apiBase}/issues`, { next: { revalidate: 10 } });
+    const res = await fetch(`${apiBase}/issues`, {
+      headers: { "X-BFF-Key": BFF_KEY },
+      next: { revalidate: 10 },
+    });
     if (res.ok) {
       const data = await res.json();
       const rawList = Array.isArray(data) ? data : data?.items;
@@ -137,7 +142,10 @@ export async function listIssues(filters: IssueFilters = {}): Promise<Schema<"Is
 export async function getIssue(id: string): Promise<Issue | null> {
   const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
   try {
-    const res = await fetch(`${apiBase}/issues/${encodeURIComponent(id)}`, { next: { revalidate: 10 } });
+    const res = await fetch(`${apiBase}/issues/${encodeURIComponent(id)}`, {
+      headers: { "X-BFF-Key": BFF_KEY },
+      next: { revalidate: 10 },
+    });
     if (res.ok) {
       const data = await res.json();
       if (data && data.id) {

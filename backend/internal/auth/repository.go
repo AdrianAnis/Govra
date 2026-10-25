@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 	"govra/internal/platform/db"
 )
 
@@ -29,10 +30,96 @@ type repository struct {
 }
 
 func NewRepository(database *db.Database) Repository {
+	users := make(map[string]*User)
+	otps := make(map[string]*OTPVerification)
+
+	pwdHash, _ := bcrypt.GenerateFromPassword([]byte("Password123!"), bcrypt.DefaultCost)
+	seeds := []*User{
+		{
+			ID:           "00000000-0000-0000-0000-000000000001",
+			Email:        "admin@kotacontoh.go.id",
+			PasswordHash: string(pwdHash),
+			DisplayName:  "Admin Pusat Kota Contoh",
+			Role:         RoleAdmin,
+			Status:       "ACTIVE",
+		},
+		{
+			ID:           "00000000-0000-0000-0000-000000000002",
+			Email:        "walikota@kotacontoh.go.id",
+			PasswordHash: string(pwdHash),
+			DisplayName:  "Bpk. Ir. H. Ahmad Dahlan",
+			Role:         RoleKepalaDaerah,
+			Status:       "ACTIVE",
+		},
+		{
+			ID:           "00000000-0000-0000-0000-000000000003",
+			Email:        "dbmsda@kotacontoh.go.id",
+			PasswordHash: string(pwdHash),
+			DisplayName:  "Dinas Bina Marga & SDA",
+			Role:         RoleDinas,
+			OpdID:        "b0000000-0000-0000-0000-000000000001",
+			Status:       "ACTIVE",
+		},
+		{
+			ID:           "00000000-0000-0000-0000-000000000004",
+			Email:        "dlhk@kotacontoh.go.id",
+			PasswordHash: string(pwdHash),
+			DisplayName:  "Dinas Lingkungan Hidup & Kebersihan",
+			Role:         RoleDinas,
+			OpdID:        "b0000000-0000-0000-0000-000000000002",
+			Status:       "ACTIVE",
+		},
+		{
+			ID:           "00000000-0000-0000-0000-000000000005",
+			Email:        "dishub@kotacontoh.go.id",
+			PasswordHash: string(pwdHash),
+			DisplayName:  "Dinas Perhubungan",
+			Role:         RoleDinas,
+			OpdID:        "b0000000-0000-0000-0000-000000000003",
+			Status:       "ACTIVE",
+		},
+		{
+			ID:           "00000000-0000-0000-0000-000000000006",
+			Email:        "warga@example.com",
+			PasswordHash: string(pwdHash),
+			DisplayName:  "Warga Kota",
+			Role:         RolePelapor,
+			Status:       "ACTIVE",
+		},
+		{
+			ID:           "00000000-0000-0000-0000-000000000007",
+			Email:        "rina.pelapor@gmail.com",
+			PasswordHash: string(pwdHash),
+			DisplayName:  "Rina Handayani",
+			Role:         RolePelapor,
+			Status:       "ACTIVE",
+		},
+		{
+			ID:           "00000000-0000-0000-0000-000000000008",
+			Email:        "bmsda@example.org",
+			PasswordHash: string(pwdHash),
+			DisplayName:  "Staf Bina Marga",
+			Role:         RoleDinas,
+			OpdID:        "b0000000-0000-0000-0000-000000000001",
+			Status:       "ACTIVE",
+		},
+		{
+			ID:           "00000000-0000-0000-0000-000000000009",
+			Email:        "admin@example.org",
+			PasswordHash: string(pwdHash),
+			DisplayName:  "Super Admin",
+			Role:         RoleAdmin,
+			Status:       "ACTIVE",
+		},
+	}
+	for _, s := range seeds {
+		users[s.Email] = s
+	}
+
 	return &repository{
 		db:    database,
-		users: make(map[string]*User),
-		otps:  make(map[string]*OTPVerification),
+		users: users,
+		otps:  otps,
 	}
 }
 

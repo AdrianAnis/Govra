@@ -67,13 +67,18 @@ function pending(): Schema<"VerificationItem">[] {
   return [...verify, ...transfer].sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
 }
 
+const BFF_KEY = process.env.BFF_SHARED_KEY || "413016c9d4970e8030a87654f65c11321dd77c97ecf9f4d95d1beca837faddb2";
+
 export async function getAdminOverview(): Promise<Schema<"AdminOverview">> {
   const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
   try {
     const jar = await cookies();
     const token = jar.get("govra_token")?.value;
     const res = await fetch(`${apiBase}/admin/overview`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        "X-BFF-Key": BFF_KEY,
+      },
       next: { revalidate: 10 },
     });
     if (res.ok) {
