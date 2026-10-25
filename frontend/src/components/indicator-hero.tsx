@@ -1,3 +1,4 @@
+import { BackdropImage } from "@/components/backdrop-image";
 import type { ReactNode } from "react";
 
 interface IndicatorHeroProps {
@@ -11,7 +12,8 @@ interface IndicatorHeroProps {
 
 function IndicatorHero({ eyebrow, title, description, formula, value, caption }: IndicatorHeroProps) {
   return (
-    <section className="relative isolate overflow-hidden rounded-sheet bg-secondary bg-cityscape text-secondary-fg">
+    <section className="relative isolate overflow-hidden rounded-sheet bg-secondary text-secondary-fg">
+      <BackdropImage src="/cityscape.jpg" />
       <div aria-hidden className="absolute inset-0 -z-10 bg-linear-to-t from-secondary via-secondary/80 to-secondary/50" />
       <div className="grid gap-10 p-8 pt-12 sm:p-10 sm:pt-14 lg:grid-cols-3 lg:items-end lg:p-12 lg:pt-14">
         <div className="flex flex-col gap-5 lg:col-span-2">

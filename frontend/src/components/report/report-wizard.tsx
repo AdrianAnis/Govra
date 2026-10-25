@@ -166,8 +166,8 @@ function ReportWizard({ districts, bounds }: ReportWizardProps) {
           )}
           {step === LAST_STEP && <SubmitStep draft={draft} onChange={change} />}
         </div>
-        <div className="sticky bottom-0 z-20 mt-auto flex items-center justify-between gap-4 border-t bg-surface py-4">
-          <Button type="button" variant="ghost" onClick={back} disabled={step === 0 || pending}>
+        <div className="sticky bottom-0 z-20 mt-auto flex items-center justify-between gap-2 border-t bg-surface py-4 sm:gap-4">
+          <Button type="button" variant="ghost" className="px-3 sm:px-6" onClick={back} disabled={step === 0 || pending}>
             <ArrowLeft aria-hidden />
             Kembali
           </Button>

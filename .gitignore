@@ -31,3 +31,6 @@ backend/supabase/.temp/
 Thumbs.db
 
 *.log
+
+playwright-report/
+test-results/

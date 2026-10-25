@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackdropImage } from "@/components/backdrop-image";
 import { BlurText } from "@/components/bits/blur-text";
 import { Container } from "@/components/layout/container";
 import { buttonVariants } from "@/components/ui/button";
@@ -9,7 +10,9 @@ function Hero() {
   return (
     <Container className="pt-4 lg:pt-6">
       <section className="relative isolate overflow-hidden rounded-sheet bg-secondary text-secondary-fg">
-      <div aria-hidden className="hero-drift absolute -inset-y-24 inset-x-0 -z-20 bg-hero" />
+      <div aria-hidden className="hero-drift absolute -inset-y-24 inset-x-0 -z-20">
+        <BackdropImage src="/hero.jpg" position="center 65%" />
+      </div>
       <div
         aria-hidden
         className="absolute inset-0 -z-10 bg-linear-to-r from-secondary/90 via-secondary/55 to-secondary/10"

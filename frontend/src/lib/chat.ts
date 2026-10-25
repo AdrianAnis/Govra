@@ -1,3 +1,4 @@
+import "@/lib/zod-config";
 import { z } from "zod";
 
 export const MAX_MESSAGES = 20;

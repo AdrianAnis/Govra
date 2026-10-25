@@ -6,7 +6,7 @@ import { formatPercent } from "@/lib/format";
 import type { Schema } from "@/lib/schema";
 import { PROGRAM_STATUS, type ProgramStatus } from "@/lib/status";
 
-function ProgramCard({ program }: { program: Schema<"ProgramSummary"> }) {
+function ProgramCard({ program, heading: Heading = "h3" }: { program: Schema<"ProgramSummary">; heading?: "h2" | "h3" }) {
   return (
     <article className="group relative flex h-full flex-col gap-3 rounded-lg border bg-surface p-3 transition-all duration-200 ease-ui hover:-translate-y-1 hover:border-secondary hover:shadow-lg has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-primary">
       <div className="relative flex flex-col gap-10 overflow-hidden rounded-md bg-secondary p-5 text-secondary-fg">
@@ -27,11 +27,11 @@ function ProgramCard({ program }: { program: Schema<"ProgramSummary"> }) {
       </div>
       <div className="flex flex-1 flex-col gap-4 p-3">
         <div className="flex flex-col gap-2">
-          <h3 className="text-xl leading-snug font-semibold">
+          <Heading className="text-xl leading-snug font-semibold">
             <Link href={`/proker/${program.code}`} className="outline-none after:absolute after:inset-0">
               {program.name}
             </Link>
-          </h3>
+          </Heading>
           <p className="flex items-center gap-1.5 text-sm text-fg-muted">
             <Building2 aria-hidden className="size-4 shrink-0" />
             {program.opd.name}

@@ -189,18 +189,6 @@
   background-position: center;
 }
 
-@utility bg-hero {
-  background-image: url("/hero.jpg");
-  background-size: cover;
-  background-position: center 65%;
-}
-
-@utility bg-cityscape {
-  background-image: url("/cityscape.jpg");
-  background-size: cover;
-  background-position: center;
-}
-
 body {
   background: var(--bg);
   color: var(--fg);

@@ -26,7 +26,12 @@ function OpdComparison({ columns, rows }: { columns: readonly Indicator[]; rows:
   const sorted = [...rows].sort((a, b) => a.opd.name.localeCompare(b.opd.name, "id"));
   return (
     <Reveal variant="blur">
-      <div className="overflow-x-auto rounded-lg border bg-surface">
+      <div
+        role="region"
+        aria-label="Tabel indikator rapor per OPD"
+        tabIndex={0}
+        className="overflow-x-auto rounded-lg border bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
         <table className="w-full min-w-4xl border-collapse text-left">
           <caption className="sr-only">Indikator rapor per OPD, diurutkan abjad</caption>
           <thead className="bg-secondary text-secondary-fg">
