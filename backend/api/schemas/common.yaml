@@ -77,7 +77,7 @@ Attachment:
 CoverPhoto:
   type: object
   required: [url, mime]
-  description: Foto sampul isu dari laporan Publik. Sudah disaring (EXIF dihapus, wajah dan plat nomor diburamkan) dan memakai URL tetap.
+  description: Foto sampul isu, diambil dari lampiran laporan Publik yang sudah ditandai layak publik oleh Dinas. EXIF dihapus saat unggah. Wajah dan plat nomor tidak diburamkan otomatis, jadi penilaian kelayakan ada di Dinas. Sampulnya foto yang dipilih Dinas, atau foto layak tertua bila belum ada yang dipilih. Memakai URL publik yang stabil, bukan signed URL 5 menit.
   properties:
     url: {type: string, format: uri}
     mime:

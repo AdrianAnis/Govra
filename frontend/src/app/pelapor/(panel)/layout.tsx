@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ChatWidget } from "@/components/chat/chat-widget";
 import { SiteHeader } from "@/components/layout/site-header";
 import { listNotifications } from "@/lib/data/notifications";
 import { getSessionUser } from "@/lib/data/session";
@@ -13,6 +14,7 @@ export default async function ReporterLayout({ children }: { children: ReactNode
       <main id="konten" className="flex-1">
         {children}
       </main>
+      <ChatWidget signedIn />
     </>
   );
 }

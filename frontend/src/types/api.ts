@@ -451,6 +451,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/agency/issues/{id}/attachments/{attachment_id}/publication": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Tandai foto layak publik dan pilih sampul isu
+         * @description Hanya untuk lampiran laporan Publik pada isu milik OPD pemanggil. Foto yang layak publik boleh tampil di halaman publik. Satu foto layak dapat dipilih sebagai sampul isu. Jika belum ada sampul yang dipilih, backend memakai foto layak tertua sebagai sampul sementara.
+         */
+        put: operations["setAttachmentPublication"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/agency/stats": {
         parameters: {
             query?: never;
@@ -897,7 +917,7 @@ export interface components {
             mime: "image/jpeg" | "image/png" | "image/webp";
             size_bytes: number;
         };
-        /** @description Foto sampul isu dari laporan Publik. Sudah disaring (EXIF dihapus, wajah dan plat nomor diburamkan) dan memakai URL tetap. */
+        /** @description Foto sampul isu, diambil dari lampiran laporan Publik yang sudah ditandai layak publik oleh Dinas. EXIF dihapus saat unggah. Wajah dan plat nomor tidak diburamkan otomatis, jadi penilaian kelayakan ada di Dinas. Sampulnya foto yang dipilih Dinas, atau foto layak tertua bila belum ada yang dipilih. Memakai URL publik yang stabil, bukan signed URL 5 menit. */
         CoverPhoto: {
             /** Format: uri */
             url: string;
@@ -1189,6 +1209,15 @@ export interface components {
             safety_risk: components["schemas"]["SafetyRisk"];
             sensitive: boolean;
         };
+        AgencyAttachment: components["schemas"]["Attachment"] & {
+            public_ok: boolean;
+            is_cover: boolean;
+        };
+        /** @description is_cover true mewajibkan public_ok true. Menunjuk sampul baru otomatis mencabut sampul lama pada isu yang sama. Mengubah public_ok menjadi false otomatis mencabut is_cover. */
+        PublicationRequest: {
+            public_ok: boolean;
+            is_cover: boolean;
+        };
         /** @description Identitas pelapor tidak pernah disertakan. */
         AgencyReport: {
             code: components["schemas"]["ReportCode"];
@@ -1196,7 +1225,7 @@ export interface components {
             visibility: components["schemas"]["Visibility"];
             created_at: components["schemas"]["DateTime"];
             location: components["schemas"]["PublicLocation"];
-            attachments: components["schemas"]["Attachment"][];
+            attachments: components["schemas"]["AgencyAttachment"][];
         };
         AgencyIssueSummary: components["schemas"]["IssueSummary"] & {
             sla_due_at: components["schemas"]["DateTime"] | null;
@@ -1386,6 +1415,7 @@ export interface components {
         UrgencyFilter: components["schemas"]["Urgency"];
         IdPath: components["schemas"]["Uuid"];
         ReportCodePath: components["schemas"]["ReportCode"];
+        AttachmentIdPath: components["schemas"]["Uuid"];
         CodePath: components["schemas"]["Code"];
         SettingKeyPath: components["schemas"]["SettingKey"];
     };
@@ -2009,6 +2039,34 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Attachment"];
+                };
+            };
+            default: components["responses"]["error"];
+        };
+    };
+    setAttachmentPublication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdPath"];
+                attachment_id: components["parameters"]["AttachmentIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicationRequest"];
+            };
+        };
+        responses: {
+            /** @description Status publikasi foto setelah diubah */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgencyAttachment"];
                 };
             };
             default: components["responses"]["error"];

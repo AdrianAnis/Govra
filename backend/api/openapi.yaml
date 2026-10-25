@@ -46,6 +46,7 @@ paths:
   /agency/issues/{id}: {$ref: 'paths/agency.yaml#/issue'}
   /agency/issues/{id}/transitions: {$ref: 'paths/agency.yaml#/transition'}
   /agency/issues/{id}/evidence: {$ref: 'paths/agency.yaml#/evidence'}
+  /agency/issues/{id}/attachments/{attachment_id}/publication: {$ref: 'paths/agency.yaml#/publication'}
   /agency/stats: {$ref: 'paths/agency.yaml#/stats'}
   /admin/overview: {$ref: 'paths/admin-queue.yaml#/overview'}
   /admin/verification: {$ref: 'paths/admin-queue.yaml#/verification'}
@@ -161,6 +162,8 @@ components:
     ChatSource: {$ref: 'schemas/assistant.yaml#/ChatSource'}
     ChatReply: {$ref: 'schemas/assistant.yaml#/ChatReply'}
     AiTriage: {$ref: 'schemas/agency.yaml#/AiTriage'}
+    AgencyAttachment: {$ref: 'schemas/agency.yaml#/AgencyAttachment'}
+    PublicationRequest: {$ref: 'schemas/agency.yaml#/PublicationRequest'}
     AgencyReport: {$ref: 'schemas/agency.yaml#/AgencyReport'}
     AgencyIssueSummary: {$ref: 'schemas/agency.yaml#/AgencyIssueSummary'}
     AgencyIssueList: {$ref: 'schemas/agency.yaml#/AgencyIssueList'}
