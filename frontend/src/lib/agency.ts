@@ -36,6 +36,15 @@ export const TRANSFER_LABEL: Record<TransferReason, string> = {
   KATEGORI_SALAH: "Kategori salah",
 };
 
+export const REJECTION_OPTIONS = (
+  ["DUPLIKAT", "DATA_TIDAK_LENGKAP", "BUKAN_MASALAH_PUBLIK", "SUDAH_DITANGANI", "LAPORAN_TIDAK_BENAR"] as const
+).map((value) => ({ value, label: REJECTION_LABEL[value] }));
+
+export const TRANSFER_OPTIONS = (["BUKAN_WEWENANG_OPD", "PERLU_OPD_LAIN", "KATEGORI_SALAH"] as const).map((value) => ({
+  value,
+  label: TRANSFER_LABEL[value],
+}));
+
 export const transitionSchema = z
   .object({
     to: z.enum(["DIPROSES", "SELESAI", "DITOLAK", "DIALIHKAN"]),

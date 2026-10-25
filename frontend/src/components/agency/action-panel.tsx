@@ -12,13 +12,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SelectField } from "@/components/select-field";
 import { Textarea } from "@/components/ui/textarea";
 import {
   MAX_EVIDENCE,
   MAX_RESPONSE_LENGTH,
   REJECTION_LABEL,
+  REJECTION_OPTIONS,
   TRANSFER_LABEL,
+  TRANSFER_OPTIONS,
   TRANSITION_LABEL,
   TRANSITION_TITLE,
   transitionSchema,
@@ -44,24 +46,9 @@ interface Evidence {
 type ErrorField = "response" | "rejection_reason" | "transfer_reason" | "evidence_ids";
 type Errors = { [K in ErrorField]?: string | undefined };
 
-function isRejection(value: string): value is RejectionReason {
-  return value in REJECTION_LABEL;
-}
-
-function isTransfer(value: string): value is TransferReason {
-  return value in TRANSFER_LABEL;
-}
-
 function isErrorField(value: unknown): value is ErrorField {
   return value === "response" || value === "rejection_reason" || value === "transfer_reason" || value === "evidence_ids";
 }
-
-const REJECTION_OPTIONS = Object.entries(REJECTION_LABEL).flatMap(([value, label]) =>
-  isRejection(value) ? [{ value, label }] : [],
-);
-const TRANSFER_OPTIONS = Object.entries(TRANSFER_LABEL).flatMap(([value, label]) =>
-  isTransfer(value) ? [{ value, label }] : [],
-);
 
 function ActionPanel({ issueId, transitions }: ActionPanelProps) {
   const router = useRouter();
@@ -194,20 +181,24 @@ function ActionPanel({ issueId, transitions }: ActionPanelProps) {
               </DialogHeader>
               <div className="flex flex-col gap-5">
                 {active === "DITOLAK" && (
-                  <ReasonSelect
+                  <SelectField
+                    id="rejection"
                     label="Alasan penolakan"
                     value={rejection}
                     options={REJECTION_OPTIONS}
                     error={errors.rejection_reason}
+                    placeholder="Pilih alasan"
                     onChange={setRejection}
                   />
                 )}
                 {active === "DIALIHKAN" && (
-                  <ReasonSelect
+                  <SelectField
+                    id="transfer"
                     label="Alasan pengalihan"
                     value={transfer}
                     options={TRANSFER_OPTIONS}
                     error={errors.transfer_reason}
+                    placeholder="Pilih alasan"
                     onChange={setTransfer}
                   />
                 )}
@@ -335,47 +326,6 @@ function ActionPanel({ issueId, transitions }: ActionPanelProps) {
         </DialogContent>
       </Dialog>
     </AsideCard>
-  );
-}
-
-interface ReasonSelectProps<T extends string> {
-  label: string;
-  value: T | null;
-  options: readonly { value: T; label: string }[];
-  error: string | undefined;
-  onChange: (value: T) => void;
-}
-
-function ReasonSelect<T extends string>({ label, value, options, error, onChange }: ReasonSelectProps<T>) {
-  const labelId = `${label.replaceAll(" ", "-")}-label`;
-  return (
-    <div className="flex flex-col gap-2">
-      <p id={labelId} className="text-sm font-semibold">
-        {label}
-      </p>
-      <Select
-        value={value}
-        items={options}
-        onValueChange={(next) => {
-          const match = options.find((option) => option.value === next);
-          if (match) {
-            onChange(match.value);
-          }
-        }}
-      >
-        <SelectTrigger aria-labelledby={labelId} aria-invalid={Boolean(error)} className={cn("h-12", FIELD_CLASS)}>
-          <SelectValue placeholder="Pilih alasan" />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      {error && <p className="text-xs font-medium">{error}</p>}
-    </div>
   );
 }
 
