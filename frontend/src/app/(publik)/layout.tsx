@@ -7,7 +7,7 @@ import { getSessionUser } from "@/lib/data/session";
 
 export default async function PublicLayout({ children }: LayoutProps<"/">) {
   const user = await getSessionUser();
-  const notifications = user ? await listNotifications() : [];
+  const notifications = user?.role === "pelapor" ? await listNotifications() : [];
 
   return (
     <>
@@ -17,7 +17,7 @@ export default async function PublicLayout({ children }: LayoutProps<"/">) {
         {children}
       </main>
       {!user && <SiteFooter />}
-      <ChatWidget signedIn={user !== null} />
+      <ChatWidget signedIn={user?.role === "pelapor"} />
     </>
   );
 }

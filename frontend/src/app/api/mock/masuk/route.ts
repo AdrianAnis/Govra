@@ -1,23 +1,29 @@
-import { errorResponse } from "@/lib/api-response";
 import { rejectCrossOrigin } from "@/lib/origin";
-import { safeNext, SESSION_COOKIE } from "@/lib/session";
+import { mockOnly } from "@/lib/mock-guard";
+import { type Role, ROLE_HOME, safeNext, SESSION_COOKIE } from "@/lib/session";
 
-const NOT_FOUND_STATUS = 404;
 const SEE_OTHER_STATUS = 303;
-const DEMO_ROLE = "pelapor";
+
+function roleFromEmail(email: string): Role {
+  const name = email.trim().toLowerCase().split("@")[0] ?? "";
+  if (name.startsWith("dinas")) {
+    return "dinas";
+  }
+  return name.startsWith("admin") ? "admin" : "pelapor";
+}
 
 export async function POST(request: Request) {
-  if (process.env.NODE_ENV === "production") {
-    return errorResponse("NOT_FOUND", "Tidak ditemukan.", NOT_FOUND_STATUS);
-  }
-  const rejected = rejectCrossOrigin(request);
-  if (rejected) {
-    return rejected;
+  const blocked = mockOnly() ?? rejectCrossOrigin(request);
+  if (blocked) {
+    return blocked;
   }
   const form = await request.formData();
+  const email = form.get("email");
+  const role = roleFromEmail(typeof email === "string" ? email : "");
   const raw = form.get("lanjut");
-  const target = new URL(safeNext(typeof raw === "string" ? raw : null), request.url);
+  const next = safeNext(typeof raw === "string" ? raw : null);
+  const target = new URL(next === "/" ? ROLE_HOME[role] : next, request.url);
   const headers = new Headers({ Location: target.toString() });
-  headers.append("Set-Cookie", `${SESSION_COOKIE}=${DEMO_ROLE}; Path=/; HttpOnly; SameSite=Lax`);
+  headers.append("Set-Cookie", `${SESSION_COOKIE}=${role}; Path=/; HttpOnly; SameSite=Lax`);
   return new Response(null, { status: SEE_OTHER_STATUS, headers });
 }

@@ -8,14 +8,15 @@ import { currentTime } from "@/lib/clock";
 import { listIssues } from "@/lib/data/issues";
 import { listPrograms } from "@/lib/data/programs";
 import { getSessionUser } from "@/lib/data/session";
-import { REPORTER_HOME } from "@/lib/routes";
+import { ROLE_HOME } from "@/lib/session";
 
 const FEATURED_PROGRAMS = 3;
 const LATEST_ISSUES = 6;
 
 export default async function HomePage() {
-  if (await getSessionUser()) {
-    redirect(REPORTER_HOME);
+  const user = await getSessionUser();
+  if (user) {
+    redirect(ROLE_HOME[user.role]);
   }
   const [latest, programs] = await Promise.all([
     listIssues({ limit: LATEST_ISSUES }),

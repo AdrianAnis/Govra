@@ -19,7 +19,7 @@ import {
 import type { Notification } from "@/lib/data/notifications";
 import type { SessionUser } from "@/lib/data/session";
 import { MAIN_NAV, MEMBER_NAV } from "@/lib/navigation";
-import { REPORTER_HOME } from "@/lib/routes";
+import { ROLE_HOME } from "@/lib/session";
 
 interface SiteHeaderProps {
   user: SessionUser | null;
@@ -29,13 +29,14 @@ interface SiteHeaderProps {
 function SiteHeader({ user, notifications }: SiteHeaderProps) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
-  const items = user ? MEMBER_NAV : MAIN_NAV;
+  const reporter = user?.role === "pelapor";
+  const items = reporter ? MEMBER_NAV : MAIN_NAV;
 
   return (
     <header className="sticky top-0 z-40 border-b bg-surface">
       <Container className="flex h-16 items-center gap-4">
         <div className="flex flex-1">
-          <Wordmark href={user ? REPORTER_HOME : "/"} />
+          <Wordmark href={user ? ROLE_HOME[user.role] : "/"} />
         </div>
         <div className="hidden md:block">
           <MainNav orientation="row" items={items} />
@@ -43,7 +44,7 @@ function SiteHeader({ user, notifications }: SiteHeaderProps) {
         <div className="hidden flex-1 items-center justify-end gap-3 md:flex">
           {user ? <UserActions user={user} notifications={notifications} /> : <HeaderActions />}
         </div>
-        {user && (
+        {reporter && (
           <div className="md:hidden">
             <NotificationBell notifications={notifications} />
           </div>

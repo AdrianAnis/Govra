@@ -8,6 +8,7 @@ import type { Notification } from "@/lib/data/notifications";
 import type { SessionUser } from "@/lib/data/session";
 import { cn } from "@/lib/utils";
 import { REPORT_NEW, PROFILE } from "@/lib/routes";
+import { ROLE_HOME } from "@/lib/session";
 
 interface UserActionsProps {
   user: SessionUser;
@@ -27,6 +28,9 @@ function ReportLink({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 function UserActions({ user, notifications }: UserActionsProps) {
+  if (user.role !== "pelapor") {
+    return <UserMenu user={user} />;
+  }
   return (
     <>
       <NotificationBell notifications={notifications} />
@@ -49,16 +53,16 @@ function MobileAccount({ user, onNavigate }: { user: SessionUser; onNavigate: ()
         </span>
       </div>
       <NavLink
-        href={PROFILE}
+        href={user.role === "pelapor" ? PROFILE : ROLE_HOME[user.role]}
         onFollow={onNavigate}
         className={cn(buttonVariants({ variant: "ghost" }), "justify-start")}
       >
-        Profil
+        {user.role === "pelapor" ? "Profil" : "Buka panel"}
       </NavLink>
       <a href="/api/mock/keluar" className={cn(buttonVariants({ variant: "ghost" }), "justify-start")}>
         Keluar
       </a>
-      <ReportLink onNavigate={onNavigate} />
+      {user.role === "pelapor" && <ReportLink onNavigate={onNavigate} />}
     </div>
   );
 }

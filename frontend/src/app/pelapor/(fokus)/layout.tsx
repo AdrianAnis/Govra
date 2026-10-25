@@ -1,5 +1,16 @@
+import { forbidden, redirect } from "next/navigation";
 import type { ReactNode } from "react";
+import { getSessionUser } from "@/lib/data/session";
+import { REPORT_NEW } from "@/lib/routes";
+import { loginHref } from "@/lib/session";
 
-export default function ReporterFocusLayout({ children }: { children: ReactNode }) {
+export default async function ReporterFocusLayout({ children }: { children: ReactNode }) {
+  const user = await getSessionUser();
+  if (!user) {
+    redirect(loginHref(REPORT_NEW));
+  }
+  if (user.role !== "pelapor") {
+    forbidden();
+  }
   return <>{children}</>;
 }
