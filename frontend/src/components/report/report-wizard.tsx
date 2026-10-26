@@ -4,7 +4,6 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { FocusPage } from "@/components/layout/focus-page";
 import { DescriptionStep } from "@/components/report/description-step";
-import { DuplicateStep } from "@/components/report/duplicate-step";
 import { LocationStep } from "@/components/report/location-step";
 import { PreviewDialog } from "@/components/report/preview-dialog";
 import { ReportSuccess } from "@/components/report/report-success";
@@ -38,12 +37,7 @@ const STEPS: readonly Step[] = [
   {
     label: "Lokasi",
     title: "Tandai lokasinya",
-    hint: "Pilih kecamatan dan kelurahan, lalu taruh pin di titik kejadian.",
-  },
-  {
-    label: "Serupa",
-    title: "Cek isu serupa",
-    hint: "Mungkin sudah ada warga lain yang melaporkan hal yang sama.",
+    hint: "Pilih kecamatan, kelurahan, dan nama jalan, lalu sesuaikan titik kejadian.",
   },
   {
     label: "Kirim",
@@ -53,7 +47,6 @@ const STEPS: readonly Step[] = [
 ];
 
 const LAST_STEP = STEPS.length - 1;
-const SUGGESTION_STEP = 2;
 
 interface Outcome {
   code: string;
@@ -157,12 +150,6 @@ function ReportWizard({ districts, bounds }: ReportWizardProps) {
           {step === 0 && <DescriptionStep draft={draft} errors={errors} onChange={change} />}
           {step === 1 && (
             <LocationStep draft={draft} errors={errors} districts={districts} bounds={bounds} onChange={change} />
-          )}
-          {step === SUGGESTION_STEP && (
-            <DuplicateStep
-              draft={draft}
-              onSupported={(code, reporters) => setOutcome({ code, reporters })}
-            />
           )}
           {step === LAST_STEP && <SubmitStep draft={draft} onChange={change} />}
         </div>

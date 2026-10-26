@@ -31,7 +31,9 @@ export function submitReport(draft: ReportDraft) {
   const form = new FormData();
   form.set("title", draft.title);
   form.set("body", draft.body);
+  form.set("district_id", draft.districtId);
   form.set("village_id", draft.villageId);
+  form.set("address_detail", draft.addressDetail || "");
   form.set("lat", String(draft.point?.lat ?? ""));
   form.set("lng", String(draft.point?.lng ?? ""));
   form.set("visibility", draft.visibility);

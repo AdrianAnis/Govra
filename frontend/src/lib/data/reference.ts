@@ -63,7 +63,7 @@ export async function getRegion(): Promise<Schema<"Region">> {
 }
 
 export async function getDistricts(): Promise<Schema<"DistrictList">> {
-  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  const apiBase = (process.env.API_BASE_URL || "http://127.0.0.1:8080").replace("localhost", "127.0.0.1");
   try {
     const res = await fetch(`${apiBase}/districts`, {
       headers: { "X-BFF-Key": BFF_KEY },
@@ -72,7 +72,11 @@ export async function getDistricts(): Promise<Schema<"DistrictList">> {
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
-        return { items: data };
+        const cleaned = data.map((d: { id: string; name: string; villages?: { id: string; name: string }[] }) => ({
+          ...d,
+          villages: Array.isArray(d.villages) ? d.villages : [],
+        }));
+        return { items: cleaned as unknown as Schema<"District">[] };
       }
     }
   } catch {}

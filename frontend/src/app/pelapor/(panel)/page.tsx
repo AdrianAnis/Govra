@@ -1,3 +1,4 @@
+import { ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { DataCell, DataRow, DataTable, RowHead } from "@/components/data-table";
@@ -16,7 +17,7 @@ import { REPORT_NEW, reportHref, REPORTER_HOME } from "@/lib/routes";
 export const metadata: Metadata = { title: "Laporan Saya" };
 
 const PAGE_SIZE = 10;
-const HEADERS = ["Kode", "Laporan", "Status", "Dikirim"] as const;
+const HEADERS = ["Kode", "Laporan", "Status", "Dikirim", "Aksi"] as const;
 
 const VISIBILITY_LABEL = { PUBLIK: "Publik", RAHASIA: "Rahasia" } as const;
 
@@ -63,6 +64,15 @@ export default async function MyReportsPage({ searchParams }: PageProps<"/pelapo
                 <IssueStatusBadge status={report.status} />
               </DataCell>
               <DataCell className="text-sm text-fg-muted">{formatDateTime(report.created_at)}</DataCell>
+              <DataCell>
+                <Link
+                  href={reportHref(report.code)}
+                  className={buttonVariants({ variant: "outline", size: "sm" })}
+                >
+                  Detail
+                  <ArrowRight aria-hidden className="size-3.5" />
+                </Link>
+              </DataCell>
             </DataRow>
           ))}
         </DataTable>

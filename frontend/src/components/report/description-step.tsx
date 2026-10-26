@@ -1,4 +1,5 @@
 import { AttachmentsField } from "@/components/report/attachments-field";
+import { VoiceRecorder } from "@/components/report/voice-recorder";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FIELD_CLASS, FIELD_HEIGHT } from "@/lib/field-style";
@@ -14,6 +15,14 @@ interface DescriptionStepProps {
 function DescriptionStep({ draft, errors, onChange }: DescriptionStepProps) {
   const bodyError = errors.body;
   const titleError = errors.title;
+
+  const handleVoiceTranscript = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const updated = draft.body.trim() ? `${draft.body.trim()}\n\n${trimmed}` : trimmed;
+    onChange({ body: updated });
+  };
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
@@ -35,10 +44,14 @@ function DescriptionStep({ draft, errors, onChange }: DescriptionStepProps) {
           </p>
         )}
       </div>
-      <div className="flex flex-col gap-2">
+
+      <div className="flex flex-col gap-3">
         <label htmlFor="body" className="font-semibold">
           Ceritakan apa yang terjadi
         </label>
+
+        <VoiceRecorder onTranscript={handleVoiceTranscript} />
+
         <Textarea
           id="body"
           value={draft.body}
@@ -64,6 +77,7 @@ function DescriptionStep({ draft, errors, onChange }: DescriptionStepProps) {
           </p>
         )}
       </div>
+
       <AttachmentsField files={draft.files} onChange={(files) => onChange({ files })} />
     </div>
   );

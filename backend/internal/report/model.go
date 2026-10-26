@@ -22,8 +22,11 @@ const (
 type Attachment struct {
 	ID        string `json:"id"`
 	FileURL   string `json:"file_url"`
+	URL       string `json:"url,omitempty"`
 	MimeType  string `json:"mime_type"`
+	Mime      string `json:"mime,omitempty"`
 	FileSize  int64  `json:"file_size"`
+	SizeBytes int64  `json:"size_bytes,omitempty"`
 	IsCover   bool   `json:"is_cover"`
 	PublicOK  bool   `json:"public_ok"`
 }
