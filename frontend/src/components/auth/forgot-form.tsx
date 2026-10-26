@@ -1,13 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { FieldError } from "@/components/auth/field-error";
 import { FormField } from "@/components/form-field";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { requestReset } from "@/lib/auth-client";
 import { emailSchema } from "@/lib/auth-flow";
-import { cn } from "@/lib/utils";
 
 function ForgotForm() {
   const [error, setError] = useState<string | undefined>();
@@ -40,14 +38,6 @@ function ForgotForm() {
         <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-800 dark:text-emerald-300">
           <p className="font-semibold mb-1">Berhasil Terkirim</p>
           <p>{success}</p>
-          <div className="mt-3">
-            <Link
-              href="/masuk"
-              className={cn(buttonVariants({ size: "sm" }), "bg-emerald-600 hover:bg-emerald-700 text-white")}
-            >
-              Ke Halaman Masuk
-            </Link>
-          </div>
         </div>
       )}
 

@@ -142,7 +142,7 @@ func (r *repository) CreateUser(ctx context.Context, u *User) error {
 	u.UpdatedAt = time.Now()
 
 	if r.db != nil && r.db.Pool != nil {
-		query := `INSERT INTO public.profiles (id, email, password_hash, display_name, role, opd_id, status, phone, created_at, updated_at) 
+		query := `INSERT INTO app.profiles (id, email, password_hash, display_name, role, opd_id, status, phone, created_at, updated_at) 
 		          VALUES ($1, $2, $3, $4, $5, NULLIF($6, '')::uuid, $7, $8, $9, $10)`
 		_, err := r.db.Pool.Exec(ctx, query, u.ID, u.Email, u.PasswordHash, u.DisplayName, string(u.Role), u.OpdID, u.Status, u.Phone, u.CreatedAt, u.UpdatedAt)
 		return err
@@ -194,7 +194,7 @@ func (r *repository) CreateUser(ctx context.Context, u *User) error {
 func (r *repository) GetUserByEmail(ctx context.Context, email string) (*User, error) {
 	if r.db != nil && r.db.Pool != nil {
 		query := `SELECT id, email, password_hash, display_name, role, COALESCE(opd_id::text, ''), status, COALESCE(phone, ''), COALESCE(avatar_url, ''), created_at, updated_at 
-		          FROM public.profiles WHERE email = $1`
+		          FROM app.profiles WHERE email = $1`
 		var u User
 		var roleStr string
 		err := r.db.Pool.QueryRow(ctx, query, email).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.DisplayName, &roleStr, &u.OpdID, &u.Status, &u.Phone, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt)
@@ -256,7 +256,7 @@ func (r *repository) GetUserByEmail(ctx context.Context, email string) (*User, e
 func (r *repository) GetUserByID(ctx context.Context, id string) (*User, error) {
 	if r.db != nil && r.db.Pool != nil {
 		query := `SELECT id, email, password_hash, display_name, role, COALESCE(opd_id::text, ''), status, COALESCE(phone, ''), COALESCE(avatar_url, ''), created_at, updated_at 
-		          FROM public.profiles WHERE id = $1`
+		          FROM app.profiles WHERE id = $1`
 		var u User
 		var roleStr string
 		err := r.db.Pool.QueryRow(ctx, query, id).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.DisplayName, &roleStr, &u.OpdID, &u.Status, &u.Phone, &u.AvatarURL, &u.CreatedAt, &u.UpdatedAt)
@@ -318,7 +318,7 @@ func (r *repository) GetUserByID(ctx context.Context, id string) (*User, error) 
 
 func (r *repository) UpdatePassword(ctx context.Context, email, newPasswordHash string) error {
 	if r.db != nil && r.db.Pool != nil {
-		query := `UPDATE public.profiles SET password_hash = $2, updated_at = now() WHERE email = $1`
+		query := `UPDATE app.profiles SET password_hash = $2, updated_at = now() WHERE email = $1`
 		tag, err := r.db.Pool.Exec(ctx, query, email, newPasswordHash)
 		if err == nil && tag.RowsAffected() > 0 {
 			return nil
@@ -359,7 +359,7 @@ func (r *repository) SaveOTP(ctx context.Context, otp *OTPVerification) error {
 		if len(otp.PendingPayload) > 0 && string(otp.PendingPayload) != "null" {
 			payloadArg = otp.PendingPayload
 		}
-		query := `INSERT INTO public.otp_verifications (id, email, code, purpose, token, pending_payload, attempts, send_count, lock_level, lock_until, expires_at, is_used, created_at, updated_at)
+		query := `INSERT INTO app.otp_verifications (id, email, code, purpose, token, pending_payload, attempts, send_count, lock_level, lock_until, expires_at, is_used, created_at, updated_at)
 		          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`
 		_, _ = r.db.Pool.Exec(ctx, query, otp.ID, otp.Email, otp.Code, otp.Purpose, otp.Token, payloadArg, otp.Attempts, otp.SendCount, otp.LockLevel, otp.LockUntil, otp.ExpiresAt, otp.IsUsed, otp.CreatedAt, otp.UpdatedAt)
 	}
@@ -409,7 +409,7 @@ func (r *repository) SaveOTP(ctx context.Context, otp *OTPVerification) error {
 func (r *repository) GetLatestOTP(ctx context.Context, email, purpose string) (*OTPVerification, error) {
 	if r.db != nil && r.db.Pool != nil {
 		query := `SELECT id, email, code, purpose, COALESCE(token, ''), COALESCE(pending_payload, '{}'::jsonb), attempts, send_count, lock_level, lock_until, expires_at, is_used, created_at, updated_at
-		          FROM public.otp_verifications WHERE email = $1 AND purpose = $2 AND is_used = false ORDER BY created_at DESC LIMIT 1`
+		          FROM app.otp_verifications WHERE email = $1 AND purpose = $2 AND is_used = false ORDER BY created_at DESC LIMIT 1`
 		var otp OTPVerification
 		err := r.db.Pool.QueryRow(ctx, query, email, purpose).Scan(&otp.ID, &otp.Email, &otp.Code, &otp.Purpose, &otp.Token, &otp.PendingPayload, &otp.Attempts, &otp.SendCount, &otp.LockLevel, &otp.LockUntil, &otp.ExpiresAt, &otp.IsUsed, &otp.CreatedAt, &otp.UpdatedAt)
 		if err == nil {
@@ -438,7 +438,7 @@ func (r *repository) GetLatestOTP(ctx context.Context, email, purpose string) (*
 func (r *repository) GetOTPByToken(ctx context.Context, token string) (*OTPVerification, error) {
 	if r.db != nil && r.db.Pool != nil {
 		query := `SELECT id, email, code, purpose, COALESCE(token, ''), COALESCE(pending_payload, '{}'::jsonb), attempts, send_count, lock_level, lock_until, expires_at, is_used, created_at, updated_at
-		          FROM public.otp_verifications WHERE token = $1 AND is_used = false ORDER BY created_at DESC LIMIT 1`
+		          FROM app.otp_verifications WHERE token = $1 AND is_used = false ORDER BY created_at DESC LIMIT 1`
 		var otp OTPVerification
 		err := r.db.Pool.QueryRow(ctx, query, token).Scan(&otp.ID, &otp.Email, &otp.Code, &otp.Purpose, &otp.Token, &otp.PendingPayload, &otp.Attempts, &otp.SendCount, &otp.LockLevel, &otp.LockUntil, &otp.ExpiresAt, &otp.IsUsed, &otp.CreatedAt, &otp.UpdatedAt)
 		if err == nil {
@@ -457,7 +457,7 @@ func (r *repository) GetOTPByToken(ctx context.Context, token string) (*OTPVerif
 
 func (r *repository) MarkOTPUsed(ctx context.Context, id string) error {
 	if r.db != nil && r.db.Pool != nil {
-		query := `UPDATE public.otp_verifications SET is_used = true, updated_at = now() WHERE id = $1`
+		query := `UPDATE app.otp_verifications SET is_used = true, updated_at = now() WHERE id = $1`
 		_, _ = r.db.Pool.Exec(ctx, query, id)
 	}
 
@@ -478,7 +478,7 @@ func (r *repository) MarkOTPUsed(ctx context.Context, id string) error {
 
 func (r *repository) IncrementOTPAttempts(ctx context.Context, id string) error {
 	if r.db != nil && r.db.Pool != nil {
-		query := `UPDATE public.otp_verifications SET attempts = attempts + 1, updated_at = now() WHERE id = $1`
+		query := `UPDATE app.otp_verifications SET attempts = attempts + 1, updated_at = now() WHERE id = $1`
 		_, _ = r.db.Pool.Exec(ctx, query, id)
 	}
 
