@@ -8,18 +8,36 @@ import (
 	"time"
 )
 
-type ScorecardIndicator struct {
-	Code        string  `json:"code"`
-	Name        string  `json:"name"`
-	Value       float64 `json:"value"`
-	Unit        string  `json:"unit"`
-	Description string  `json:"description"`
+type ScorecardPeriod struct {
+	StartYear int `json:"start_year"`
+	EndYear   int `json:"end_year"`
+}
+
+type IndicatorValue struct {
+	Code       string   `json:"code"`
+	Label      string   `json:"label"`
+	Unit       string   `json:"unit"`
+	Value      *float64 `json:"value"`
+	SampleSize int      `json:"sample_size"`
+}
+
+type OpdRef struct {
+	Code string `json:"code"`
+	Slug string `json:"slug"`
+	Name string `json:"name"`
+}
+
+type OpdScorecard struct {
+	Opd        OpdRef           `json:"opd"`
+	Indicators []IndicatorValue `json:"indicators"`
 }
 
 type Scorecard struct {
-	OverallScore int                  `json:"overall_score"`
-	Indicators   []ScorecardIndicator `json:"indicators"`
-	Period       string               `json:"period"`
+	Period       ScorecardPeriod  `json:"period"`
+	HeadLabel    string           `json:"head_label"`
+	IsSimulation bool             `json:"is_simulation"`
+	Indicators   []IndicatorValue `json:"indicators"`
+	ByOpd        []OpdScorecard   `json:"by_opd"`
 }
 
 type Service interface {
@@ -161,15 +179,41 @@ func (s *service) AddUpdate(ctx context.Context, code string, req CreateUpdateRe
 }
 
 func (s *service) GetScorecard(ctx context.Context) (*Scorecard, error) {
-	return &Scorecard{
-		OverallScore: 86,
-		Period:       "2025–2030",
-		Indicators: []ScorecardIndicator{
-			{Code: "KETUNTASAN", Name: "Ketuntasan Proker", Value: 85.5, Unit: "%", Description: "Persentase proker selesai dari yang sudah melewati tenggat"},
-			{Code: "KETEPATAN", Name: "Ketepatan Jadwal", Value: 88.0, Unit: "%", Description: "Persentase proker yang sesuai jadwal atau selesai"},
-			{Code: "RESPONSIVITAS", Name: "Responsivitas Tanggapan", Value: 18.5, Unit: "Jam", Description: "Median waktu respon dinas terhadap laporan diteruskan"},
-			{Code: "PENYELESAIAN", Name: "Penyelesaian Isu Warga", Value: 82.0, Unit: "%", Description: "Isu selesai yang dikonfirmasi warga"},
-			{Code: "ANGGARAN", Name: "Penyerapan Anggaran", Value: 79.4, Unit: "%", Description: "Realisasi anggaran dibandingkan pagu"},
+	v1, v2, v3, v4, v5 := 85.5, 88.0, 18.5, 82.0, 79.4
+	indicators := []IndicatorValue{
+		{Code: "KETUNTASAN_PROKER", Label: "Ketuntasan proker", Unit: "PERCENT", Value: &v1, SampleSize: 12},
+		{Code: "KETEPATAN_JADWAL", Label: "Ketepatan jadwal", Unit: "PERCENT", Value: &v2, SampleSize: 25},
+		{Code: "RESPONSIVITAS", Label: "Responsivitas", Unit: "HOURS", Value: &v3, SampleSize: 45},
+		{Code: "PENYELESAIAN_ISU", Label: "Penyelesaian isu", Unit: "PERCENT", Value: &v4, SampleSize: 38},
+		{Code: "PENYERAPAN_ANGGARAN", Label: "Penyerapan anggaran", Unit: "PERCENT", Value: &v5, SampleSize: 18},
+	}
+	opds := []OpdScorecard{
+		{
+			Opd:        OpdRef{Code: "BMSDA", Slug: "dinas-bina-marga-sda", Name: "Dinas Bina Marga dan Sumber Daya Air"},
+			Indicators: indicators,
 		},
+		{
+			Opd:        OpdRef{Code: "DLHK", Slug: "dinas-lingkungan-hidup-kebersihan", Name: "Dinas Lingkungan Hidup dan Kebersihan"},
+			Indicators: indicators,
+		},
+		{
+			Opd:        OpdRef{Code: "DISHUB", Slug: "dinas-perhubungan", Name: "Dinas Perhubungan"},
+			Indicators: indicators,
+		},
+		{
+			Opd:        OpdRef{Code: "DINKES", Slug: "dinas-kesehatan", Name: "Dinas Kesehatan"},
+			Indicators: indicators,
+		},
+		{
+			Opd:        OpdRef{Code: "DISDIK", Slug: "dinas-pendidikan", Name: "Dinas Pendidikan"},
+			Indicators: indicators,
+		},
+	}
+	return &Scorecard{
+		Period:       ScorecardPeriod{StartYear: 2025, EndYear: 2030},
+		HeadLabel:    "Wali Kota Bandung (data simulasi)",
+		IsSimulation: true,
+		Indicators:   indicators,
+		ByOpd:        opds,
 	}, nil
 }

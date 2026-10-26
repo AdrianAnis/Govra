@@ -49,17 +49,20 @@ func NewRepository(database *db.Database) Repository {
 func (r *repository) seedData() {
 	r.region = &Region{
 		ID:        "a0000000-0000-0000-0000-000000000001",
-		Code:      "KOTA-SIMULASI",
-		Name:      "Kota Contoh",
-		HeadLabel: "Wali Kota",
-		Center:    GeoPoint{Lat: -6.2088, Lng: 106.8456},
+		Code:      "KOTA-BANDUNG",
+		Name:      "Kota Bandung",
+		HeadLabel: "Wali Kota Bandung",
+		Center:    GeoPoint{Lat: -6.9175, Lng: 107.6191},
 	}
 	r.districts = []District{
 		{
-			ID:       "b0000000-0000-0000-0000-000000000001",
+			ID:       "0197a000-0000-7000-8000-000000000013",
 			RegionID: "a0000000-0000-0000-0000-000000000001",
-			Name:     "Kecamatan Tengah",
-			Point:    GeoPoint{Lat: -6.2000, Lng: 106.8400},
+			Name:     "Kecamatan Coblong",
+			Point:    GeoPoint{Lat: -6.8845, Lng: 107.6155},
+			Villages: []Village{
+				{ID: "0197a000-0000-7000-8000-0000000000b9", DistrictID: "0197a000-0000-7000-8000-000000000013", Name: "Kelurahan Dago", Point: GeoPoint{Lat: -6.8775, Lng: 107.6185}},
+			},
 		},
 	}
 	r.goals = []Goal{
@@ -80,6 +83,29 @@ func (r *repository) seedData() {
 }
 
 func (r *repository) GetRegion(ctx context.Context) (*Region, error) {
+	if r.db != nil && r.db.HasREST() {
+		type restRegion struct {
+			ID             string                 `json:"id"`
+			Code           string                 `json:"code"`
+			Name           string                 `json:"name"`
+			HeadLabel      string                 `json:"head_label"`
+			CenterLat      float64                `json:"center_lat"`
+			CenterLng      float64                `json:"center_lng"`
+			PolygonGeoJSON map[string]interface{} `json:"polygon_geojson,omitempty"`
+		}
+		var list []restRegion
+		if err := r.db.PostgRESTGet(ctx, "regions?select=id,code,name,head_label,center_lat,center_lng,polygon_geojson&is_pilot=eq.true&limit=1", &list); err == nil && len(list) > 0 {
+			reg := list[0]
+			return &Region{
+				ID:             reg.ID,
+				Code:           reg.Code,
+				Name:           reg.Name,
+				HeadLabel:      reg.HeadLabel,
+				Center:         GeoPoint{Lat: reg.CenterLat, Lng: reg.CenterLng},
+				PolygonGeoJSON: reg.PolygonGeoJSON,
+			}, nil
+		}
+	}
 	if r.db != nil && r.db.Pool != nil {
 		query := `SELECT id, code, name, head_label, center_lat, center_lng, polygon_geojson FROM app.regions WHERE is_pilot = true LIMIT 1`
 		var reg Region
@@ -99,6 +125,46 @@ func (r *repository) GetRegion(ctx context.Context) (*Region, error) {
 }
 
 func (r *repository) ListDistricts(ctx context.Context) ([]District, error) {
+	if r.db != nil && r.db.HasREST() {
+		type restVillage struct {
+			ID         string  `json:"id"`
+			DistrictID string  `json:"district_id"`
+			Name       string  `json:"name"`
+			CenterLat  float64 `json:"center_lat"`
+			CenterLng  float64 `json:"center_lng"`
+		}
+		type restDistrict struct {
+			ID        string        `json:"id"`
+			RegionID  string        `json:"region_id"`
+			Name      string        `json:"name"`
+			CenterLat float64       `json:"center_lat"`
+			CenterLng float64       `json:"center_lng"`
+			Villages  []restVillage `json:"villages"`
+		}
+		var restList []restDistrict
+		if err := r.db.PostgRESTGet(ctx, "districts?select=id,region_id,name,center_lat,center_lng,villages(id,district_id,name,center_lat,center_lng)&order=name.asc", &restList); err == nil && len(restList) > 0 {
+			list := make([]District, 0, len(restList))
+			for _, rd := range restList {
+				d := District{
+					ID:       rd.ID,
+					RegionID: rd.RegionID,
+					Name:     rd.Name,
+					Point:    GeoPoint{Lat: rd.CenterLat, Lng: rd.CenterLng},
+					Villages: make([]Village, 0, len(rd.Villages)),
+				}
+				for _, rv := range rd.Villages {
+					d.Villages = append(d.Villages, Village{
+						ID:         rv.ID,
+						DistrictID: rv.DistrictID,
+						Name:       rv.Name,
+						Point:      GeoPoint{Lat: rv.CenterLat, Lng: rv.CenterLng},
+					})
+				}
+				list = append(list, d)
+			}
+			return list, nil
+		}
+	}
 	if r.db != nil && r.db.Pool != nil {
 		rows, err := r.db.Pool.Query(ctx, `SELECT id, region_id, name, center_lat, center_lng, polygon_geojson FROM app.districts ORDER BY name ASC`)
 		if err == nil {
@@ -107,6 +173,7 @@ func (r *repository) ListDistricts(ctx context.Context) ([]District, error) {
 			for rows.Next() {
 				var d District
 				var rawGeo []byte
+				d.Villages = make([]Village, 0)
 				if err := rows.Scan(&d.ID, &d.RegionID, &d.Name, &d.Point.Lat, &d.Point.Lng, &rawGeo); err == nil {
 					_ = json.Unmarshal(rawGeo, &d.PolygonGeoJSON)
 					vRows, vErr := r.db.Pool.Query(ctx, `SELECT id, district_id, name, center_lat, center_lng, polygon_geojson FROM app.villages WHERE district_id = $1 ORDER BY name ASC`, d.ID)
