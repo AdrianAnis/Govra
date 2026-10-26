@@ -71,6 +71,7 @@ func (db *Database) PostgRESTGet(ctx context.Context, endpoint string, dest any)
 	req.Header.Set("apikey", db.SupabaseKey)
 	req.Header.Set("Authorization", "Bearer "+db.SupabaseKey)
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Accept-Profile", "app")
 
 	res, err := db.HTTPClient.Do(req)
 	if err != nil {
@@ -101,6 +102,7 @@ func (db *Database) PostgRESTPost(ctx context.Context, endpoint string, payload 
 	req.Header.Set("apikey", db.SupabaseKey)
 	req.Header.Set("Authorization", "Bearer "+db.SupabaseKey)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Profile", "app")
 	if dest != nil {
 		req.Header.Set("Prefer", "return=representation")
 	}
@@ -137,6 +139,7 @@ func (db *Database) PostgRESTPatch(ctx context.Context, endpoint string, payload
 	req.Header.Set("apikey", db.SupabaseKey)
 	req.Header.Set("Authorization", "Bearer "+db.SupabaseKey)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Profile", "app")
 
 	res, err := db.HTTPClient.Do(req)
 	if err != nil {

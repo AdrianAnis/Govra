@@ -12,7 +12,7 @@ export const SECURITY_HEADERS: ReadonlyArray<readonly [string, string]> = [
   ["Referrer-Policy", "strict-origin-when-cross-origin"],
   [
     "Permissions-Policy",
-    "camera=(), microphone=(), geolocation=(self), payment=()",
+    "camera=(), microphone=(self), geolocation=(self), payment=()",
   ],
   ["Cross-Origin-Opener-Policy", "same-origin"],
   ["Cross-Origin-Resource-Policy", "same-site"],
@@ -37,6 +37,7 @@ export function buildContentSecurityPolicy(nonce: string, isDev: boolean): strin
     ["style-src", "'self'", isDev ? "'unsafe-inline'" : nonceSource],
     ["style-src-attr", "'unsafe-inline'"],
     ["img-src", "'self'", "blob:", "data:", SUPABASE_HOSTS, MAP_TILES_HOST],
+    ["media-src", "'self'", "blob:"],
     ["connect-src", "'self'", MAP_TILES_HOST],
     ["frame-src", TURNSTILE_HOST],
     ["worker-src", "'self'", "blob:"],

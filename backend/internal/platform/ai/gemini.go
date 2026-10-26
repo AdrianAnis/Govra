@@ -129,7 +129,10 @@ Keluarkan HANYA JSON tanpa format markdown:
 
 func (c *Client) TranscribeAudio(ctx context.Context, audioBase64, mimeType string) (string, error) {
 	if mimeType == "" {
-		mimeType = "audio/mp3"
+		mimeType = "audio/webm"
+	}
+	if idx := strings.Index(mimeType, ";"); idx != -1 {
+		mimeType = strings.TrimSpace(mimeType[:idx])
 	}
 	req := geminiRequest{
 		Contents: []geminiContent{

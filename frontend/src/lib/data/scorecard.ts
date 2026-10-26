@@ -18,7 +18,7 @@ export async function getScorecard(): Promise<Schema<"Scorecard">> {
     });
     if (res.ok) {
       const data = await res.json();
-      if (data && data.period) {
+      if (data && data.period && typeof data.period === "object" && Array.isArray(data.by_opd)) {
         return data;
       }
     }
