@@ -16,12 +16,12 @@ const PAGE_SIZE = 20;
 
 const TOPIC_TABS: ReadonlyArray<{ code: string | null; label: string }> = [
   { code: null, label: "Semua Topik" },
-  { code: "DBM-SDA", label: "Jalan & Infrastruktur" },
-  { code: "DLHK", label: "Kebersihan & Sampah" },
-  { code: "DISHUB", label: "Lalu Lintas & Dishub" },
-  { code: "SATPOL-PP", label: "Ketertiban Umum" },
-  { code: "DINKES", label: "Kesehatan" },
-  { code: "BPBD", label: "Kebencanaan" },
+  { code: "DBM-SDA", label: "Dinas Bina Marga & SDA" },
+  { code: "DLHK", label: "Dinas Lingkungan Hidup" },
+  { code: "DISHUB", label: "Dinas Perhubungan" },
+  { code: "DINKES", label: "Dinas Kesehatan" },
+  { code: "PUPR", label: "Dinas PUPR" },
+  { code: "TIDAK_TERDAFTAR", label: "Tidak Masuk Dinas" },
 ];
 
 const QUEUE_TABS: ReadonlyArray<{ kind: Schema<"VerificationKind"> | null; label: string }> = [

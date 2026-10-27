@@ -38,10 +38,13 @@ type SimilarityResult struct {
 
 type TriageResult struct {
 	OpdCode           string  `json:"opd_code"`
+	OpdName           string  `json:"opd_name"`
 	CategoryCode      string  `json:"category_code"`
+	CategoryName      string  `json:"category_name"`
 	Confidence        float64 `json:"confidence"`
 	SafetyRisk        string  `json:"safety_risk"`
 	IsSensitive       bool    `json:"is_sensitive"`
+	IsUnregisteredOpd bool    `json:"is_unregistered_opd"`
 	Summary           string  `json:"summary"`
 	RecommendedAction string  `json:"recommended_action"`
 }
@@ -88,31 +91,51 @@ func NewClient(apiKey, model string) *Client {
 }
 
 func (c *Client) ClassifyReport(ctx context.Context, title, description, district, village string) (*TriageResult, error) {
-	prompt := fmt.Sprintf(`Anda adalah AI Triage Pengaduan Pemerintah Daerah.
-Tugas Anda adalah membaca judul dan penjelasan laporan warga lalu mengklasifikasikan dinas penanggung jawab.
+	prompt := fmt.Sprintf(`Anda adalah AI Triage Pengaduan Pemerintah Daerah Kota.
+Tugas Anda adalah membaca dan menganalisis teks pengaduan warga khususnya field "Ceritakan apa yang terjadi" (Deskripsi Masalah) dan judul laporan, lalu memetakan dinas penanggung jawab yang terdaftar.
 
-Daftar OPD:
-- DBM-SDA: Jalan berlubang, aspal rusak, jembatan, tanggul, saluran air, drainase banjir
-- DLHK: Tumpukan sampah liar, limbah, pohon tumbang, pencemaran lingkungan
-- DISHUB: Lampu jalan mati, rambu lalu lintas rusak, traffic light macet, parkir liar
-- DINKES: Fasilitas puskesmas, wabah penyakit, sanitasi air bersih
-- SATPOL-PP: Gangguan ketertiban umum, pedagang liar yang menutup akses jalan
-- BPBD: Bencana alam, longsor, pohon roboh darurat, banjir bandang
+Dinas resmi yang terdaftar dan didukung sistem:
+1. DBM-SDA: Dinas Bina Marga & SDA (Jalan berlubang, aspal amblas, jembatan rusak, drainase banjir, gorong-gorong tersumbat, tanggul sungai jebol)
+2. DLHK: Dinas Lingkungan Hidup & Kebersihan (Tumpukan sampah liar, limbah industri beracun, pencemaran lingkungan, bau busuk sampah tak diangkut)
+3. DISHUB: Dinas Perhubungan (Lampu penerangan jalan padam, rambu lalu lintas roboh, lampu merah traffic light mati/error, parkir liar sembarangan)
+4. DINKES: Dinas Kesehatan (Pelayanan puskesmas/posyandu, wabah penyakit seperti DBD/kolera, ketiadaan sanitasi air bersih, ambulans darurat)
+5. PUPR: Dinas PUPR (Kerusakan infrastruktur gedung pelayanan publik pemerintah daerah, tata ruang wilayah, fasilitas umum fisik bangunan)
+
+ATURAN WAJIB DAN KETAT:
+Jika pengaduan yang disampaikan warga TIDAK MASUK ke dalam wewenang dari 5 dinas terdaftar di atas (misalnya: sengketa tanah antarwarga, pembuatan KTP/Akta, urusan perpajakan/pajak daerah, masalah ketenagakerjaan/gaji, izin usaha mikro, urusan tindak kriminal/pencurian, perselisihan sekolah/guru), maka Anda WAJIB menetapkan:
+- "is_unregistered_opd": true
+- "opd_code": "TIDAK_TERDAFTAR"
+- "opd_name": "Tidak Masuk ke Dinas Manapun yang Terdaftar"
+- "recommended_action": "Laporan ini tidak masuk ke dinas manapun yang terdaftar. Mohon tentukan dinas tujuan secara manual oleh Admin Pusat."
 
 Judul: %s
-Deskripsi Masalah: %s
+Deskripsi Masalah (Ceritakan apa yang terjadi): %s
 Lokasi: Kecamatan %s, Kelurahan %s
 
-Keluarkan HANYA JSON tanpa format markdown:
+Keluarkan HANYA JSON tanpa markdown:
 {
   "opd_code": "DBM-SDA",
+  "opd_name": "Dinas Bina Marga & SDA",
   "category_code": "JALAN-RUSAK",
+  "category_name": "Jalan Rusak & Berlubang",
   "confidence": 0.95,
   "safety_risk": "NONE",
   "is_sensitive": false,
+  "is_unregistered_opd": false,
   "summary": "Ringkasan padat laporan maksimal 150 karakter",
-  "recommended_action": "Rekomendasi tindakan untuk admin pusat"
+  "recommended_action": "Rekomendasi tindakan untuk Admin Pusat"
 }`, title, description, district, village)
+
+	fallbackRes := &TriageResult{
+		OpdCode:           "DBM-SDA",
+		OpdName:           "Dinas Bina Marga & SDA",
+		CategoryCode:      "JALAN-RUSAK",
+		CategoryName:      "Jalan Rusak & Berlubang",
+		Confidence:        0.75,
+		SafetyRisk:        "NONE",
+		Summary:           title,
+		RecommendedAction: "Perlu verifikasi manual oleh Administrator Pusat",
+	}
 
 	raw, err := c.generateContent(ctx, geminiRequest{
 		Contents: []geminiContent{
@@ -120,28 +143,53 @@ Keluarkan HANYA JSON tanpa format markdown:
 		},
 	})
 	if err != nil {
-		return &TriageResult{
-			OpdCode:           "DBM-SDA",
-			CategoryCode:      "JALAN-RUSAK",
-			Confidence:        0.70,
-			SafetyRisk:        "NONE",
-			Summary:           title,
-			RecommendedAction: "Perlu verifikasi manual oleh admin",
-		}, nil
+		return fallbackRes, nil
 	}
 
 	cleaned := cleanJSON(raw)
 	var res TriageResult
 	if err := json.Unmarshal([]byte(cleaned), &res); err != nil {
-		return &TriageResult{
-			OpdCode:           "DBM-SDA",
-			CategoryCode:      "JALAN-RUSAK",
-			Confidence:        0.70,
-			SafetyRisk:        "NONE",
-			Summary:           title,
-			RecommendedAction: "Perlu verifikasi manual oleh admin",
-		}, nil
+		return fallbackRes, nil
 	}
+
+	supportedOpds := map[string]string{
+		"DBM-SDA": "Dinas Bina Marga & SDA",
+		"DLHK":    "Dinas Lingkungan Hidup & Kebersihan",
+		"DISHUB":  "Dinas Perhubungan",
+		"DINKES":  "Dinas Kesehatan",
+		"PUPR":    "Dinas PUPR",
+	}
+
+	name, isSupported := supportedOpds[res.OpdCode]
+	if !isSupported || res.IsUnregisteredOpd || res.OpdCode == "TIDAK_TERDAFTAR" {
+		res.IsUnregisteredOpd = true
+		res.OpdCode = "TIDAK_TERDAFTAR"
+		res.OpdName = "Tidak Masuk ke Dinas Manapun yang Terdaftar"
+		if res.RecommendedAction == "" || !strings.Contains(res.RecommendedAction, "tidak masuk") {
+			res.RecommendedAction = "Laporan ini tidak masuk ke dinas manapun yang terdaftar. Mohon tentukan dinas tujuan secara manual oleh Admin Pusat."
+		}
+	} else {
+		res.OpdName = name
+		res.IsUnregisteredOpd = false
+	}
+
+	if res.CategoryName == "" {
+		categoryNames := map[string]string{
+			"JALAN-RUSAK":          "Jalan Rusak & Berlubang",
+			"DRAINASE-TERSUMBAT":   "Saluran Air & Drainase Tersumbat",
+			"SAMPAH-LIAR":          "Tumpukan Sampah Liar",
+			"LAMPU-JALAN":          "Lampu Penerangan Jalan Padam",
+			"RAMBU-RUSAK":          "Rambu & Traffic Light Rusak",
+			"FASILITAS-KESEHATAN":  "Layanan Kesehatan & Faskes",
+			"INFRASTRUKTUR-GEDUNG": "Infrastruktur & Gedung",
+		}
+		if cName, exists := categoryNames[res.CategoryCode]; exists {
+			res.CategoryName = cName
+		} else {
+			res.CategoryName = res.CategoryCode
+		}
+	}
+
 	return &res, nil
 }
 

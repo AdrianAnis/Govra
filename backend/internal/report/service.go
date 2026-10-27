@@ -88,7 +88,7 @@ func (s *service) CreateReport(ctx context.Context, req CreateReportRequest, rep
 			{
 				Status:    "DIAJUKAN",
 				Title:     "Laporan Berhasil Diajukan",
-				Note:      "Laporan telah tersimpan dan masuk ke antrean triage sistem.",
+				Note:      "Laporan telah tersimpan dan menunggu approval verifikasi dari Administrator Pusat.",
 				CreatedAt: time.Now(),
 			},
 		},
@@ -97,18 +97,25 @@ func (s *service) CreateReport(ctx context.Context, req CreateReportRequest, rep
 	topic := "Umum"
 	triageRes, err := s.aiClient.ClassifyReport(ctx, rep.Title, rep.Description, rep.DistrictName, rep.VillageName)
 	if err == nil && triageRes != nil {
-		rep.OpdID = triageRes.OpdCode
-		rep.OpdName = "Dinas Terkait (" + triageRes.OpdCode + ")"
-		rep.CategoryID = triageRes.CategoryCode
+		rep.AiOpdCode = triageRes.OpdCode
+		rep.AiOpdName = triageRes.OpdName
+		rep.AiCategoryCode = triageRes.CategoryCode
+		rep.AiCategoryName = triageRes.CategoryName
+		rep.AiConfidence = triageRes.Confidence
+		rep.AiSummary = triageRes.Summary
+		rep.IsUnregisteredOpd = triageRes.IsUnregisteredOpd
 		topic = triageRes.CategoryCode
-		if triageRes.Confidence >= 0.75 && !triageRes.IsSensitive {
-			rep.Status = StatusDiteruskan
-			rep.Timeline = append(rep.Timeline, TimelineEvent{
-				Status:    "DITERUSKAN",
-				Title:     "Diteruskan ke " + triageRes.OpdCode,
-				Note:      triageRes.RecommendedAction,
-				CreatedAt: time.Now(),
-			})
+
+		if !triageRes.IsUnregisteredOpd && triageRes.OpdCode != "TIDAK_TERDAFTAR" {
+			rep.OpdID = triageRes.OpdCode
+			rep.OpdName = triageRes.OpdName
+			rep.CategoryID = triageRes.CategoryCode
+			rep.CategoryName = triageRes.CategoryName
+		} else {
+			rep.OpdID = ""
+			rep.OpdName = "Tidak Masuk ke Dinas Manapun yang Terdaftar"
+			rep.CategoryID = ""
+			rep.CategoryName = "Tidak Terdaftar"
 		}
 	}
 

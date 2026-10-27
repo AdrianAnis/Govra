@@ -93,6 +93,28 @@ func (r *repository) SaveReport(ctx context.Context, report *Report) error {
 		if _, err := uuid.Parse(report.VillageID); err == nil {
 			rr.VillageID = &report.VillageID
 		}
+		opdUUIDs := map[string]string{
+			"DBM-SDA": "e0000000-0000-0000-0000-000000000001",
+			"DLHK":    "e0000000-0000-0000-0000-000000000002",
+			"DISHUB":  "e0000000-0000-0000-0000-000000000003",
+			"DINKES":  "e0000000-0000-0000-0000-000000000004",
+			"PUPR":    "e0000000-0000-0000-0000-000000000007",
+		}
+		if u, ok := opdUUIDs[report.OpdID]; ok {
+			report.OpdID = u
+		}
+		catUUIDs := map[string]string{
+			"JALAN-RUSAK":          "f0000000-0000-0000-0000-000000000001",
+			"DRAINASE-TERSUMBAT":   "f0000000-0000-0000-0000-000000000002",
+			"SAMPAH-LIAR":          "f0000000-0000-0000-0000-000000000003",
+			"LAMPU-JALAN":          "f0000000-0000-0000-0000-000000000004",
+			"RAMBU-RUSAK":          "f0000000-0000-0000-0000-000000000005",
+			"INFRASTRUKTUR-GEDUNG": "f0000000-0000-0000-0000-000000000006",
+			"FASILITAS-KESEHATAN":  "f0000000-0000-0000-0000-000000000007",
+		}
+		if u, ok := catUUIDs[report.CategoryID]; ok {
+			report.CategoryID = u
+		}
 		if _, err := uuid.Parse(report.OpdID); err == nil {
 			rr.OpdID = &report.OpdID
 		}
@@ -103,6 +125,41 @@ func (r *repository) SaveReport(ctx context.Context, report *Report) error {
 			fmt.Printf("[REPORT DB SUCCESS] Report saved to Supabase: %s\n", report.Code)
 		} else {
 			fmt.Printf("[REPORT DB ERROR] Failed to save report to Supabase: %v\n", err)
+		}
+
+		if report.AiOpdCode != "" {
+			var predOpdID *string
+			if u, ok := opdUUIDs[report.AiOpdCode]; ok {
+				predOpdID = &u
+			}
+			var predCatID *string
+			if u, ok := catUUIDs[report.AiCategoryCode]; ok {
+				predCatID = &u
+			}
+			type restClassification struct {
+				ID                  string  `json:"id"`
+				ReportID            string  `json:"report_id"`
+				PredictedOpdID      *string `json:"predicted_opd_id,omitempty"`
+				PredictedCategoryID *string `json:"predicted_category_id,omitempty"`
+				Confidence          float64 `json:"confidence"`
+				Summary             string  `json:"summary"`
+				RawResponse         any     `json:"raw_response,omitempty"`
+			}
+			_ = r.db.PostgRESTPost(ctx, "ai_classifications", restClassification{
+				ID:                  uuid.New().String(),
+				ReportID:            report.ID,
+				PredictedOpdID:      predOpdID,
+				PredictedCategoryID: predCatID,
+				Confidence:          report.AiConfidence,
+				Summary:             report.AiSummary,
+				RawResponse: map[string]any{
+					"opd_code":            report.AiOpdCode,
+					"opd_name":            report.AiOpdName,
+					"category_code":       report.AiCategoryCode,
+					"category_name":       report.AiCategoryName,
+					"is_unregistered_opd": report.IsUnregisteredOpd,
+				},
+			}, nil)
 		}
 		for _, att := range report.Attachments {
 			fileURL := att.FileURL
@@ -230,6 +287,29 @@ func (r *repository) FindMatchingIssueOrCluster(ctx context.Context, title, desc
 			UpdatedAt            time.Time `json:"updated_at"`
 		}
 
+		opdUUIDs := map[string]string{
+			"DBM-SDA": "e0000000-0000-0000-0000-000000000001",
+			"DLHK":    "e0000000-0000-0000-0000-000000000002",
+			"DISHUB":  "e0000000-0000-0000-0000-000000000003",
+			"DINKES":  "e0000000-0000-0000-0000-000000000004",
+			"PUPR":    "e0000000-0000-0000-0000-000000000007",
+		}
+		if u, ok := opdUUIDs[opdID]; ok {
+			opdID = u
+		}
+		catUUIDs := map[string]string{
+			"JALAN-RUSAK":          "f0000000-0000-0000-0000-000000000001",
+			"DRAINASE-TERSUMBAT":   "f0000000-0000-0000-0000-000000000002",
+			"SAMPAH-LIAR":          "f0000000-0000-0000-0000-000000000003",
+			"LAMPU-JALAN":          "f0000000-0000-0000-0000-000000000004",
+			"RAMBU-RUSAK":          "f0000000-0000-0000-0000-000000000005",
+			"INFRASTRUKTUR-GEDUNG": "f0000000-0000-0000-0000-000000000006",
+			"FASILITAS-KESEHATAN":  "f0000000-0000-0000-0000-000000000007",
+		}
+		if u, ok := catUUIDs[categoryID]; ok {
+			categoryID = u
+		}
+
 		regionID := "a0000000-0000-0000-0000-000000000001"
 		cip := createIssuePayload{
 			ID:                   newIssueID,
@@ -239,7 +319,7 @@ func (r *repository) FindMatchingIssueOrCluster(ctx context.Context, title, desc
 			RegionID:             &regionID,
 			CenterLat:            lat,
 			CenterLng:            lng,
-			Status:               "DITERUSKAN",
+			Status:               "MENUNGGU_VERIFIKASI",
 			Urgency:              "NORMAL",
 			SafetyRisk:           "NONE",
 			UniqueReportersCount: 1,
@@ -273,6 +353,7 @@ func (r *repository) GetReportByCode(ctx context.Context, code string) (*Report,
 			ID                  string    `json:"id"`
 			Code                string    `json:"code"`
 			ReporterID          *string   `json:"reporter_id"`
+			IssueID             *string   `json:"issue_id"`
 			Title               string    `json:"title"`
 			Description         string    `json:"description"`
 			VoiceNoteTranscript *string   `json:"voice_note_transcript"`
@@ -281,6 +362,7 @@ func (r *repository) GetReportByCode(ctx context.Context, code string) (*Report,
 			AddressDetail       *string   `json:"address_detail"`
 			Visibility          string    `json:"visibility"`
 			Status              string    `json:"status"`
+			HideReason          *string   `json:"hide_reason"`
 			DistrictID          *string   `json:"district_id"`
 			VillageID           *string   `json:"village_id"`
 			OpdID               *string   `json:"opd_id"`
@@ -308,14 +390,40 @@ func (r *repository) GetReportByCode(ctx context.Context, code string) (*Report,
 				UpdatedAt:   item.UpdatedAt,
 				Timeline: []TimelineEvent{
 					{
-						Status:    item.Status,
-						Title:     "Laporan " + item.Status,
+						Status:    "DIAJUKAN",
+						Title:     "Laporan Berhasil Diajukan",
+						Note:      "Laporan telah tersimpan dan menunggu approval verifikasi dari Administrator Pusat.",
 						CreatedAt: item.CreatedAt,
 					},
 				},
 			}
 			if item.ReporterID != nil {
 				rep.ReporterID = *item.ReporterID
+			}
+			if item.IssueID != nil {
+				rep.IssueID = *item.IssueID
+			}
+			if item.HideReason != nil && *item.HideReason != "" {
+				rep.RejectionReason = *item.HideReason
+			}
+			if item.Status == "DITOLAK" {
+				note := "Laporan ditolak oleh Administrator Pusat."
+				if item.HideReason != nil && *item.HideReason != "" {
+					note = *item.HideReason
+				}
+				rep.Timeline = append(rep.Timeline, TimelineEvent{
+					Status:    "DITOLAK",
+					Title:     "Laporan Ditolak oleh Administrator Pusat",
+					Note:      note,
+					CreatedAt: item.UpdatedAt,
+				})
+			} else if item.Status == "DITERUSKAN" {
+				rep.Timeline = append(rep.Timeline, TimelineEvent{
+					Status:    "DITERUSKAN",
+					Title:     "Laporan Diteruskan",
+					Note:      "Laporan telah diverifikasi oleh Administrator Pusat dan diteruskan ke dinas terkait.",
+					CreatedAt: item.UpdatedAt,
+				})
 			}
 			if item.VoiceNoteTranscript != nil {
 				rep.VoiceNoteTranscript = *item.VoiceNoteTranscript

@@ -3,21 +3,7 @@ package issue
 import (
 	"context"
 	"errors"
-	"time"
 )
-
-type MapPoint struct {
-	ID            string        `json:"id"`
-	Code          string        `json:"code"`
-	Title         string        `json:"title"`
-	OpdID         string        `json:"opd_id"`
-	OpdName       string        `json:"opd_name"`
-	Status        IssueStatus   `json:"status"`
-	Urgency       Urgency       `json:"urgency"`
-	Point         LocationPoint `json:"point"`
-	AddressDetail string        `json:"address_detail"`
-	CoverPhotoURL string        `json:"cover_photo_url,omitempty"`
-}
 
 type Service interface {
 	ListIssues(ctx context.Context, opdID, status, q string) ([]Issue, error)
@@ -43,28 +29,11 @@ func (s *service) ListIssues(ctx context.Context, opdID, status, q string) ([]Is
 }
 
 func (s *service) GetIssueByID(ctx context.Context, id string) (*Issue, error) {
-	iss, err := s.repo.GetIssueByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	iss.IsOverdue = time.Now().After(iss.SlaDueAt) && iss.Status != StatusSelesai
-	return iss, nil
+	return s.repo.GetIssueByID(ctx, id)
 }
 
 func (s *service) SupportIssue(ctx context.Context, issueID, userID string) (int, error) {
-	count, err := s.repo.SupportIssue(ctx, issueID, userID)
-	if err != nil {
-		return 0, err
-	}
-	iss, err := s.repo.GetIssueByID(ctx, issueID)
-	if err == nil {
-		if count >= 10 {
-			iss.Urgency = UrgencyUrgent
-		} else if count >= 5 {
-			iss.Urgency = UrgencyTinggi
-		}
-	}
-	return count, nil
+	return s.repo.SupportIssue(ctx, issueID, userID)
 }
 
 func (s *service) Transition(ctx context.Context, issueID string, req TransitionRequest, authorName, authorOpd string) error {
@@ -115,20 +84,25 @@ func (s *service) validateTransition(current, target IssueStatus) bool {
 }
 
 func (s *service) RouteIssue(ctx context.Context, issueID string, req RouteIssueRequest) error {
-	if req.OpdID == "" {
+	opd := req.OpdID
+	if opd == "" {
+		opd = req.OpdCode
+	}
+	if opd == "" {
 		return errors.New("opd tujuan wajib dipilih")
 	}
-	return s.repo.RouteIssue(ctx, issueID, req.OpdID, req.CategoryID, req.Note)
+	cat := req.CategoryID
+	if cat == "" {
+		cat = req.CategoryCode
+	}
+	return s.repo.RouteIssue(ctx, issueID, opd, cat, req.Note)
 }
 
 func (s *service) RejectIssue(ctx context.Context, issueID string, req RejectIssueRequest) error {
-	evt := IssueEvent{
-		ToStatus:   string(StatusDitolak),
-		AuthorName: "Administrator Pusat",
-		Note:       req.Reason + ": " + req.Note,
+	if req.Reason == "" {
+		return errors.New("alasan penolakan wajib diisi")
 	}
-	_ = s.repo.AddEvent(ctx, issueID, evt)
-	return s.repo.UpdateStatus(ctx, issueID, StatusDitolak, "")
+	return s.repo.RejectIssue(ctx, issueID, req)
 }
 
 func (s *service) ListVerificationQueue(ctx context.Context) ([]Issue, error) {

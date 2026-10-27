@@ -108,6 +108,83 @@ export async function getAdminOverview(): Promise<Schema<"AdminOverview">> {
 export async function listVerification(
   params: PageParams & { kind?: Schema<"VerificationKind"> | undefined; opdCode?: string | undefined },
 ): Promise<Schema<"VerificationList">> {
+  const jar = await cookies();
+  const token = jar.get("govra_token")?.value;
+  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  try {
+    const res = await fetch(`${apiBase}/admin/verification`, {
+      headers: {
+        "X-BFF-Key": BFF_KEY,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      cache: "no-store",
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const rawItems = Array.isArray(data.items) ? data.items : [];
+      let mapped: Schema<"VerificationItem">[] = rawItems.map((iss: Record<string, any>) => {
+        const isTransfer = iss.status === "DIALIHKAN";
+        const isUnregistered = Boolean(iss.is_unregistered_opd) || iss.ai_opd_code === "TIDAK_TERDAFTAR";
+        const opdCode = iss.ai_opd_code || (isUnregistered ? "TIDAK_TERDAFTAR" : "DBM-SDA");
+        const opdName = iss.ai_opd_name || (isUnregistered ? "Tidak Masuk ke Dinas Manapun yang Terdaftar" : "Dinas Bina Marga & SDA");
+        const catCode = iss.ai_category_code || "UMUM";
+        const catName = iss.ai_category_name || "Umum";
+
+        return {
+          issue_id: iss.id,
+          kind: (isTransfer ? "PENGALIHAN" : "VERIFIKASI") as Schema<"VerificationKind">,
+          title: iss.title,
+          summary: iss.summary || null,
+          reporter_count: iss.unique_reporters_count || 1,
+          created_at: iss.created_at,
+          photo_urls: Array.isArray(iss.photo_urls) ? iss.photo_urls : iss.cover_photo_url ? [iss.cover_photo_url] : [],
+          ai_suggestion: {
+            opd: {
+              code: opdCode,
+              name: opdName,
+              slug: opdCode.toLowerCase(),
+            },
+            category: {
+              code: catCode,
+              name: catName,
+            },
+            confidence: typeof iss.ai_confidence === "number" ? iss.ai_confidence : 0.85,
+            is_unregistered_opd: isUnregistered,
+            recommended_action: iss.ai_recommendation || "",
+          },
+          current_opd: iss.opd_name
+            ? {
+                code: iss.opd_code || "",
+                name: iss.opd_name,
+                slug: (iss.opd_code || "").toLowerCase(),
+              }
+            : null,
+          transfer_reason: isTransfer ? "BUKAN_WEWENANG_OPD" : null,
+          transfer_note: iss.summary || null,
+        } as unknown as Schema<"VerificationItem">;
+      });
+
+      if (params.kind) {
+        mapped = mapped.filter((item) => item.kind === params.kind);
+      }
+      if (params.opdCode) {
+        mapped = mapped.filter((item) => {
+          if (params.opdCode === "TIDAK_TERDAFTAR") {
+            const sug = item.ai_suggestion as any;
+            return sug?.is_unregistered_opd || sug?.opd?.code === "TIDAK_TERDAFTAR";
+          }
+          return item.ai_suggestion?.opd.code === params.opdCode;
+        });
+      }
+
+      if (mapped.length > 0) {
+        return paginate(mapped, params);
+      }
+    }
+  } catch (err) {
+    console.error("[ADMIN VERIFICATION FETCH ERROR]", err);
+  }
+
   return paginate(
     pending().filter(
       (item) =>
@@ -119,6 +196,31 @@ export async function listVerification(
 }
 
 export async function routeIssue(id: string, input: RouteInput): Promise<Outcome<Schema<"IssueStatusResult">>> {
+  const jar = await cookies();
+  const token = jar.get("govra_token")?.value;
+  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  try {
+    const res = await fetch(`${apiBase}/admin/issues/${encodeURIComponent(id)}/route`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-BFF-Key": BFF_KEY,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        opd_code: input.opd_code,
+        category_code: input.category_code,
+      }),
+    });
+    if (res.ok) {
+      adminStore().decisions.set(id, { status: "DITERUSKAN" });
+      record("ISSUE_ROUTE", "issue", id, `Diteruskan ke OPD ${input.opd_code}, kategori ${input.category_code}.`);
+      return { ok: true, value: { issue_id: id, status: "DITERUSKAN" } };
+    }
+  } catch (err) {
+    console.error("[ROUTE ISSUE API ERROR]", err);
+  }
+
   const item = pending().find((entry) => entry.issue_id === id);
   if (!item) {
     return fail(404, "Isu tidak ada di antrean.");
@@ -134,6 +236,31 @@ export async function routeIssue(id: string, input: RouteInput): Promise<Outcome
 }
 
 export async function rejectIssue(id: string, input: RejectInput): Promise<Outcome<Schema<"IssueStatusResult">>> {
+  const jar = await cookies();
+  const token = jar.get("govra_token")?.value;
+  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  try {
+    const res = await fetch(`${apiBase}/admin/issues/${encodeURIComponent(id)}/reject`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-BFF-Key": BFF_KEY,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        reason: input.reason,
+        explanation: input.explanation,
+      }),
+    });
+    if (res.ok) {
+      adminStore().decisions.set(id, { status: "DITOLAK" });
+      record("ISSUE_REJECT", "issue", id, `Ditolak: ${REJECTION_LABEL[input.reason]}.`);
+      return { ok: true, value: { issue_id: id, status: "DITOLAK" } };
+    }
+  } catch (err) {
+    console.error("[REJECT ISSUE API ERROR]", err);
+  }
+
   if (!pending().some((entry) => entry.issue_id === id)) {
     return fail(404, "Isu tidak ada di antrean.");
   }

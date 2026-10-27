@@ -128,29 +128,49 @@ interface OpdSeed {
 
 export const OPDS: readonly OpdSeed[] = [
   {
-    ref: { code: "BMSDA", slug: "dinas-bina-marga-sda", name: "Dinas Bina Marga dan Sumber Daya Air" },
+    ref: { code: "DBM-SDA", slug: "bina-marga-sda", name: "Dinas Bina Marga & SDA" },
     categories: [
-      { code: "JALAN_RUSAK", name: "Jalan rusak" },
-      { code: "DRAINASE", name: "Saluran dan drainase" },
+      { code: "JALAN-RUSAK", name: "Jalan Rusak & Berlubang" },
+      { code: "DRAINASE-TERSUMBAT", name: "Saluran Air & Drainase Tersumbat" },
     ],
   },
   {
-    ref: { code: "LHK", slug: "dinas-lingkungan-hidup", name: "Dinas Lingkungan Hidup dan Kebersihan" },
-    categories: [{ code: "SAMPAH", name: "Sampah menumpuk" }],
+    ref: { code: "DLHK", slug: "lingkungan-hidup", name: "Dinas Lingkungan Hidup & Kebersihan" },
+    categories: [{ code: "SAMPAH-LIAR", name: "Tumpukan Sampah Liar" }],
   },
   {
-    ref: { code: "KES", slug: "dinas-kesehatan", name: "Dinas Kesehatan" },
-    categories: [{ code: "PUSKESMAS", name: "Layanan puskesmas" }],
+    ref: { code: "DISHUB", slug: "perhubungan", name: "Dinas Perhubungan" },
+    categories: [
+      { code: "LAMPU-JALAN", name: "Lampu Penerangan Jalan Padam" },
+      { code: "RAMBU-RUSAK", name: "Rambu & Traffic Light Rusak" },
+    ],
   },
   {
-    ref: { code: "PERHUB", slug: "dinas-perhubungan", name: "Dinas Perhubungan" },
-    categories: [{ code: "LAMPU_LALIN", name: "Lampu lalu lintas" }],
+    ref: { code: "DINKES", slug: "kesehatan", name: "Dinas Kesehatan" },
+    categories: [{ code: "FASILITAS-KESEHATAN", name: "Layanan Kesehatan & Faskes" }],
   },
   {
-    ref: { code: "DIKBUD", slug: "dinas-pendidikan-kebudayaan", name: "Dinas Pendidikan dan Kebudayaan" },
-    categories: [{ code: "SEKOLAH_RUSAK", name: "Fasilitas sekolah rusak" }],
+    ref: { code: "PUPR", slug: "pupr", name: "Dinas PUPR" },
+    categories: [{ code: "INFRASTRUKTUR-GEDUNG", name: "Infrastruktur & Gedung" }],
   },
 ];
+
+const OPD_ALIASES: Record<string, string> = {
+  BMSDA: "DBM-SDA",
+  LHK: "DLHK",
+  PERHUB: "DISHUB",
+  KES: "DINKES",
+  DIKBUD: "PUPR",
+};
+
+const CAT_ALIASES: Record<string, string> = {
+  JALAN_RUSAK: "JALAN-RUSAK",
+  DRAINASE: "DRAINASE-TERSUMBAT",
+  SAMPAH: "SAMPAH-LIAR",
+  LAMPU_LALIN: "LAMPU-JALAN",
+  PUSKESMAS: "FASILITAS-KESEHATAN",
+  SEKOLAH_RUSAK: "INFRASTRUKTUR-GEDUNG",
+};
 
 export function must<T>(value: T | undefined, what: string): T {
   if (value === undefined) {
@@ -160,11 +180,16 @@ export function must<T>(value: T | undefined, what: string): T {
 }
 
 export function opdRef(code: string): Schema<"OpdRef"> {
-  return must(OPDS.find((opd) => opd.ref.code === code)?.ref, code);
+  const resolved = OPD_ALIASES[code] ?? code;
+  return must(OPDS.find((opd) => opd.ref.code === resolved || opd.ref.code === code)?.ref, code);
 }
 
 export function categoryRef(code: string): Schema<"CategoryRef"> {
-  return must(OPDS.flatMap((opd) => opd.categories).find((item) => item.code === code), code);
+  const resolved = CAT_ALIASES[code] ?? code;
+  return must(
+    OPDS.flatMap((opd) => opd.categories).find((item) => item.code === resolved || item.code === code),
+    code,
+  );
 }
 
 export function goalRef(code: string): Schema<"Goal"> {

@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, ExternalLink, MapPin } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, ExternalLink, MapPin } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -61,6 +61,27 @@ export default async function MyReportPage({ params }: PageProps<"/pelapor/lapor
           <span>Dikirim {formatDateTime(report.created_at)}</span>
         </p>
       </header>
+      {report.status === "DITOLAK" && (
+        <div className="flex flex-col gap-3 rounded-xl border border-red-300 bg-red-50/90 dark:border-red-900/60 dark:bg-red-950/40 p-5 sm:p-6 shadow-xs">
+          <div className="flex items-center gap-2.5 text-red-800 dark:text-red-300 font-semibold text-base sm:text-lg">
+            <AlertCircle className="size-5 text-red-600 dark:text-red-400 shrink-0" />
+            <span>Laporan Ditolak</span>
+          </div>
+          <p className="text-sm text-red-700 dark:text-red-300 leading-relaxed">
+            Laporan ini tidak dapat diteruskan ke dinas terkait dan telah ditolak oleh Administrator Pusat Kota Contoh.
+          </p>
+          {report.rejection_reason && (
+            <div className="rounded-lg border border-red-200 bg-white dark:border-red-900/40 dark:bg-zinc-900 p-4">
+              <span className="text-xs font-semibold uppercase tracking-wider text-red-600 dark:text-red-400">
+                Alasan Penolakan:
+              </span>
+              <p className="text-sm font-semibold text-fg mt-1 leading-relaxed">
+                {report.rejection_reason}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
       <div className="grid gap-10 lg:grid-cols-3 lg:gap-12">
         <div className="flex flex-col gap-12 lg:col-span-2">
           <section className="flex flex-col gap-4">

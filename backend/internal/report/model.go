@@ -48,6 +48,14 @@ type Report struct {
 	OpdName             string          `json:"opd_name,omitempty"`
 	CategoryID          string          `json:"category_id,omitempty"`
 	CategoryName        string          `json:"category_name,omitempty"`
+	AiOpdCode           string          `json:"ai_opd_code,omitempty"`
+	AiOpdName           string          `json:"ai_opd_name,omitempty"`
+	AiCategoryCode      string          `json:"ai_category_code,omitempty"`
+	AiCategoryName      string          `json:"ai_category_name,omitempty"`
+	AiConfidence        float64         `json:"ai_confidence,omitempty"`
+	AiSummary           string          `json:"ai_summary,omitempty"`
+	IsUnregisteredOpd   bool            `json:"is_unregistered_opd"`
+	RejectionReason     string          `json:"rejection_reason,omitempty"`
 	DistrictID          string          `json:"district_id"`
 	DistrictName        string          `json:"district_name"`
 	VillageID           string          `json:"village_id"`

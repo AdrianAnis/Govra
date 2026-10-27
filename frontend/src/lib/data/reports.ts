@@ -6,7 +6,10 @@ import { locationOf } from "@/lib/mock/reference";
 import { allReports, reportStore } from "@/lib/mock/reports";
 import type { Schema } from "@/lib/schema";
 
-export type Detail = Schema<"MyReportDetail"> & { address_detail?: string | null };
+export type Detail = Schema<"MyReportDetail"> & {
+  address_detail?: string | null;
+  rejection_reason?: string | null;
+};
 
 export interface CreateReportInput {
   title: string;
@@ -135,6 +138,12 @@ export async function getMyReport(code: string): Promise<Detail | null> {
         mime: (typeof a.mime === "string" ? a.mime : typeof a.mime_type === "string" ? a.mime_type : "image/jpeg") as "image/jpeg" | "image/png" | "image/webp",
         size_bytes: typeof a.size_bytes === "number" ? a.size_bytes : typeof a.file_size === "number" ? a.file_size : 0,
       }));
+      const rejectionReason =
+        r.rejection_reason ||
+        r.hide_reason ||
+        timelineRaw.find((t) => t.status === "DITOLAK")?.note ||
+        null;
+
       return {
         code: r.code,
         title: r.title || null,
@@ -146,6 +155,7 @@ export async function getMyReport(code: string): Promise<Detail | null> {
         location: loc,
         address_detail: r.address_detail || null,
         attachments,
+        rejection_reason: rejectionReason,
         timeline: timelineRaw.map((t, idx) => ({
           id: `evt-${idx}`,
           at: t.created_at || r.created_at,

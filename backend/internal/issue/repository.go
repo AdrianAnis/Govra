@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"net/url"
 	"sync"
 	"time"
 
@@ -19,6 +21,7 @@ type Repository interface {
 	AddEvent(ctx context.Context, issueID string, evt IssueEvent) error
 	UpdateStatus(ctx context.Context, issueID string, status IssueStatus, coverPhoto string) error
 	RouteIssue(ctx context.Context, issueID, opdID, categoryID, note string) error
+	RejectIssue(ctx context.Context, issueID string, req RejectIssueRequest) error
 	ListVerificationQueue(ctx context.Context) ([]Issue, error)
 }
 
@@ -42,7 +45,7 @@ func NewRepository(database *db.Database) Repository {
 			Title:                "Jalan Berlubang di Jl. Sudirman",
 			Summary:              "Lubang sedalam 15cm membahayakan pengendara motor",
 			OpdID:                "e0000000-0000-0000-0000-000000000001",
-			OpdName:              "Dinas Bina Marga",
+			OpdName:              "Dinas Bina Marga & SDA",
 			CategoryID:           "f0000000-0000-0000-0000-000000000001",
 			CategoryName:         "Jalan & Jembatan",
 			DistrictID:           "b0000000-0000-0000-0000-000000000001",
@@ -267,38 +270,351 @@ func (r *repository) UpdateStatus(ctx context.Context, issueID string, status Is
 }
 
 func (r *repository) RouteIssue(ctx context.Context, issueID, opdID, categoryID, note string) error {
+	opdUUIDs := map[string]string{
+		"DBM-SDA": "e0000000-0000-0000-0000-000000000001",
+		"DLHK":    "e0000000-0000-0000-0000-000000000002",
+		"DISHUB":  "e0000000-0000-0000-0000-000000000003",
+		"DINKES":  "e0000000-0000-0000-0000-000000000004",
+		"PUPR":    "e0000000-0000-0000-0000-000000000007",
+	}
+	targetOpdUUID := opdID
+	if mapped, ok := opdUUIDs[opdID]; ok {
+		targetOpdUUID = mapped
+	}
+
+	catUUIDs := map[string]string{
+		"JALAN-RUSAK":          "f0000000-0000-0000-0000-000000000001",
+		"DRAINASE-TERSUMBAT":   "f0000000-0000-0000-0000-000000000002",
+		"SAMPAH-LIAR":          "f0000000-0000-0000-0000-000000000003",
+		"LAMPU-JALAN":          "f0000000-0000-0000-0000-000000000004",
+		"RAMBU-RUSAK":          "f0000000-0000-0000-0000-000000000005",
+		"INFRASTRUKTUR-GEDUNG": "f0000000-0000-0000-0000-000000000006",
+		"FASILITAS-KESEHATAN":  "f0000000-0000-0000-0000-000000000007",
+	}
+	targetCatUUID := categoryID
+	if mapped, ok := catUUIDs[categoryID]; ok {
+		targetCatUUID = mapped
+	}
+
+	if r.db != nil && r.db.HasREST() {
+		patchPayload := map[string]any{
+			"status":     "DITERUSKAN",
+			"updated_at": time.Now(),
+		}
+		if _, err := uuid.Parse(targetOpdUUID); err == nil {
+			patchPayload["opd_id"] = targetOpdUUID
+		}
+		if _, err := uuid.Parse(targetCatUUID); err == nil {
+			patchPayload["category_id"] = targetCatUUID
+		}
+
+		_ = r.db.PostgRESTPatch(ctx, fmt.Sprintf("issues?id=eq.%s", url.QueryEscape(issueID)), patchPayload)
+		_ = r.db.PostgRESTPatch(ctx, fmt.Sprintf("reports?issue_id=eq.%s", url.QueryEscape(issueID)), patchPayload)
+		_ = r.db.PostgRESTPatch(ctx, fmt.Sprintf("reports?id=eq.%s", url.QueryEscape(issueID)), patchPayload)
+
+		_ = r.db.PostgRESTPost(ctx, "issue_events", map[string]any{
+			"id":          uuid.New().String(),
+			"issue_id":    issueID,
+			"from_status": "MENUNGGU_VERIFIKASI",
+			"to_status":   "DITERUSKAN",
+			"note":        note,
+			"created_at":  time.Now(),
+		}, nil)
+	}
+
 	if r.db != nil && r.db.Pool != nil {
 		query := `UPDATE app.issues SET opd_id = $2::uuid, category_id = NULLIF($3,'')::uuid, status = 'DITERUSKAN', updated_at = now() WHERE id = $1`
-		_, err := r.db.Pool.Exec(ctx, query, issueID, opdID, categoryID)
-		if err != nil {
-			return err
-		}
+		_, _ = r.db.Pool.Exec(ctx, query, issueID, targetOpdUUID, targetCatUUID)
+		_, _ = r.db.Pool.Exec(ctx, `UPDATE app.reports SET opd_id = $2::uuid, category_id = NULLIF($3,'')::uuid, status = 'DITERUSKAN', updated_at = now() WHERE issue_id = $1::uuid OR id = $1::uuid`, issueID, targetOpdUUID, targetCatUUID)
 		_, _ = r.db.Pool.Exec(ctx, `INSERT INTO app.issue_events (id, issue_id, from_status, to_status, note, created_at) VALUES ($1, $2, 'MENUNGGU_VERIFIKASI', 'DITERUSKAN', $3, now())`, uuid.New().String(), issueID, note)
-		return nil
 	}
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	iss, ok := r.issues[issueID]
-	if !ok {
-		return errors.New("isu tidak ditemukan")
+	if ok {
+		iss.OpdID = targetOpdUUID
+		iss.CategoryID = targetCatUUID
+		iss.Status = StatusDiteruskan
+		iss.Events = append(iss.Events, IssueEvent{
+			ID:         uuid.New().String(),
+			FromStatus: string(StatusMenungguVerifikasi),
+			ToStatus:   string(StatusDiteruskan),
+			AuthorName: "Administrator Pusat",
+			Note:       note,
+			CreatedAt:  time.Now(),
+		})
+		iss.UpdatedAt = time.Now()
 	}
-	iss.OpdID = opdID
-	iss.CategoryID = categoryID
-	iss.Status = StatusDiteruskan
-	iss.Events = append(iss.Events, IssueEvent{
-		ID:         uuid.New().String(),
-		FromStatus: string(StatusMenungguVerifikasi),
-		ToStatus:   string(StatusDiteruskan),
-		AuthorName: "Administrator Pusat",
-		Note:       note,
-		CreatedAt:  time.Now(),
-	})
-	iss.UpdatedAt = time.Now()
+	return nil
+}
+
+func (r *repository) RejectIssue(ctx context.Context, issueID string, req RejectIssueRequest) error {
+	reasonLabels := map[string]string{
+		"DUPLIKAT":             "Duplikat isu lain",
+		"DATA_TIDAK_LENGKAP":   "Data tidak lengkap",
+		"BUKAN_MASALAH_PUBLIK": "Bukan masalah publik",
+		"SUDAH_DITANGANI":      "Sudah ditangani",
+		"LAPORAN_TIDAK_BENAR":  "Laporan tidak benar",
+	}
+
+	label := reasonLabels[req.Reason]
+	if label == "" {
+		label = req.Reason
+	}
+	explanation := req.Explanation
+	if explanation == "" {
+		explanation = req.Note
+	}
+	fullReason := label
+	if explanation != "" {
+		fullReason = label + ": " + explanation
+	}
+
+	if r.db != nil && r.db.HasREST() {
+		patchPayload := map[string]any{
+			"status":      "DITOLAK",
+			"hide_reason": fullReason,
+			"updated_at":  time.Now(),
+		}
+
+		_ = r.db.PostgRESTPatch(ctx, fmt.Sprintf("issues?id=eq.%s", url.QueryEscape(issueID)), map[string]any{
+			"status":     "DITOLAK",
+			"updated_at": time.Now(),
+		})
+		_ = r.db.PostgRESTPatch(ctx, fmt.Sprintf("reports?issue_id=eq.%s", url.QueryEscape(issueID)), patchPayload)
+		_ = r.db.PostgRESTPatch(ctx, fmt.Sprintf("reports?id=eq.%s", url.QueryEscape(issueID)), patchPayload)
+
+		_ = r.db.PostgRESTPost(ctx, "issue_events", map[string]any{
+			"id":          uuid.New().String(),
+			"issue_id":    issueID,
+			"from_status": "MENUNGGU_VERIFIKASI",
+			"to_status":   "DITOLAK",
+			"note":        fullReason,
+			"created_at":  time.Now(),
+		}, nil)
+	}
+
+	if r.db != nil && r.db.Pool != nil {
+		_, _ = r.db.Pool.Exec(ctx, `UPDATE app.issues SET status = 'DITOLAK', updated_at = now() WHERE id = $1`, issueID)
+		_, _ = r.db.Pool.Exec(ctx, `UPDATE app.reports SET status = 'DITOLAK', hide_reason = $2, updated_at = now() WHERE issue_id = $1::uuid OR id = $1::uuid`, issueID, fullReason)
+		_, _ = r.db.Pool.Exec(ctx, `INSERT INTO app.issue_events (id, issue_id, from_status, to_status, note, created_at) VALUES ($1, $2, 'MENUNGGU_VERIFIKASI', 'DITOLAK', $3, now())`, uuid.New().String(), issueID, fullReason)
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	iss, ok := r.issues[issueID]
+	if ok {
+		iss.Status = StatusDitolak
+		iss.Events = append(iss.Events, IssueEvent{
+			ID:         uuid.New().String(),
+			FromStatus: string(StatusMenungguVerifikasi),
+			ToStatus:   string(StatusDitolak),
+			AuthorName: "Administrator Pusat",
+			Note:       fullReason,
+			CreatedAt:  time.Now(),
+		})
+		iss.UpdatedAt = time.Now()
+	}
 	return nil
 }
 
 func (r *repository) ListVerificationQueue(ctx context.Context) ([]Issue, error) {
+	if r.db != nil && r.db.HasREST() {
+		var restIssues []struct {
+			ID                   string    `json:"id"`
+			Code                 string    `json:"code"`
+			Title                string    `json:"title"`
+			Summary              *string   `json:"summary"`
+			OpdID                *string   `json:"opd_id"`
+			CategoryID           *string   `json:"category_id"`
+			DistrictID           *string   `json:"district_id"`
+			VillageID            *string   `json:"village_id"`
+			CenterLat            float64   `json:"center_lat"`
+			CenterLng            float64   `json:"center_lng"`
+			Status               string    `json:"status"`
+			Urgency              string    `json:"urgency"`
+			SafetyRisk           string    `json:"safety_risk"`
+			UniqueReportersCount int       `json:"unique_reporters_count"`
+			CoverPhotoURL        *string   `json:"cover_photo_url"`
+			CreatedAt            time.Time `json:"created_at"`
+			UpdatedAt            time.Time `json:"updated_at"`
+		}
+
+		opdNames := map[string]string{
+			"e0000000-0000-0000-0000-000000000001": "Dinas Bina Marga & SDA",
+			"e0000000-0000-0000-0000-000000000002": "Dinas Lingkungan Hidup & Kebersihan",
+			"e0000000-0000-0000-0000-000000000003": "Dinas Perhubungan",
+			"e0000000-0000-0000-0000-000000000004": "Dinas Kesehatan",
+			"e0000000-0000-0000-0000-000000000007": "Dinas PUPR",
+			"DBM-SDA":                              "Dinas Bina Marga & SDA",
+			"DLHK":                                 "Dinas Lingkungan Hidup & Kebersihan",
+			"DISHUB":                               "Dinas Perhubungan",
+			"DINKES":                               "Dinas Kesehatan",
+			"PUPR":                                 "Dinas PUPR",
+		}
+
+		opdCodes := map[string]string{
+			"e0000000-0000-0000-0000-000000000001": "DBM-SDA",
+			"e0000000-0000-0000-0000-000000000002": "DLHK",
+			"e0000000-0000-0000-0000-000000000003": "DISHUB",
+			"e0000000-0000-0000-0000-000000000004": "DINKES",
+			"e0000000-0000-0000-0000-000000000007": "PUPR",
+			"DBM-SDA":                              "DBM-SDA",
+			"DLHK":                                 "DLHK",
+			"DISHUB":                               "DISHUB",
+			"DINKES":                               "DINKES",
+			"PUPR":                                 "PUPR",
+		}
+
+		type clsRecord struct {
+			ReportID    string  `json:"report_id"`
+			Confidence  float64 `json:"confidence"`
+			Summary     string  `json:"summary"`
+			RawResponse struct {
+				OpdCode           string  `json:"opd_code"`
+				OpdName           string  `json:"opd_name"`
+				CategoryCode      string  `json:"category_code"`
+				CategoryName      string  `json:"category_name"`
+				IsUnregisteredOpd bool    `json:"is_unregistered_opd"`
+				RecommendedAction string  `json:"recommended_action"`
+			} `json:"raw_response"`
+		}
+		var classifications []clsRecord
+		_ = r.db.PostgRESTGet(ctx, "ai_classifications?order=created_at.desc&limit=100", &classifications)
+		aiByReport := make(map[string]clsRecord)
+		for _, c := range classifications {
+			aiByReport[c.ReportID] = c
+		}
+
+		var reports []struct {
+			ID          string    `json:"id"`
+			Code        string    `json:"code"`
+			IssueID     *string   `json:"issue_id"`
+			Title       string    `json:"title"`
+			Description string    `json:"description"`
+			Status      string    `json:"status"`
+			CreatedAt   time.Time `json:"created_at"`
+		}
+		_ = r.db.PostgRESTGet(ctx, "reports?order=created_at.desc&limit=200", &reports)
+
+		var attachments []struct {
+			ReportID string `json:"report_id"`
+			FileURL  string `json:"file_url"`
+		}
+		_ = r.db.PostgRESTGet(ctx, "report_attachments?limit=500", &attachments)
+		photosByReport := make(map[string][]string)
+		for _, a := range attachments {
+			if a.FileURL != "" {
+				photosByReport[a.ReportID] = append(photosByReport[a.ReportID], a.FileURL)
+			}
+		}
+
+		endpoint := "issues?status=in.(MENUNGGU_VERIFIKASI,DIALIHKAN,DIAJUKAN)&order=created_at.asc"
+		_ = r.db.PostgRESTGet(ctx, endpoint, &restIssues)
+
+		var list []Issue
+		seenIssueIDs := make(map[string]bool)
+		for _, item := range restIssues {
+			seenIssueIDs[item.ID] = true
+			iss := Issue{
+				ID:                   item.ID,
+				Code:                 item.Code,
+				Title:                item.Title,
+				Status:               IssueStatus(item.Status),
+				Urgency:              Urgency(item.Urgency),
+				SafetyRisk:           item.SafetyRisk,
+				UniqueReportersCount: item.UniqueReportersCount,
+				Point:                LocationPoint{Lat: item.CenterLat, Lng: item.CenterLng},
+				CreatedAt:            item.CreatedAt,
+				UpdatedAt:            item.UpdatedAt,
+			}
+			if item.Summary != nil {
+				iss.Summary = *item.Summary
+			}
+			if item.CoverPhotoURL != nil {
+				iss.CoverPhotoURL = *item.CoverPhotoURL
+			}
+			if item.OpdID != nil {
+				iss.OpdID = *item.OpdID
+				iss.OpdCode = opdCodes[*item.OpdID]
+				iss.OpdName = opdNames[*item.OpdID]
+			}
+
+			for _, rep := range reports {
+				if rep.IssueID != nil && *rep.IssueID == item.ID {
+					if photos, ok := photosByReport[rep.ID]; ok {
+						iss.PhotoURLs = append(iss.PhotoURLs, photos...)
+					}
+					if cls, ok := aiByReport[rep.ID]; ok {
+						iss.AiOpdCode = cls.RawResponse.OpdCode
+						iss.AiOpdName = cls.RawResponse.OpdName
+						iss.AiCategoryCode = cls.RawResponse.CategoryCode
+						iss.AiCategoryName = cls.RawResponse.CategoryName
+						iss.AiConfidence = cls.Confidence
+						iss.AiSummary = cls.Summary
+						iss.IsUnregisteredOpd = cls.RawResponse.IsUnregisteredOpd
+						iss.AiRecommendation = cls.RawResponse.RecommendedAction
+					}
+				}
+			}
+
+			if iss.AiOpdCode == "" {
+				iss.AiOpdCode = "DBM-SDA"
+				iss.AiOpdName = "Dinas Bina Marga & SDA"
+				iss.AiCategoryCode = "JALAN-RUSAK"
+				iss.AiCategoryName = "Jalan Rusak & Berlubang"
+				iss.AiConfidence = 0.85
+				iss.AiSummary = iss.Title
+			}
+
+			list = append(list, iss)
+		}
+
+		for _, rep := range reports {
+			if rep.Status == "DIAJUKAN" && (rep.IssueID == nil || !seenIssueIDs[*rep.IssueID]) {
+				targetID := rep.ID
+				if rep.IssueID != nil && *rep.IssueID != "" {
+					targetID = *rep.IssueID
+				}
+				iss := Issue{
+					ID:                   targetID,
+					Code:                 rep.Code,
+					Title:                rep.Title,
+					Summary:              rep.Description,
+					Status:               StatusMenungguVerifikasi,
+					Urgency:              UrgencyNormal,
+					UniqueReportersCount: 1,
+					CreatedAt:            rep.CreatedAt,
+					UpdatedAt:            rep.CreatedAt,
+					PhotoURLs:            photosByReport[rep.ID],
+				}
+				if cls, ok := aiByReport[rep.ID]; ok {
+					iss.AiOpdCode = cls.RawResponse.OpdCode
+					iss.AiOpdName = cls.RawResponse.OpdName
+					iss.AiCategoryCode = cls.RawResponse.CategoryCode
+					iss.AiCategoryName = cls.RawResponse.CategoryName
+					iss.AiConfidence = cls.Confidence
+					iss.AiSummary = cls.Summary
+					iss.IsUnregisteredOpd = cls.RawResponse.IsUnregisteredOpd
+					iss.AiRecommendation = cls.RawResponse.RecommendedAction
+				} else {
+					iss.AiOpdCode = "DBM-SDA"
+					iss.AiOpdName = "Dinas Bina Marga & SDA"
+					iss.AiCategoryCode = "JALAN-RUSAK"
+					iss.AiCategoryName = "Jalan Rusak & Berlubang"
+					iss.AiConfidence = 0.85
+					iss.AiSummary = rep.Title
+				}
+				list = append(list, iss)
+			}
+		}
+
+		if len(list) > 0 {
+			return list, nil
+		}
+	}
+
 	if r.db != nil && r.db.Pool != nil {
 		query := `SELECT i.id, i.code, i.title, COALESCE(i.summary,''), 
 		          COALESCE(i.opd_id::text,''), COALESCE(o.name,''), 
@@ -313,7 +629,7 @@ func (r *repository) ListVerificationQueue(ctx context.Context) ([]Issue, error)
 		          LEFT JOIN app.categories c ON i.category_id = c.id 
 		          LEFT JOIN app.districts d ON i.district_id = d.id 
 		          LEFT JOIN app.villages v ON i.village_id = v.id 
-		          WHERE i.status IN ('MENUNGGU_VERIFIKASI', 'DIALIHKAN') 
+		          WHERE i.status IN ('MENUNGGU_VERIFIKASI', 'DIALIHKAN', 'DIAJUKAN') 
 		          ORDER BY i.created_at ASC`
 		rows, err := r.db.Pool.Query(ctx, query)
 		if err == nil {
@@ -328,7 +644,9 @@ func (r *repository) ListVerificationQueue(ctx context.Context) ([]Issue, error)
 					list = append(list, iss)
 				}
 			}
-			return list, nil
+			if len(list) > 0 {
+				return list, nil
+			}
 		}
 	}
 

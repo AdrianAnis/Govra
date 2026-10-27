@@ -50,8 +50,10 @@ type Issue struct {
 	Title                string              `json:"title"`
 	Summary              string              `json:"summary"`
 	OpdID                string              `json:"opd_id"`
+	OpdCode              string              `json:"opd_code,omitempty"`
 	OpdName              string              `json:"opd_name"`
 	CategoryID           string              `json:"category_id"`
+	CategoryCode         string              `json:"category_code,omitempty"`
 	CategoryName         string              `json:"category_name"`
 	DistrictID           string              `json:"district_id"`
 	DistrictName         string              `json:"district_name"`
@@ -66,8 +68,16 @@ type Issue struct {
 	SlaDueAt             time.Time           `json:"sla_due_at"`
 	IsOverdue            bool                `json:"is_overdue"`
 	CoverPhotoURL        string              `json:"cover_photo_url,omitempty"`
+	PhotoURLs            []string            `json:"photo_urls,omitempty"`
 	Reports              []IssueMemberReport `json:"reports,omitempty"`
 	Events               []IssueEvent        `json:"events"`
+	AiOpdCode            string              `json:"ai_opd_code,omitempty"`
+	AiOpdName            string              `json:"ai_opd_name,omitempty"`
+	AiCategoryCode       string              `json:"ai_category_code,omitempty"`
+	AiCategoryName       string              `json:"ai_category_name,omitempty"`
+	AiConfidence         float64             `json:"ai_confidence,omitempty"`
+	AiSummary            string              `json:"ai_summary,omitempty"`
+	IsUnregisteredOpd    bool                `json:"is_unregistered_opd"`
 	AiRecommendation     string              `json:"ai_recommendation,omitempty"`
 	CreatedAt            time.Time           `json:"created_at"`
 	UpdatedAt            time.Time           `json:"updated_at"`
@@ -82,17 +92,33 @@ type TransitionRequest struct {
 }
 
 type RouteIssueRequest struct {
-	OpdID      string `json:"opd_id"`
-	CategoryID string `json:"category_id"`
-	Note       string `json:"note,omitempty"`
+	OpdID        string `json:"opd_id"`
+	OpdCode      string `json:"opd_code"`
+	CategoryID   string `json:"category_id"`
+	CategoryCode string `json:"category_code"`
+	Note         string `json:"note,omitempty"`
 }
 
 type RejectIssueRequest struct {
-	Reason string `json:"reason"`
-	Note   string `json:"note"`
+	Reason      string `json:"reason"`
+	Explanation string `json:"explanation"`
+	Note        string `json:"note"`
 }
 
 type PublicationRequest struct {
 	PublicOK bool `json:"public_ok"`
 	IsCover  bool `json:"is_cover"`
+}
+
+type MapPoint struct {
+	ID            string        `json:"id"`
+	Code          string        `json:"code"`
+	Title         string        `json:"title"`
+	OpdID         string        `json:"opd_id"`
+	OpdName       string        `json:"opd_name"`
+	Status        IssueStatus   `json:"status"`
+	Urgency       Urgency       `json:"urgency"`
+	Point         LocationPoint `json:"point"`
+	AddressDetail string        `json:"address_detail"`
+	CoverPhotoURL string        `json:"cover_photo_url,omitempty"`
 }
