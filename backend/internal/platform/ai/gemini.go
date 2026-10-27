@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"strings"
 	"time"
@@ -16,6 +17,23 @@ type Client struct {
 	apiKey     string
 	model      string
 	httpClient *http.Client
+}
+
+type ModerationResult struct {
+	IsViolation    bool    `json:"is_violation"`
+	ViolationType  string  `json:"violation_type"`
+	Confidence     float64 `json:"confidence"`
+	Reason         string  `json:"reason"`
+	Topic          string  `json:"topic"`
+	EstimatedOpd   string  `json:"estimated_opd"`
+	SuggestedTitle string  `json:"suggested_title"`
+}
+
+type SimilarityResult struct {
+	TopicSimilarity    float64 `json:"topic_similarity"`
+	LocationSimilarity float64 `json:"location_similarity"`
+	TotalSimilarity    float64 `json:"total_similarity"`
+	IsSimilar          bool    `json:"is_similar"`
 }
 
 type TriageResult struct {
@@ -200,4 +218,165 @@ func cleanJSON(s string) string {
 	s = strings.TrimPrefix(s, "```")
 	s = strings.TrimSuffix(s, "```")
 	return strings.TrimSpace(s)
+}
+
+func (c *Client) CheckContentModeration(ctx context.Context, text string) (*ModerationResult, error) {
+	if c.apiKey == "" {
+		return &ModerationResult{
+			IsViolation:   false,
+			ViolationType: "NONE",
+			Confidence:    0.0,
+			Topic:         "Umum",
+		}, nil
+	}
+	prompt := fmt.Sprintf(`Anda adalah AI Content Moderation & Triage untuk Sistem Pengaduan Warga Kota Bandung (Govra).
+Tugas Anda adalah memeriksa teks laporan warga apakah mengandung:
+1. SARA (Ujaran kebencian, diskriminasi/penghinaan suku, agama, ras, antargolongan)
+2. PORNOGRAFI (Konten seksual, vulgar, asusila, pornografi, pelecehan seksual)
+3. GIBBERISH / TEKS TIDAK JELAS (Ketikan acak keyboard smashing seperti 'asdfghjkl', 'qwertyuiop', 'aaaaaaa', spam tanpa makna yang bukan pengaduan publik nyata)
+
+Teks laporan yang diperiksa:
+"%s"
+
+Aturan evaluasi:
+- Jika terdeteksi SARA, PORNOGRAFI, atau GIBBERISH dengan confidence > 0.8 (80%%):
+  "is_violation": true,
+  "violation_type": "SARA" atau "PORNOGRAPHY" atau "GIBBERISH",
+  "confidence": angka 0.81 sampai 1.0,
+  "reason": "Penjelasan santun dalam Bahasa Indonesia mengapa laporan ini terindikasi melanggar pedoman dan tidak dapat dilanjutkan.",
+  "topic": "",
+  "estimated_opd": "",
+  "suggested_title": ""
+
+- Jika aman (tidak ada pelanggaran atau confidence <= 0.8):
+  "is_violation": false,
+  "violation_type": "NONE",
+  "confidence": angka 0.0 sampai 0.2,
+  "reason": "",
+  "topic": "Salah satu dari: Jalan & Jembatan, Sampah & Lingkungan, Penerangan Jalan & Dishub, Ketertiban Umum, Kesehatan Lingkungan, Drainase & Banjir, Kebencanaan",
+  "estimated_opd": "Salah satu dari: DBM-SDA, DLHK, DISHUB, SATPOL-PP, DINKES, BPBD",
+  "suggested_title": "Judul singkat maksimal 60 karakter yang merangkum masalah"
+
+Keluarkan HANYA format JSON murni tanpa markdown triple backticks.`, text)
+
+	raw, err := c.generateContent(ctx, geminiRequest{
+		Contents: []geminiContent{
+			{Parts: []geminiPart{{Text: prompt}}},
+		},
+	})
+	if err != nil {
+		return &ModerationResult{
+			IsViolation:   false,
+			ViolationType: "NONE",
+			Confidence:    0.0,
+			Topic:         "Umum",
+		}, nil
+	}
+
+	cleaned := cleanJSON(raw)
+	var res ModerationResult
+	if err := json.Unmarshal([]byte(cleaned), &res); err != nil {
+		return &ModerationResult{
+			IsViolation:   false,
+			ViolationType: "NONE",
+			Confidence:    0.0,
+			Topic:         "Umum",
+		}, nil
+	}
+	return &res, nil
+}
+
+func CalculateLocationSimilarity(lat1, lng1, lat2, lng2 float64) float64 {
+	if (lat1 == 0 && lng1 == 0) || (lat2 == 0 && lng2 == 0) {
+		return 0.55
+	}
+	d := haversineDistanceMeters(lat1, lng1, lat2, lng2)
+	if d <= 100 {
+		return 1.0
+	}
+	if d <= 300 {
+		return 0.90
+	}
+	if d <= 600 {
+		return 0.80
+	}
+	if d <= 1000 {
+		return 0.65
+	}
+	if d <= 1500 {
+		return 0.52
+	}
+	if d <= 2500 {
+		return 0.35
+	}
+	return 0.10
+}
+
+func CalculateTopicSimilarity(topic1, desc1, topic2, desc2 string) float64 {
+	t1 := strings.ToLower(strings.TrimSpace(topic1))
+	t2 := strings.ToLower(strings.TrimSpace(topic2))
+	if t1 != "" && t2 != "" && t1 == t2 {
+		return 0.90
+	}
+	words1 := extractKeywords(desc1)
+	words2 := extractKeywords(desc2)
+	if len(words1) == 0 || len(words2) == 0 {
+		return 0.50
+	}
+	matchCount := 0
+	set2 := make(map[string]bool)
+	for _, w := range words2 {
+		set2[w] = true
+	}
+	for _, w := range words1 {
+		if set2[w] {
+			matchCount++
+		}
+	}
+	unionCount := len(words1) + len(words2) - matchCount
+	if unionCount <= 0 {
+		return 0.0
+	}
+	jaccard := float64(matchCount) / float64(unionCount)
+	return math.Min(1.0, 0.40+(jaccard*1.2))
+}
+
+func EvaluateSimilarity(topicSim, locSim float64) SimilarityResult {
+	total := (topicSim * 0.5) + (locSim * 0.5)
+	isSimilar := topicSim > 0.50 && locSim > 0.50 && total > 0.80
+	return SimilarityResult{
+		TopicSimilarity:    topicSim,
+		LocationSimilarity: locSim,
+		TotalSimilarity:    total,
+		IsSimilar:          isSimilar,
+	}
+}
+
+func haversineDistanceMeters(lat1, lon1, lat2, lon2 float64) float64 {
+	const R = 6371000
+	dLat := (lat2 - lat1) * (math.Pi / 180.0)
+	dLon := (lon2 - lon1) * (math.Pi / 180.0)
+	a := math.Sin(dLat/2)*math.Sin(dLat/2) +
+		math.Cos(lat1*(math.Pi/180.0))*math.Cos(lat2*(math.Pi/180.0))*
+			math.Sin(dLon/2)*math.Sin(dLon/2)
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+	return R * c
+}
+
+func extractKeywords(text string) []string {
+	stopWords := map[string]bool{
+		"yang": true, "di": true, "dan": true, "ini": true, "itu": true,
+		"ke": true, "dari": true, "untuk": true, "pada": true, "adalah": true,
+		"ada": true, "karena": true, "saat": true, "oleh": true, "dengan": true,
+		"saya": true, "kami": true, "bisa": true, "sudah": true, "telah": true,
+	}
+	fields := strings.Fields(strings.ToLower(text))
+	var result []string
+	for _, f := range fields {
+		clean := strings.Trim(f, `.,!?:;'"()[]{}*-/`)
+		if len(clean) >= 3 && !stopWords[clean] {
+			result = append(result, clean)
+		}
+	}
+	return result
 }

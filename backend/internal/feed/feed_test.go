@@ -34,7 +34,7 @@ func TestListAndCreateFeed(t *testing.T) {
 	app, _, tm := setupFeedApp()
 	pelaporToken, _ := tm.Generate("warga-1", "warga1@example.com", "Rian", "pelapor", "")
 
-	listReq := httptest.NewRequest(http.MethodGet, "/feeds", nil)
+	listReq := httptest.NewRequest(http.MethodGet, "/feeds?tab=trending", nil)
 	listResp, err := app.Test(listReq)
 	if err != nil {
 		t.Fatalf("failed list feeds: %v", err)
@@ -82,5 +82,53 @@ func TestLikeAndShareFeed(t *testing.T) {
 	}
 	if shareResp.StatusCode != fiber.StatusOK {
 		t.Fatalf("expected 200, got %d", shareResp.StatusCode)
+	}
+}
+
+func TestSupportAndCommentFeed(t *testing.T) {
+	app, _, tm := setupFeedApp()
+	pelaporToken, _ := tm.Generate("warga-1", "warga1@example.com", "Rian", "pelapor", "")
+
+	supportReq := httptest.NewRequest(http.MethodPost, "/feeds/fd-001/support", nil)
+	supportReq.Header.Set("Authorization", "Bearer "+pelaporToken)
+	supportResp, err := app.Test(supportReq)
+	if err != nil {
+		t.Fatalf("failed support feed: %v", err)
+	}
+	if supportResp.StatusCode != fiber.StatusOK {
+		t.Fatalf("expected 200, got %d", supportResp.StatusCode)
+	}
+
+	supListReq := httptest.NewRequest(http.MethodGet, "/feeds/fd-001/supporters", nil)
+	supListResp, err := app.Test(supListReq)
+	if err != nil {
+		t.Fatalf("failed list supporters: %v", err)
+	}
+	if supListResp.StatusCode != fiber.StatusOK {
+		t.Fatalf("expected 200, got %d", supListResp.StatusCode)
+	}
+
+	commentBody, _ := json.Marshal(feed.CreateCommentRequest{
+		Content: "Ayo kawal terus sampai selesai!",
+	})
+	commentReq := httptest.NewRequest(http.MethodPost, "/feeds/fd-001/comments", bytes.NewReader(commentBody))
+	commentReq.Header.Set("Content-Type", "application/json")
+	commentReq.Header.Set("Authorization", "Bearer "+pelaporToken)
+
+	commentResp, err := app.Test(commentReq)
+	if err != nil {
+		t.Fatalf("failed add comment: %v", err)
+	}
+	if commentResp.StatusCode != fiber.StatusCreated {
+		t.Fatalf("expected 201, got %d", commentResp.StatusCode)
+	}
+
+	listCmReq := httptest.NewRequest(http.MethodGet, "/feeds/fd-001/comments", nil)
+	listCmResp, err := app.Test(listCmReq)
+	if err != nil {
+		t.Fatalf("failed list comments: %v", err)
+	}
+	if listCmResp.StatusCode != fiber.StatusOK {
+		t.Fatalf("expected 200, got %d", listCmResp.StatusCode)
 	}
 }

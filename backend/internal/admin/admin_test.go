@@ -5,10 +5,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
 	"govra/internal/admin"
 	pauth "govra/internal/platform/auth"
 	"govra/internal/platform/httpx"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func setupAdminApp() (*fiber.App, admin.Service, *pauth.TokenManager) {
@@ -27,7 +28,7 @@ func setupAdminApp() (*fiber.App, admin.Service, *pauth.TokenManager) {
 
 func TestAdminProductivityRanking(t *testing.T) {
 	app, _, tm := setupAdminApp()
-	adminToken, _ := tm.Generate("admin-1", "admin@kotacontoh.go.id", "Admin", "admin", "")
+	adminToken, _ := tm.Generate("admin-1", "admin@pusat.govra.id", "Admin", "admin", "")
 
 	req := httptest.NewRequest(http.MethodGet, "/admin/productivity", nil)
 	req.Header.Set("Authorization", "Bearer "+adminToken)
@@ -43,7 +44,7 @@ func TestAdminProductivityRanking(t *testing.T) {
 
 func TestAdminExecutiveSummary(t *testing.T) {
 	app, _, tm := setupAdminApp()
-	adminToken, _ := tm.Generate("admin-1", "admin@kotacontoh.go.id", "Admin", "admin", "")
+	adminToken, _ := tm.Generate("admin-1", "admin@pusat.govra.id", "Admin", "admin", "")
 
 	req := httptest.NewRequest(http.MethodGet, "/admin/executive-summary", nil)
 	req.Header.Set("Authorization", "Bearer "+adminToken)

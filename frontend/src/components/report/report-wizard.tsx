@@ -5,12 +5,13 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { FocusPage } from "@/components/layout/focus-page";
 import { DescriptionStep } from "@/components/report/description-step";
 import { LocationStep } from "@/components/report/location-step";
+import { ModerationDialog } from "@/components/report/moderation-dialog";
 import { PreviewDialog } from "@/components/report/preview-dialog";
 import { ReportSuccess } from "@/components/report/report-success";
 import { Stepper } from "@/components/report/stepper";
 import { SubmitStep } from "@/components/report/submit-step";
 import { Button } from "@/components/ui/button";
-import { submitReport } from "@/lib/report-client";
+import { checkReportContent, submitReport } from "@/lib/report-client";
 import {
   EMPTY_DRAFT,
   validateDescription,
@@ -67,9 +68,20 @@ function ReportWizard({ districts, bounds }: ReportWizardProps) {
   const [draft, setDraft] = useState<ReportDraft>(EMPTY_DRAFT);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [pending, setPending] = useState(false);
+  const [checkingContent, setCheckingContent] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+
+  const [moderationOpen, setModerationOpen] = useState(false);
+  const [moderationState, setModerationState] = useState<{
+    violationType: string;
+    reason?: string | undefined;
+  }>({
+    violationType: "",
+    reason: "",
+  });
+
   const formRef = useRef<HTMLFormElement>(null);
   const filesRef = useRef(draft.files);
   const current = stepAt(step);
@@ -109,14 +121,46 @@ function ReportWizard({ districts, bounds }: ReportWizardProps) {
     }
   };
 
-  const advance = (event: FormEvent<HTMLFormElement>) => {
+  const advance = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (pending || checkingContent) return;
+
     if (step === LAST_STEP) {
       setSendError(null);
       setPreviewOpen(true);
       return;
     }
-    const found = step === 0 ? validateDescription(draft) : step === 1 ? validateLocation(draft, bounds) : {};
+
+    if (step === 0) {
+      const found = validateDescription(draft);
+      setErrors(found);
+      if (Object.keys(found).length > 0) return;
+
+      setCheckingContent(true);
+      try {
+        const check = await checkReportContent(draft.body, draft.title);
+        if (check.is_violation && check.confidence > 0.8) {
+          setModerationState({
+            violationType: check.violation_type,
+            reason: check.reason,
+          });
+          setModerationOpen(true);
+          return;
+        }
+
+        if (!draft.title && check.suggested_title) {
+          change({ title: check.suggested_title });
+        }
+      } catch {
+      } finally {
+        setCheckingContent(false);
+      }
+
+      setStep(1);
+      return;
+    }
+
+    const found = validateLocation(draft, bounds);
     setErrors(found);
     if (Object.keys(found).length === 0) {
       setStep((previous) => Math.min(previous + 1, LAST_STEP));
@@ -154,16 +198,28 @@ function ReportWizard({ districts, bounds }: ReportWizardProps) {
           {step === LAST_STEP && <SubmitStep draft={draft} onChange={change} />}
         </div>
         <div className="sticky bottom-0 z-20 mt-auto flex items-center justify-between gap-2 border-t bg-surface py-4 sm:gap-4">
-          <Button type="button" variant="ghost" className="px-3 sm:px-6" onClick={back} disabled={step === 0 || pending}>
+          <Button type="button" variant="ghost" className="px-3 sm:px-6" onClick={back} disabled={step === 0 || pending || checkingContent}>
             <ArrowLeft aria-hidden />
             Kembali
           </Button>
-          <Button type="submit" size="lg">
-            {step === LAST_STEP ? "Kirim laporan" : `Lanjut ke ${stepAt(step + 1).label}`}
-            {step !== LAST_STEP && <ArrowRight aria-hidden />}
+          <Button type="submit" size="lg" disabled={pending || checkingContent}>
+            {checkingContent
+              ? "Menganalisis laporan..."
+              : step === LAST_STEP
+                ? "Kirim laporan"
+                : `Lanjut ke ${stepAt(step + 1).label}`}
+            {step !== LAST_STEP && !checkingContent && <ArrowRight aria-hidden />}
           </Button>
         </div>
       </form>
+
+      <ModerationDialog
+        open={moderationOpen}
+        violationType={moderationState.violationType}
+        reason={moderationState.reason}
+        onClose={() => setModerationOpen(false)}
+      />
+
       <PreviewDialog
         open={previewOpen}
         onOpenChange={setPreviewOpen}

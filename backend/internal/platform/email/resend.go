@@ -13,12 +13,21 @@ import (
 
 type Client struct {
 	apiKey     string
+	fromEmail  string
 	httpClient *http.Client
 }
 
-func NewClient(apiKey string) *Client {
+func NewClient(apiKey string, fromEmail ...string) *Client {
+	from := ""
+	if len(fromEmail) > 0 {
+		from = fromEmail[0]
+	}
+	if from == "" {
+		from = "Govra <noreply@pradatelyu.online>"
+	}
 	return &Client{
-		apiKey: apiKey,
+		apiKey:    apiKey,
+		fromEmail: from,
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
@@ -30,6 +39,68 @@ type resendRequest struct {
 	To      []string `json:"to"`
 	Subject string   `json:"subject"`
 	HTML    string   `json:"html"`
+}
+
+func (c *Client) sendHTTP(ctx context.Context, from, toEmail, subject, htmlContent string) error {
+	reqBody := resendRequest{
+		From:    from,
+		To:      []string{toEmail},
+		Subject: subject,
+		HTML:    htmlContent,
+	}
+
+	payload, err := json.Marshal(reqBody)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.resend.com/emails", bytes.NewReader(payload))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	body, _ := io.ReadAll(res.Body)
+	if res.StatusCode >= 400 {
+		return fmt.Errorf("status %d: %s", res.StatusCode, string(body))
+	}
+	return nil
+}
+
+func (c *Client) sendWithFallback(ctx context.Context, toEmail, subject, htmlContent string) error {
+	from := c.fromEmail
+	if from == "" {
+		from = "Govra <noreply@pradatelyu.online>"
+	}
+
+	err := c.sendHTTP(ctx, from, toEmail, subject, htmlContent)
+	if err == nil {
+		fmt.Printf("[RESEND SUCCESS] Delivered to %s using %s\n", toEmail, from)
+		return nil
+	}
+
+	errStr := err.Error()
+	if (strings.Contains(errStr, "not verified") || strings.Contains(errStr, "validation_error")) && !strings.Contains(from, "pradatelyu.online") {
+		fallbackFrom := "Govra <noreply@pradatelyu.online>"
+		fmt.Printf("[RESEND FALLBACK] Domain %s not yet active, retrying with %s\n", from, fallbackFrom)
+		fallbackErr := c.sendHTTP(ctx, fallbackFrom, toEmail, subject, htmlContent)
+		if fallbackErr == nil {
+			fmt.Printf("[RESEND SUCCESS] Delivered to %s using verified fallback %s\n", toEmail, fallbackFrom)
+			return nil
+		}
+		fmt.Printf("[RESEND ERROR] Fallback failed for %s: %v\n", toEmail, fallbackErr)
+		return fallbackErr
+	}
+
+	fmt.Printf("[RESEND ERROR] Failed for %s: %v\n", toEmail, err)
+	return err
 }
 
 func (c *Client) SendOTP(ctx context.Context, toEmail, code, purpose string) error {
@@ -50,38 +121,7 @@ func (c *Client) SendOTP(ctx context.Context, toEmail, code, purpose string) err
 		</div>
 	`, purpose, code)
 
-	reqBody := resendRequest{
-		From:    "Govra <onboarding@resend.dev>",
-		To:      []string{toEmail},
-		Subject: subject,
-		HTML:    htmlContent,
-	}
-
-	payload, err := json.Marshal(reqBody)
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.resend.com/emails", bytes.NewReader(payload))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Authorization", "Bearer "+c.apiKey)
-	req.Header.Set("Content-Type", "application/json")
-
-	res, err := c.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer res.Body.Close()
-
-	body, _ := io.ReadAll(res.Body)
-	if res.StatusCode >= 400 {
-		fmt.Printf("[RESEND ERROR] Status %d for %s: %s\n", res.StatusCode, toEmail, string(body))
-		return fmt.Errorf("resend api error status %d: %s", res.StatusCode, string(body))
-	}
-	fmt.Printf("[RESEND SUCCESS] Email OTP delivered to %s\n", toEmail)
-	return nil
+	return c.sendWithFallback(ctx, toEmail, subject, htmlContent)
 }
 
 func (c *Client) SendPasswordResetLink(ctx context.Context, toEmail, resetLink string) error {
@@ -102,36 +142,5 @@ func (c *Client) SendPasswordResetLink(ctx context.Context, toEmail, resetLink s
 		</div>
 	`, resetLink)
 
-	reqBody := resendRequest{
-		From:    "Govra <onboarding@resend.dev>",
-		To:      []string{toEmail},
-		Subject: subject,
-		HTML:    htmlContent,
-	}
-
-	payload, err := json.Marshal(reqBody)
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.resend.com/emails", bytes.NewReader(payload))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Authorization", "Bearer "+c.apiKey)
-	req.Header.Set("Content-Type", "application/json")
-
-	res, err := c.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer res.Body.Close()
-
-	body, _ := io.ReadAll(res.Body)
-	if res.StatusCode >= 400 {
-		fmt.Printf("[RESEND ERROR] Status %d for %s: %s\n", res.StatusCode, toEmail, string(body))
-		return fmt.Errorf("resend api error status %d: %s", res.StatusCode, string(body))
-	}
-	fmt.Printf("[RESEND SUCCESS] Reset link delivered to %s\n", toEmail)
-	return nil
+	return c.sendWithFallback(ctx, toEmail, subject, htmlContent)
 }

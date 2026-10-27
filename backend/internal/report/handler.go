@@ -1,6 +1,8 @@
 package report
 
 import (
+	"strings"
+
 	"github.com/gofiber/fiber/v2"
 	"govra/internal/platform/auth"
 	"govra/internal/platform/httpx"
@@ -16,12 +18,46 @@ func NewHandler(s Service) *Handler {
 
 func (h *Handler) RegisterRoutes(app fiber.Router) {
 	app.Post("/reports", auth.RequireRole("pelapor", "admin"), h.CreateReport)
+	app.Post("/reports/check-content", h.CheckContent)
 	app.Post("/reports/duplicate-suggestions", h.GetDuplicateSuggestions)
 	app.Post("/reports/speech-to-text", h.TranscribeVoiceNote)
 
 	app.Get("/me/reports", auth.RequireRole("pelapor", "admin"), h.ListMyReports)
 	app.Get("/me/reports/:code", auth.RequireRole("pelapor", "admin"), h.GetMyReport)
 	app.Post("/me/reports/:code/resolution-feedback", auth.RequireRole("pelapor", "admin"), h.SubmitFeedback)
+}
+
+func (h *Handler) CheckContent(c *fiber.Ctx) error {
+	var req ContentCheckRequest
+	if err := c.BodyParser(&req); err != nil {
+		return httpx.NewAppError(fiber.StatusBadRequest, "BAD_REQUEST", "Format permintaan tidak valid")
+	}
+	text := strings.TrimSpace(req.Text)
+	if text == "" {
+		return c.JSON(ContentCheckResponse{
+			IsViolation:   false,
+			ViolationType: "NONE",
+			Confidence:    0.0,
+		})
+	}
+	res, err := h.service.CheckContent(c.Context(), text)
+	if err != nil {
+		return c.JSON(ContentCheckResponse{
+			IsViolation:   false,
+			ViolationType: "NONE",
+			Confidence:    0.0,
+			Topic:         "Umum",
+		})
+	}
+	return c.JSON(ContentCheckResponse{
+		IsViolation:    res.IsViolation,
+		ViolationType:  res.ViolationType,
+		Confidence:     res.Confidence,
+		Reason:         res.Reason,
+		Topic:          res.Topic,
+		EstimatedOpd:   res.EstimatedOpd,
+		SuggestedTitle: res.SuggestedTitle,
+	})
 }
 
 func (h *Handler) CreateReport(c *fiber.Ctx) error {

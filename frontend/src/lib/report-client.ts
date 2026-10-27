@@ -63,3 +63,37 @@ export function supportIssue(issueId: string) {
 export function sendFeedback(code: string, outcome: "CONFIRM" | "DISPUTE", note: string) {
   return request(`/api/me/reports/${code}/feedback`, jsonInit({ outcome, note }), feedbackResultSchema);
 }
+
+export interface ContentCheckResult {
+  is_violation: boolean;
+  violation_type: "SARA" | "PORNOGRAPHY" | "GIBBERISH" | "NONE" | string;
+  confidence: number;
+  reason?: string;
+  topic?: string;
+  estimated_opd?: string;
+  suggested_title?: string;
+}
+
+export async function checkReportContent(text: string, title?: string): Promise<ContentCheckResult> {
+  try {
+    const res = await fetch("/api/reports/check-content", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, title }),
+    });
+    if (!res.ok) {
+      return {
+        is_violation: false,
+        violation_type: "NONE",
+        confidence: 0,
+      };
+    }
+    return res.json();
+  } catch {
+    return {
+      is_violation: false,
+      violation_type: "NONE",
+      confidence: 0,
+    };
+  }
+}

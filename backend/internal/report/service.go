@@ -19,6 +19,7 @@ type Service interface {
 	GetDuplicateSuggestions(ctx context.Context, query DuplicateQuery) ([]DuplicateSuggestion, error)
 	TranscribeVoiceNote(ctx context.Context, audioBase64, mimeType string) (string, error)
 	SubmitFeedback(ctx context.Context, code string, req FeedbackRequest) error
+	CheckContent(ctx context.Context, text string) (*ai.ModerationResult, error)
 }
 
 type service struct {
@@ -93,11 +94,13 @@ func (s *service) CreateReport(ctx context.Context, req CreateReportRequest, rep
 		},
 	}
 
+	topic := "Umum"
 	triageRes, err := s.aiClient.ClassifyReport(ctx, rep.Title, rep.Description, rep.DistrictName, rep.VillageName)
 	if err == nil && triageRes != nil {
 		rep.OpdID = triageRes.OpdCode
 		rep.OpdName = "Dinas Terkait (" + triageRes.OpdCode + ")"
 		rep.CategoryID = triageRes.CategoryCode
+		topic = triageRes.CategoryCode
 		if triageRes.Confidence >= 0.75 && !triageRes.IsSensitive {
 			rep.Status = StatusDiteruskan
 			rep.Timeline = append(rep.Timeline, TimelineEvent{
@@ -107,6 +110,11 @@ func (s *service) CreateReport(ctx context.Context, req CreateReportRequest, rep
 				CreatedAt: time.Now(),
 			})
 		}
+	}
+
+	issueID, _ := s.repo.FindMatchingIssueOrCluster(ctx, rep.Title, rep.Description, topic, rep.Lat, rep.Lng, rep.DistrictID, rep.VillageID, rep.OpdID, rep.CategoryID)
+	if issueID != "" {
+		rep.IssueID = issueID
 	}
 
 	if err := s.repo.SaveReport(ctx, rep); err != nil {
@@ -137,15 +145,18 @@ func (s *service) GetDuplicateSuggestions(ctx context.Context, query DuplicateQu
 	}
 	var res []DuplicateSuggestion
 	for _, r := range openReps {
-		if query.DistrictID != "" && r.DistrictID == query.DistrictID {
+		topicSim := ai.CalculateTopicSimilarity(query.Title, query.Title, r.Title, r.Description)
+		locSim := ai.CalculateLocationSimilarity(query.Lat, query.Lng, r.Lat, r.Lng)
+		eval := ai.EvaluateSimilarity(topicSim, locSim)
+		if eval.IsSimilar {
 			res = append(res, DuplicateSuggestion{
 				IssueID:         r.ID,
 				IssueCode:       r.Code,
 				Title:           r.Title,
 				Summary:         r.Description,
-				SimilarityScore: 0.88,
-				DistanceMeters:  120.0,
-				ReportersCount:  3,
+				SimilarityScore: eval.TotalSimilarity,
+				DistanceMeters:  100.0,
+				ReportersCount:  2,
 			})
 			if len(res) >= 3 {
 				break
@@ -161,4 +172,8 @@ func (s *service) TranscribeVoiceNote(ctx context.Context, audioBase64, mimeType
 
 func (s *service) SubmitFeedback(ctx context.Context, code string, req FeedbackRequest) error {
 	return s.repo.SaveFeedback(ctx, code, req.Confirmed, req.Note)
+}
+
+func (s *service) CheckContent(ctx context.Context, text string) (*ai.ModerationResult, error) {
+	return s.aiClient.CheckContentModeration(ctx, text)
 }

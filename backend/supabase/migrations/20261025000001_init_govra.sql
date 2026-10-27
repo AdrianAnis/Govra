@@ -471,7 +471,7 @@ ON CONFLICT (key) DO NOTHING;
 
 INSERT INTO app.profiles (id, email, password_hash, display_name, role, opd_id, status, phone)
 VALUES
-    ('a0000000-0000-0000-0000-000000000001', 'admin@kotacontoh.go.id', '$2a$10$pVl/dR63gsumKnvGeIH5IeppTQzigYEcIPyxFZxvVkOmpBcliRudu', 'Administrator Utama', 'admin', NULL, 'ACTIVE', '081100000001'),
+    ('a0000000-0000-0000-0000-000000000001', 'admin@pusat.govra.id', '$2a$10$pVl/dR63gsumKnvGeIH5IeppTQzigYEcIPyxFZxvVkOmpBcliRudu', 'Administrator Utama', 'admin', NULL, 'ACTIVE', '081100000001'),
     ('a0000000-0000-0000-0000-000000000002', 'walikota@kotacontoh.go.id', '$2a$10$pVl/dR63gsumKnvGeIH5IeppTQzigYEcIPyxFZxvVkOmpBcliRudu', 'Bapak Wali Kota', 'kepala_daerah', NULL, 'ACTIVE', '081100000002'),
     ('a0000000-0000-0000-0000-000000000003', 'dbmsda@kotacontoh.go.id', '$2a$10$pVl/dR63gsumKnvGeIH5IeppTQzigYEcIPyxFZxvVkOmpBcliRudu', 'Admin Dinas Bina Marga & SDA', 'dinas', 'e0000000-0000-0000-0000-000000000001', 'ACTIVE', '081100000003'),
     ('a0000000-0000-0000-0000-000000000004', 'dlhk@kotacontoh.go.id', '$2a$10$pVl/dR63gsumKnvGeIH5IeppTQzigYEcIPyxFZxvVkOmpBcliRudu', 'Admin Dinas Lingkungan Hidup', 'dinas', 'e0000000-0000-0000-0000-000000000002', 'ACTIVE', '081100000004'),

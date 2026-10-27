@@ -108,6 +108,21 @@ type SpeechToTextResponse struct {
 	Transcript string `json:"transcript"`
 }
 
+type ContentCheckRequest struct {
+	Text  string `json:"text"`
+	Title string `json:"title,omitempty"`
+}
+
+type ContentCheckResponse struct {
+	IsViolation    bool    `json:"is_violation"`
+	ViolationType  string  `json:"violation_type"`
+	Confidence     float64 `json:"confidence"`
+	Reason         string  `json:"reason"`
+	Topic          string  `json:"topic"`
+	EstimatedOpd   string  `json:"estimated_opd"`
+	SuggestedTitle string  `json:"suggested_title"`
+}
+
 type FeedbackRequest struct {
 	Confirmed bool   `json:"confirmed"`
 	Note      string `json:"note,omitempty"`

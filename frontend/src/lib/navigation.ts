@@ -26,7 +26,7 @@ export interface PanelNavItem extends NavLink {
 export const MAIN_NAV: readonly NavLink[] = [
   { href: "/proker", label: "Proker" },
   { href: "/rapor", label: "Rapor" },
-  { href: "/isu", label: "Isu" },
+  { href: "/isu", label: "Isu Terkini" },
 ];
 
 export const MEMBER_NAV: readonly NavLink[] = [
@@ -45,7 +45,7 @@ export const FOOTER_GROUPS: readonly FooterGroup[] = [
     links: [
       { href: "/proker", label: "Program kerja" },
       { href: "/rapor", label: "Rapor OPD" },
-      { href: "/isu", label: "Isu warga" },
+      { href: "/isu", label: "Isu Terkini" },
     ],
   },
   {

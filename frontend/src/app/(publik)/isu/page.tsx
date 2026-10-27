@@ -1,126 +1,49 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { FilterBar, type SelectFilter } from "@/components/filter-bar";
-import { IssueMap, type IssueMarker } from "@/components/issue-map";
-import { IssuePhotoCard } from "@/components/issue-photo-card";
-import { IssueViewToggle } from "@/components/issue-view-toggle";
+import { cookies } from "next/headers";
 import { Container } from "@/components/layout/container";
 import { PageHeader } from "@/components/page-header";
-import { Pagination } from "@/components/pagination";
-import { EmptyState } from "@/components/state-message";
-import { buttonVariants } from "@/components/ui/button";
+import { FeedView } from "@/components/feed/feed-view";
 import { currentTime } from "@/lib/clock";
-import { listIssues } from "@/lib/data/issues";
-import { getDistricts, getOpds } from "@/lib/data/reference";
-import { parseIssueFilters, parseIssueView } from "@/lib/search-params";
-import type { Schema } from "@/lib/schema";
-import { ISSUE_STATUS } from "@/lib/status";
-import { activeParams, buildHref } from "@/lib/url";
-import { cn } from "@/lib/utils";
+import type { FeedItem } from "@/lib/data/feeds";
 
-const FIRST_ROW = 3;
+export const metadata: Metadata = { title: "Isu Terkini" };
 
-export const metadata: Metadata = { title: "Isu Warga" };
+const BFF_KEY = process.env.BFF_SHARED_KEY || "413016c9d4970e8030a87654f65c11321dd77c97ecf9f4d95d1beca837faddb2";
+const API_BASE = process.env.API_BASE_URL || "http://localhost:8080";
 
-const PAGE_SIZE = 8;
-const MAP_LIMIT = 200;
+async function loadInitialFeeds(): Promise<FeedItem[]> {
+  const jar = await cookies();
+  const token = jar.get("govra_token")?.value;
+  const headers: Record<string, string> = { "X-BFF-Key": BFF_KEY };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
 
-const URGENCY_OPTIONS = [
-  { value: "URGENT", label: "Urgent" },
-  { value: "TINGGI", label: "Tinggi" },
-  { value: "NORMAL", label: "Normal" },
-];
-
-function toMarker(issue: Schema<"IssueSummary">): IssueMarker {
-  return {
-    id: issue.id,
-    title: issue.title,
-    status: issue.status,
-    reporters: issue.reporter_count,
-    village: issue.location.village.name,
-    cover: issue.cover_photo?.url ?? null,
-    lat: issue.location.point.lat,
-    lng: issue.location.point.lng,
-  };
+  try {
+    const res = await fetch(`${API_BASE}/feeds`, {
+      headers,
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data.items) ? data.items : [];
+  } catch {
+    return [];
+  }
 }
 
-async function loadSelects(): Promise<SelectFilter[]> {
-  const [opds, districts] = await Promise.all([getOpds(), getDistricts()]);
-  return [
-    {
-      name: "opd",
-      label: "Filter OPD",
-      allLabel: "Semua OPD",
-      options: opds.items.map((opd) => ({ value: opd.slug, label: opd.name })),
-    },
-    {
-      name: "district_id",
-      label: "Filter kecamatan",
-      allLabel: "Semua kecamatan",
-      options: districts.items.map((district) => ({ value: district.id, label: district.name })),
-    },
-    {
-      name: "status",
-      label: "Filter status",
-      allLabel: "Semua status",
-      options: Object.entries(ISSUE_STATUS).map(([value, meta]) => ({ value, label: meta.label })),
-    },
-    { name: "urgency", label: "Filter urgensi", allLabel: "Semua urgensi", options: URGENCY_OPTIONS },
-  ];
-}
-
-export default async function IssuesPage({ searchParams }: PageProps<"/isu">) {
-  const raw = await searchParams;
-  const filters = parseIssueFilters(raw);
-  const view = parseIssueView(raw);
-  const params = activeParams(filters);
-  const [issues, selects] = await Promise.all([
-    listIssues({ ...filters, limit: view === "peta" ? MAP_LIMIT : PAGE_SIZE }),
-    loadSelects(),
-  ]);
+export default async function IssuesPage() {
   const now = currentTime();
+  const initialFeeds = await loadInitialFeeds();
 
   return (
-    <Container className="flex flex-col gap-6 py-10">
+    <Container className="flex flex-col gap-6 py-6 sm:py-10">
       <PageHeader
-        title="Isu Warga"
-        description="Laporan warga yang sudah diverifikasi dan diteruskan ke dinas. Lokasi hanya ditampilkan sampai tingkat kelurahan."
+        title="Isu Terkini"
+        description="Dukung laporan sesama warga untuk menaikkan urgensi penanganan oleh dinas terkait."
       />
-      <IssueViewToggle view={view} params={params} />
-      <FilterBar search={{ name: "q", label: "Cari isu, kategori, atau kelurahan" }} selects={selects} />
-      <p aria-live="polite" className="text-sm text-fg-muted">
-        Menampilkan {issues.items.length} dari {issues.total} isu
-      </p>
-      {issues.items.length > 0 && view === "peta" ? (
-        <IssueMap key={buildHref("/isu", params, 1)} markers={issues.items.map(toMarker)} />
-      ) : issues.items.length > 0 ? (
-        <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {issues.items.map((issue, index) => (
-            <li key={issue.id}>
-              <IssuePhotoCard issue={issue} now={now} eager={index < FIRST_ROW} heading="h2" />
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <EmptyState
-          title="Tidak ada isu yang cocok"
-          description="Coba ubah kata kunci atau hapus sebagian filter."
-          action={
-            <Link href="/isu" className={cn(buttonVariants({ variant: "outline" }))}>
-              Hapus filter
-            </Link>
-          }
-        />
-      )}
-      {view === "daftar" && (
-        <Pagination
-          page={issues.page}
-          limit={issues.limit}
-          total={issues.total}
-          basePath="/isu"
-          params={params}
-        />
-      )}
+
+      <FeedView initialFeeds={initialFeeds} nowIso={now.toISOString()} />
     </Container>
   );
 }

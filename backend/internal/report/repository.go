@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/google/uuid"
+	"govra/internal/platform/ai"
 	"govra/internal/platform/db"
 )
 
@@ -19,6 +21,7 @@ type Repository interface {
 	ListOpenReports(ctx context.Context) ([]Report, error)
 	UpdateReportStatus(ctx context.Context, code string, status ReportStatus, note string) error
 	SaveFeedback(ctx context.Context, code string, confirmed bool, note string) error
+	FindMatchingIssueOrCluster(ctx context.Context, title, desc, topic string, lat, lng float64, districtID, villageID, opdID, categoryID string) (string, error)
 }
 
 type repository struct {
@@ -46,6 +49,7 @@ func (r *repository) SaveReport(ctx context.Context, report *Report) error {
 			ID                  string  `json:"id"`
 			Code                string  `json:"code"`
 			ReporterID          *string `json:"reporter_id,omitempty"`
+			IssueID             *string `json:"issue_id,omitempty"`
 			Title               string  `json:"title"`
 			Description         string  `json:"description"`
 			VoiceNoteTranscript string  `json:"voice_note_transcript,omitempty"`
@@ -79,6 +83,9 @@ func (r *repository) SaveReport(ctx context.Context, report *Report) error {
 		}
 		if _, err := uuid.Parse(report.ReporterID); err == nil {
 			rr.ReporterID = &report.ReporterID
+		}
+		if _, err := uuid.Parse(report.IssueID); err == nil {
+			rr.IssueID = &report.IssueID
 		}
 		if _, err := uuid.Parse(report.DistrictID); err == nil {
 			rr.DistrictID = &report.DistrictID
@@ -151,6 +158,113 @@ func (r *repository) SaveReport(ctx context.Context, report *Report) error {
 	defer r.mu.Unlock()
 	r.reports[report.Code] = report
 	return nil
+}
+
+func (r *repository) FindMatchingIssueOrCluster(ctx context.Context, title, desc, topic string, lat, lng float64, districtID, villageID, opdID, categoryID string) (string, error) {
+	if r.db != nil && r.db.HasREST() {
+		var openIssues []struct {
+			ID                   string  `json:"id"`
+			Code                 string  `json:"code"`
+			Title                string  `json:"title"`
+			Summary              string  `json:"summary"`
+			CenterLat            float64 `json:"center_lat"`
+			CenterLng            float64 `json:"center_lng"`
+			Status               string  `json:"status"`
+			UniqueReportersCount int     `json:"unique_reporters_count"`
+		}
+		endpoint := "issues?status=neq.SELESAI&limit=100"
+		if err := r.db.PostgRESTGet(ctx, endpoint, &openIssues); err == nil && len(openIssues) > 0 {
+			var bestIssueID string
+			var bestTotalSim float64
+
+			for _, iss := range openIssues {
+				topicSim := ai.CalculateTopicSimilarity(topic, desc, iss.Title, iss.Summary)
+				locSim := ai.CalculateLocationSimilarity(lat, lng, iss.CenterLat, iss.CenterLng)
+				eval := ai.EvaluateSimilarity(topicSim, locSim)
+
+				if eval.IsSimilar && eval.TotalSimilarity > bestTotalSim {
+					bestTotalSim = eval.TotalSimilarity
+					bestIssueID = iss.ID
+				}
+			}
+
+			if bestIssueID != "" {
+				type updatePayload struct {
+					UniqueReportersCount int       `json:"unique_reporters_count"`
+					UpdatedAt            time.Time `json:"updated_at"`
+				}
+				for _, iss := range openIssues {
+					if iss.ID == bestIssueID {
+						_ = r.db.PostgRESTPatch(ctx, fmt.Sprintf("issues?id=eq.%s", url.QueryEscape(bestIssueID)), updatePayload{
+							UniqueReportersCount: iss.UniqueReportersCount + 1,
+							UpdatedAt:            time.Now(),
+						})
+						break
+					}
+				}
+				return bestIssueID, nil
+			}
+		}
+
+		newIssueID := uuid.New().String()
+		issueCode := fmt.Sprintf("ISU-%s", strings.ToUpper(uuid.New().String()[:8]))
+		now := time.Now()
+
+		type createIssuePayload struct {
+			ID                   string    `json:"id"`
+			Code                 string    `json:"code"`
+			Title                string    `json:"title"`
+			Summary              string    `json:"summary"`
+			RegionID             *string   `json:"region_id,omitempty"`
+			OpdID                *string   `json:"opd_id,omitempty"`
+			CategoryID           *string   `json:"category_id,omitempty"`
+			DistrictID           *string   `json:"district_id,omitempty"`
+			VillageID            *string   `json:"village_id,omitempty"`
+			CenterLat            float64   `json:"center_lat"`
+			CenterLng            float64   `json:"center_lng"`
+			Status               string    `json:"status"`
+			Urgency              string    `json:"urgency"`
+			SafetyRisk           string    `json:"safety_risk"`
+			UniqueReportersCount int       `json:"unique_reporters_count"`
+			CreatedAt            time.Time `json:"created_at"`
+			UpdatedAt            time.Time `json:"updated_at"`
+		}
+
+		regionID := "a0000000-0000-0000-0000-000000000001"
+		cip := createIssuePayload{
+			ID:                   newIssueID,
+			Code:                 issueCode,
+			Title:                title,
+			Summary:              desc,
+			RegionID:             &regionID,
+			CenterLat:            lat,
+			CenterLng:            lng,
+			Status:               "DITERUSKAN",
+			Urgency:              "NORMAL",
+			SafetyRisk:           "NONE",
+			UniqueReportersCount: 1,
+			CreatedAt:            now,
+			UpdatedAt:            now,
+		}
+		if _, err := uuid.Parse(districtID); err == nil {
+			cip.DistrictID = &districtID
+		}
+		if _, err := uuid.Parse(villageID); err == nil {
+			cip.VillageID = &villageID
+		}
+		if _, err := uuid.Parse(opdID); err == nil {
+			cip.OpdID = &opdID
+		}
+		if _, err := uuid.Parse(categoryID); err == nil {
+			cip.CategoryID = &categoryID
+		}
+
+		if err := r.db.PostgRESTPost(ctx, "issues", cip, nil); err == nil {
+			return newIssueID, nil
+		}
+	}
+
+	return uuid.New().String(), nil
 }
 
 func (r *repository) GetReportByCode(ctx context.Context, code string) (*Report, error) {

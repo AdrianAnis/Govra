@@ -9,9 +9,10 @@ import (
 	"sync"
 	"time"
 
+	"govra/internal/platform/db"
+
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
-	"govra/internal/platform/db"
 )
 
 type Repository interface {
@@ -150,14 +151,14 @@ func (r *repository) CreateUser(ctx context.Context, u *User) error {
 
 	if r.db != nil && r.db.HasREST() {
 		type restUser struct {
-			ID           string `json:"id"`
-			Email        string `json:"email"`
-			PasswordHash string `json:"password_hash"`
-			DisplayName  string `json:"display_name"`
-			Role         string `json:"role"`
+			ID           string  `json:"id"`
+			Email        string  `json:"email"`
+			PasswordHash string  `json:"password_hash"`
+			DisplayName  string  `json:"display_name"`
+			Role         string  `json:"role"`
 			OpdID        *string `json:"opd_id,omitempty"`
-			Status       string `json:"status"`
-			Phone        string `json:"phone,omitempty"`
+			Status       string  `json:"status"`
+			Phone        string  `json:"phone,omitempty"`
 		}
 		ru := restUser{
 			ID:           u.ID,

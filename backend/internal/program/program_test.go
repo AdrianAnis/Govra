@@ -7,11 +7,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
 	pauth "govra/internal/platform/auth"
 	"govra/internal/platform/db"
 	"govra/internal/platform/httpx"
 	"govra/internal/program"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func setupProgramApp() (*fiber.App, program.Service, *pauth.TokenManager) {
@@ -54,7 +55,7 @@ func TestListRegionAndDistricts(t *testing.T) {
 
 func TestProgramFlow(t *testing.T) {
 	app, _, tm := setupProgramApp()
-	adminToken, _ := tm.Generate("admin-1", "admin@kotacontoh.go.id", "Admin", "admin", "")
+	adminToken, _ := tm.Generate("admin-1", "admin@pusat.govra.id", "Admin", "admin", "")
 	dinasToken, _ := tm.Generate("dinas-1", "dinas@kotacontoh.go.id", "Petugas DBM", "dinas", "e0000000-0000-0000-0000-000000000001")
 
 	newProg := program.CreateProgramRequest{

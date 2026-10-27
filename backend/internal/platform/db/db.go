@@ -154,6 +154,33 @@ func (db *Database) PostgRESTPatch(ctx context.Context, endpoint string, payload
 	return nil
 }
 
+func (db *Database) PostgRESTDelete(ctx context.Context, endpoint string) error {
+	if !db.HasREST() {
+		return fmt.Errorf("supabase rest not configured")
+	}
+	url := fmt.Sprintf("%s/rest/v1/%s", db.SupabaseURL, strings.TrimLeft(endpoint, "/"))
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("apikey", db.SupabaseKey)
+	req.Header.Set("Authorization", "Bearer "+db.SupabaseKey)
+	req.Header.Set("Accept-Profile", "app")
+	req.Header.Set("Content-Profile", "app")
+
+	res, err := db.HTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode >= 400 {
+		body, _ := io.ReadAll(res.Body)
+		return fmt.Errorf("postgrest delete error %d: %s", res.StatusCode, string(body))
+	}
+	return nil
+}
+
 func (db *Database) Close() {
 	if db.Pool != nil {
 		db.Pool.Close()

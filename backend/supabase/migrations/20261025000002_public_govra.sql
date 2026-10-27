@@ -264,7 +264,7 @@ ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, slug = EXCLUDED.slug;
 
 INSERT INTO public.profiles (id, email, password_hash, display_name, role, opd_id, status, phone)
 VALUES
-    ('00000000-0000-0000-0000-000000000001', 'admin@kotacontoh.go.id', '$2a$10$0T6p9q4gK1zM0Y.j9r5R1Oq7XvI2v3.Qp8q4u3Q8s1W2e4R5t6y7u', 'Admin Pusat Kota Contoh', 'admin', NULL, 'ACTIVE', '08110000001'),
+    ('00000000-0000-0000-0000-000000000001', 'admin@pusat.govra.id', '$2a$10$0T6p9q4gK1zM0Y.j9r5R1Oq7XvI2v3.Qp8q4u3Q8s1W2e4R5t6y7u', 'Admin Pusat Kota Contoh', 'admin', NULL, 'ACTIVE', '08110000001'),
     ('00000000-0000-0000-0000-000000000002', 'walikota@kotacontoh.go.id', '$2a$10$0T6p9q4gK1zM0Y.j9r5R1Oq7XvI2v3.Qp8q4u3Q8s1W2e4R5t6y7u', 'Bpk. Ir. H. Ahmad Dahlan', 'kepala_daerah', NULL, 'ACTIVE', '08110000002'),
     ('00000000-0000-0000-0000-000000000003', 'dbmsda@kotacontoh.go.id', '$2a$10$0T6p9q4gK1zM0Y.j9r5R1Oq7XvI2v3.Qp8q4u3Q8s1W2e4R5t6y7u', 'Dinas Bina Marga & SDA', 'dinas', 'b0000000-0000-0000-0000-000000000001', 'ACTIVE', '08110000003'),
     ('00000000-0000-0000-0000-000000000004', 'dlhk@kotacontoh.go.id', '$2a$10$0T6p9q4gK1zM0Y.j9r5R1Oq7XvI2v3.Qp8q4u3Q8s1W2e4R5t6y7u', 'Dinas Lingkungan Hidup & Kebersihan', 'dinas', 'b0000000-0000-0000-0000-000000000002', 'ACTIVE', '08110000004'),

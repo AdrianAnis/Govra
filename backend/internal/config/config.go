@@ -14,6 +14,7 @@ type Config struct {
 	SupabaseJWTSecret  string
 	BFFSharedKey       string
 	ResendAPIKey       string
+	ResendFromEmail    string
 	GeminiAPIKeyTriage string
 	GeminiAPIKeyAsst   string
 	GeminiModel        string
@@ -66,6 +67,7 @@ func Load() *Config {
 		SupabaseJWTSecret:  getEnv("SUPABASE_JWT_SECRET", "super-secret-jwt-key-minimum-32-chars-long"),
 		BFFSharedKey:       getEnv("BFF_SHARED_KEY", ""),
 		ResendAPIKey:       getEnv("RESEND_API_KEY", ""),
+		ResendFromEmail:    getEnv("RESEND_FROM_EMAIL", "Govra <noreply@pradatelyu.online>"),
 		GeminiAPIKeyTriage: getEnv("GEMINI_API_KEY_TRIAGE", ""),
 		GeminiAPIKeyAsst:   getEnv("GEMINI_API_KEY_ASSISTANT", ""),
 		GeminiModel:        getEnv("GEMINI_MODEL", "gemini-2.5-flash"),

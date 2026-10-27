@@ -106,10 +106,14 @@ export async function getAdminOverview(): Promise<Schema<"AdminOverview">> {
 }
 
 export async function listVerification(
-  params: PageParams & { kind?: Schema<"VerificationKind"> | undefined },
+  params: PageParams & { kind?: Schema<"VerificationKind"> | undefined; opdCode?: string | undefined },
 ): Promise<Schema<"VerificationList">> {
   return paginate(
-    pending().filter((item) => !params.kind || item.kind === params.kind),
+    pending().filter(
+      (item) =>
+        (!params.kind || item.kind === params.kind) &&
+        (!params.opdCode || item.ai_suggestion?.opd.code === params.opdCode),
+    ),
     params,
   );
 }

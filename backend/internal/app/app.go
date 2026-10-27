@@ -48,7 +48,7 @@ func New(cfg *config.Config) (*Application, error) {
 	tokenManager := pauth.NewTokenManager(cfg.SupabaseJWTSecret)
 	fiberApp.Use(pauth.AuthMiddleware(tokenManager))
 
-	emailClient := email.NewClient(cfg.ResendAPIKey)
+	emailClient := email.NewClient(cfg.ResendAPIKey, cfg.ResendFromEmail)
 	aiClient := ai.NewClient(cfg.GeminiAPIKeyTriage, cfg.GeminiModel)
 
 	authRepo := auth.NewRepository(database)

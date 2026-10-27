@@ -7,11 +7,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
 	"govra/internal/issue"
 	pauth "govra/internal/platform/auth"
 	"govra/internal/platform/db"
 	"govra/internal/platform/httpx"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func setupIssueApp() (*fiber.App, issue.Service, *pauth.TokenManager) {
@@ -68,7 +69,7 @@ func TestAgencyTransition(t *testing.T) {
 
 func TestAdminRouteIssue(t *testing.T) {
 	app, _, tm := setupIssueApp()
-	adminToken, _ := tm.Generate("admin-1", "admin@kotacontoh.go.id", "Admin", "admin", "")
+	adminToken, _ := tm.Generate("admin-1", "admin@pusat.govra.id", "Admin", "admin", "")
 
 	routeBody, _ := json.Marshal(issue.RouteIssueRequest{
 		OpdID:      "e0000000-0000-0000-0000-000000000002",

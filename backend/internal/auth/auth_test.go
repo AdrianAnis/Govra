@@ -8,12 +8,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
 	"govra/internal/auth"
 	pauth "govra/internal/platform/auth"
 	"govra/internal/platform/db"
 	"govra/internal/platform/email"
 	"govra/internal/platform/httpx"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func setupTestApp() (*fiber.App, auth.Service, *pauth.TokenManager, auth.Repository) {
