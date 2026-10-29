@@ -134,44 +134,48 @@ export default async function AgencyAllReportsPage({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-border bg-surface-muted text-sm font-semibold uppercase tracking-wider text-fg-muted">
-                <tr>
-                  <th scope="col" className="px-4 py-3 sm:px-6">Laporan & Lokasi</th>
-                  <th scope="col" className="px-4 py-3">Urgensi</th>
-                  <th scope="col" className="px-4 py-3">Status</th>
-                  <th scope="col" className="px-4 py-3 text-center">Pelapor</th>
-                  <th scope="col" className="px-4 py-3">Batas Penanganan</th>
-                  <th scope="col" className="px-4 py-3">Pembaruan</th>
-                  <th scope="col" className="px-4 py-3 text-right">Aksi</th>
+                <tr className="h-12">
+                  <th scope="col" className="px-4 py-2 sm:px-6 whitespace-nowrap">Laporan & Lokasi</th>
+                  <th scope="col" className="px-4 py-2 whitespace-nowrap">Urgensi</th>
+                  <th scope="col" className="px-4 py-2 whitespace-nowrap">Status</th>
+                  <th scope="col" className="px-4 py-2 text-center whitespace-nowrap">Pelapor</th>
+                  <th scope="col" className="px-4 py-2 whitespace-nowrap">Batas Penanganan</th>
+                  <th scope="col" className="px-4 py-2 whitespace-nowrap">Pembaruan</th>
+                  <th scope="col" className="px-4 py-2 text-right whitespace-nowrap">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {issues.items.map((issue) => {
                   const sla = slaInfo(issue.sla_due_at, now);
                   return (
-                    <tr key={issue.id} className="transition-colors hover:bg-surface-muted/50">
-                      <td className="px-4 py-3.5 sm:px-6">
-                        <Link href={agencyIssueHref(issue.id)} className="group flex flex-col gap-1">
-                          <span className="text-base font-semibold text-fg group-hover:text-primary transition-colors">
+                    <tr key={issue.id} className="h-14 transition-colors hover:bg-surface-muted/50">
+                      <td className="px-4 py-2 sm:px-6 max-w-[260px] sm:max-w-sm md:max-w-md lg:max-w-lg whitespace-nowrap">
+                        <Link
+                          href={agencyIssueHref(issue.id)}
+                          className="group block truncate"
+                          title={`${issue.title} (${issue.location.village.name}, ${issue.location.district.name})`}
+                        >
+                          <span className="text-sm font-semibold text-fg group-hover:text-primary transition-colors">
                             {issue.title}
                           </span>
-                          <span className="text-sm text-fg-muted">
-                            {issue.location.village.name}, {issue.location.district.name}
+                          <span className="text-sm text-fg-muted ml-2">
+                            · {issue.location.village.name}, {issue.location.district.name}
                           </span>
                         </Link>
                       </td>
-                      <td className="px-4 py-3.5 whitespace-nowrap">
+                      <td className="px-4 py-2 whitespace-nowrap">
                         <UrgencyMarker urgency={issue.urgency} />
                       </td>
-                      <td className="px-4 py-3.5 whitespace-nowrap">
+                      <td className="px-4 py-2 whitespace-nowrap">
                         <IssueStatusBadge status={issue.status} />
                       </td>
-                      <td className="px-4 py-3.5 whitespace-nowrap text-center">
-                        <span className="inline-flex items-center gap-1.5 text-base font-semibold tabular-nums text-fg">
+                      <td className="px-4 py-2 whitespace-nowrap text-center">
+                        <span className="inline-flex items-center gap-1.5 text-sm font-semibold tabular-nums text-fg">
                           <Users className="size-4 text-fg-muted" />
                           {formatNumber(issue.reporter_count)}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 whitespace-nowrap">
+                      <td className="px-4 py-2 whitespace-nowrap">
                         <span
                           className={cn(
                             "text-sm tabular-nums",
@@ -181,10 +185,10 @@ export default async function AgencyAllReportsPage({
                           {sla.text}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 whitespace-nowrap text-sm text-fg-muted tabular-nums">
+                      <td className="px-4 py-2 whitespace-nowrap text-sm text-fg-muted tabular-nums">
                         {formatRelativeTime(issue.updated_at, now)}
                       </td>
-                      <td className="px-4 py-3.5 whitespace-nowrap text-right">
+                      <td className="px-4 py-2 whitespace-nowrap text-right">
                         <Link href={agencyIssueHref(issue.id)}>
                           <Button size="sm" variant={issue.status === "DITERUSKAN" ? "primary" : "outline"}>
                             {issue.status === "DITERUSKAN" ? "Proses Isu" : "Lihat Detail"}
