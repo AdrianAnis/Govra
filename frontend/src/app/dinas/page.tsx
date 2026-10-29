@@ -1,14 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  ArrowRight,
-  CheckCircle2,
-  Clock,
-  Inbox,
-  Siren,
-  Sparkles,
-  Users,
-} from "lucide-react";
+import { ArrowRight, Users } from "lucide-react";
 import { AdminDistributionMap } from "@/components/admin/admin-distribution-map";
 import { PageHeader } from "@/components/page-header";
 import { IssueStatusBadge } from "@/components/status-badge";
@@ -84,70 +76,38 @@ export default async function AgencyDashboardPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-fg-muted">Laporan Masuk</span>
-            <div className="flex size-8 items-center justify-center rounded bg-primary-soft text-primary">
-              <Inbox className="size-4" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-baseline gap-2">
+        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-6">
+          <span className="text-base font-semibold text-fg-muted">Laporan Masuk</span>
+          <div className="mt-4">
             <span className="text-4xl font-bold tracking-tight tabular-nums text-fg">
               {formatNumber(masukCount)}
             </span>
-            <span className="text-xs text-fg-muted">menunggu respons</span>
           </div>
         </div>
 
-        <div className="flex flex-col justify-between rounded-lg border border-border border-l-4 border-l-secondary bg-surface p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-secondary flex items-center gap-1.5">
-              <Siren className="size-4 text-secondary" />
-              Laporan Urgent (AI)
-            </span>
-            <span className="rounded bg-secondary px-2 py-0.5 text-xs font-semibold text-secondary-fg">
-              Prioritas
-            </span>
-          </div>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-4xl font-bold tracking-tight tabular-nums text-fg">
+        <div className="flex flex-col justify-between rounded-lg border border-border border-l-4 border-l-secondary bg-surface p-6">
+          <span className="text-base font-semibold text-fg-muted">Laporan Urgent</span>
+          <div className="mt-4">
+            <span className="text-4xl font-bold tracking-tight tabular-nums text-secondary">
               {formatNumber(urgentCount)}
             </span>
-            <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
-              <Sparkles className="size-3" />
-              Auto-Triage
-            </span>
           </div>
         </div>
 
-        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-fg-muted">Sedang Diproses</span>
-            <div className="flex size-8 items-center justify-center rounded bg-primary-soft text-primary">
-              <Clock className="size-4" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-baseline gap-2">
+        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-6">
+          <span className="text-base font-semibold text-fg-muted">Sedang Diproses</span>
+          <div className="mt-4">
             <span className="text-4xl font-bold tracking-tight tabular-nums text-fg">
               {formatNumber(prosesCount)}
             </span>
-            <span className="text-xs text-fg-muted">dalam pengerjaan</span>
           </div>
         </div>
 
-        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-fg-muted">Tuntas Dikerjakan</span>
-            <div className="flex size-8 items-center justify-center rounded bg-accent text-accent-fg">
-              <CheckCircle2 className="size-4" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-baseline gap-2">
+        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-6">
+          <span className="text-base font-semibold text-fg-muted">Tuntas Dikerjakan</span>
+          <div className="mt-4">
             <span className="text-4xl font-bold tracking-tight tabular-nums text-fg">
               {formatNumber(selesaiCount)}
-            </span>
-            <span className="rounded bg-accent px-2 py-0.5 text-xs font-semibold text-accent-fg">
-              Selesai
             </span>
           </div>
         </div>
@@ -162,17 +122,11 @@ export default async function AgencyDashboardPage() {
       <section className="flex flex-col gap-4">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold tracking-tight text-fg">
-                Laporan Urgent & Prioritas Penanganan AI
-              </h2>
-              <span className="inline-flex items-center gap-1 rounded bg-primary-soft px-2 py-0.5 text-xs font-semibold text-primary">
-                <Sparkles className="size-3" />
-                Disortir Otomatis oleh AI
-              </span>
-            </div>
-            <p className="text-sm text-fg-muted">
-              Dianalisis dan disortir otomatis berdasarkan frekuensi pelapor, dukungan isu, dan batas waktu SLA.
+            <h2 className="text-xl font-bold tracking-tight text-fg">
+              Laporan Urgent
+            </h2>
+            <p className="text-sm text-fg-muted mt-1">
+              Disortir otomatis berdasarkan frekuensi pelapor, dukungan isu, dan batas waktu SLA.
             </p>
           </div>
           <Link href="/dinas/laporan" className="text-sm font-semibold text-primary hover:underline">
@@ -184,7 +138,7 @@ export default async function AgencyDashboardPage() {
           <div className="overflow-hidden rounded-lg border border-border bg-surface">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="border-b border-border bg-surface-muted text-xs font-semibold uppercase tracking-wider text-fg-muted">
+                <thead className="border-b border-border bg-surface-muted text-sm font-semibold uppercase tracking-wider text-fg-muted">
                   <tr>
                     <th scope="col" className="px-4 py-3 sm:px-6">Isu & Lokasi</th>
                     <th scope="col" className="px-4 py-3">Urgensi</th>
@@ -205,12 +159,12 @@ export default async function AgencyDashboardPage() {
                         <td className="px-4 py-3.5 sm:px-6">
                           <Link
                             href={agencyIssueHref(issue.id)}
-                            className="group flex flex-col gap-0.5"
+                            className="group flex flex-col gap-1"
                           >
-                            <span className="font-semibold text-fg group-hover:text-primary transition-colors">
+                            <span className="text-base font-semibold text-fg group-hover:text-primary transition-colors">
                               {issue.title}
                             </span>
-                            <span className="text-xs text-fg-muted">
+                            <span className="text-sm text-fg-muted">
                               {issue.location.village.name}, {issue.location.district.name}
                             </span>
                           </Link>
@@ -222,15 +176,15 @@ export default async function AgencyDashboardPage() {
                           <IssueStatusBadge status={issue.status} />
                         </td>
                         <td className="px-4 py-3.5 whitespace-nowrap text-center">
-                          <span className="inline-flex items-center gap-1 font-semibold tabular-nums text-fg">
-                            <Users className="size-3.5 text-fg-muted" />
+                          <span className="inline-flex items-center gap-1.5 text-base font-semibold tabular-nums text-fg">
+                            <Users className="size-4 text-fg-muted" />
                             {formatNumber(issue.reporter_count)}
                           </span>
                         </td>
                         <td className="px-4 py-3.5 whitespace-nowrap">
                           <span
                             className={cn(
-                              "text-xs tabular-nums",
+                              "text-sm tabular-nums",
                               sla.overdue ? "font-semibold text-fg" : "text-fg-muted"
                             )}
                           >
@@ -253,8 +207,7 @@ export default async function AgencyDashboardPage() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-12 text-center bg-surface">
-            <CheckCircle2 className="size-8 text-primary mb-2" />
-            <p className="font-semibold text-fg">Tidak ada laporan urgent saat ini</p>
+            <p className="text-base font-semibold text-fg">Tidak ada laporan urgent saat ini</p>
             <p className="text-sm text-fg-muted mt-1">
               Seluruh laporan telah ditindaklanjuti atau sesuai jadwal penanganan.
             </p>

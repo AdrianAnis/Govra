@@ -105,7 +105,7 @@ export default async function AgencyAllReportsPage({
               activeParams({ tab: activeTab.key })
             ).toString()}`}
             className={cn(
-              "rounded-md border px-3 py-1.5 text-xs font-semibold",
+              "rounded-md border px-3.5 py-1.5 text-sm font-semibold transition-colors",
               !filters.urgency
                 ? "border-primary bg-primary-soft text-primary"
                 : "border-border text-fg-muted hover:bg-surface-muted"
@@ -118,7 +118,7 @@ export default async function AgencyAllReportsPage({
               activeParams({ tab: activeTab.key, urgency: "URGENT" })
             ).toString()}`}
             className={cn(
-              "rounded-md border px-3 py-1.5 text-xs font-semibold",
+              "rounded-md border px-3.5 py-1.5 text-sm font-semibold transition-colors",
               filters.urgency === "URGENT"
                 ? "border-secondary bg-secondary text-secondary-fg"
                 : "border-border text-fg-muted hover:bg-surface-muted"
@@ -133,7 +133,7 @@ export default async function AgencyAllReportsPage({
         <div className="overflow-hidden rounded-lg border border-border bg-surface">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-border bg-surface-muted text-xs font-semibold uppercase tracking-wider text-fg-muted">
+              <thead className="border-b border-border bg-surface-muted text-sm font-semibold uppercase tracking-wider text-fg-muted">
                 <tr>
                   <th scope="col" className="px-4 py-3 sm:px-6">Laporan & Lokasi</th>
                   <th scope="col" className="px-4 py-3">Urgensi</th>
@@ -150,11 +150,11 @@ export default async function AgencyAllReportsPage({
                   return (
                     <tr key={issue.id} className="transition-colors hover:bg-surface-muted/50">
                       <td className="px-4 py-3.5 sm:px-6">
-                        <Link href={agencyIssueHref(issue.id)} className="group flex flex-col gap-0.5">
-                          <span className="font-semibold text-fg group-hover:text-primary transition-colors">
+                        <Link href={agencyIssueHref(issue.id)} className="group flex flex-col gap-1">
+                          <span className="text-base font-semibold text-fg group-hover:text-primary transition-colors">
                             {issue.title}
                           </span>
-                          <span className="text-xs text-fg-muted">
+                          <span className="text-sm text-fg-muted">
                             {issue.location.village.name}, {issue.location.district.name}
                           </span>
                         </Link>
@@ -166,22 +166,22 @@ export default async function AgencyAllReportsPage({
                         <IssueStatusBadge status={issue.status} />
                       </td>
                       <td className="px-4 py-3.5 whitespace-nowrap text-center">
-                        <span className="inline-flex items-center gap-1 font-semibold tabular-nums text-fg">
-                          <Users className="size-3.5 text-fg-muted" />
+                        <span className="inline-flex items-center gap-1.5 text-base font-semibold tabular-nums text-fg">
+                          <Users className="size-4 text-fg-muted" />
                           {formatNumber(issue.reporter_count)}
                         </span>
                       </td>
                       <td className="px-4 py-3.5 whitespace-nowrap">
                         <span
                           className={cn(
-                            "text-xs tabular-nums",
+                            "text-sm tabular-nums",
                             sla.overdue ? "font-semibold text-fg" : "text-fg-muted"
                           )}
                         >
                           {sla.text}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 whitespace-nowrap text-xs text-fg-muted tabular-nums">
+                      <td className="px-4 py-3.5 whitespace-nowrap text-sm text-fg-muted tabular-nums">
                         {formatRelativeTime(issue.updated_at, now)}
                       </td>
                       <td className="px-4 py-3.5 whitespace-nowrap text-right">

@@ -1,14 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
-  AlertCircle,
-  ArrowLeft,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  Coins,
-  TrendingUp,
-} from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/state-message";
 import { getSessionUser } from "@/lib/data/session";
@@ -164,62 +156,51 @@ export default async function AgencyPencapaianPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-5">
-          <span className="text-sm font-semibold text-fg-muted">Total Program Kerja</span>
-          <div className="mt-3 flex items-baseline gap-2">
+        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-6">
+          <span className="text-base font-semibold text-fg-muted">Total Program Kerja</span>
+          <div className="mt-4">
             <span className="text-4xl font-bold tracking-tight tabular-nums text-fg">
               {formatNumber(totalPrograms)}
             </span>
-            <span className="text-xs text-fg-muted">kegiatan</span>
           </div>
         </div>
 
-        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-fg-muted">Rata-rata Capaian Fisik</span>
-            <TrendingUp className="size-4 text-primary" />
-          </div>
-          <div className="mt-3 flex items-baseline gap-2">
+        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-6">
+          <span className="text-base font-semibold text-fg-muted">Rata-rata Capaian Fisik</span>
+          <div className="mt-4">
             <span className="text-4xl font-bold tracking-tight tabular-nums text-primary">
               {avgProgress}%
             </span>
-            <span className="text-xs text-fg-muted">dari total target</span>
           </div>
         </div>
 
-        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-fg-muted">Status Pelaksanaan</span>
-            <Clock className="size-4 text-fg-muted" />
-          </div>
-          <div className="mt-3 flex items-baseline gap-3">
-            <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold tabular-nums text-fg">
+        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-6">
+          <span className="text-base font-semibold text-fg-muted">Status Pelaksanaan</span>
+          <div className="mt-4 flex items-baseline gap-4">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-3xl font-bold tabular-nums text-fg">
                 {formatNumber(onScheduleCount)}
               </span>
-              <span className="text-xs text-fg-muted">sesuai</span>
+              <span className="text-sm font-medium text-fg-muted">Sesuai</span>
             </div>
             {lateCount > 0 && (
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold tabular-nums text-secondary">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl font-bold tabular-nums text-secondary">
                   {formatNumber(lateCount)}
                 </span>
-                <span className="text-xs text-secondary font-medium">terlambat</span>
+                <span className="text-sm font-semibold text-secondary">Terlambat</span>
               </div>
             )}
           </div>
         </div>
 
-        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-fg-muted">Serapan Anggaran</span>
-            <Coins className="size-4 text-fg-muted" />
-          </div>
-          <div className="mt-3 flex flex-col">
-            <span className="text-xl font-bold tracking-tight tabular-nums text-fg">
+        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-6">
+          <span className="text-base font-semibold text-fg-muted">Serapan Anggaran</span>
+          <div className="mt-4 flex flex-col gap-1">
+            <span className="text-2xl font-bold tracking-tight tabular-nums text-fg">
               {formatRupiah(totalRealisasi)}
             </span>
-            <span className="text-xs text-fg-muted tabular-nums">
+            <span className="text-sm text-fg-muted tabular-nums">
               Pagu: {formatRupiah(totalPagu)}
             </span>
           </div>
@@ -258,43 +239,37 @@ export default async function AgencyPencapaianPage() {
                   className="flex flex-col gap-5 rounded-lg border border-border bg-surface p-6 transition-colors hover:border-border-strong"
                 >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-1.5">
                       <div className="flex items-center gap-2">
-                        <span className="rounded bg-primary-soft px-2 py-0.5 font-mono text-xs font-semibold text-primary">
+                        <span className="rounded bg-surface-muted px-2.5 py-0.5 font-mono text-sm font-semibold text-fg">
                           {program.code}
                         </span>
                         {isDone ? (
-                          <span className="inline-flex items-center gap-1 rounded bg-accent px-2 py-0.5 text-xs font-semibold text-accent-fg">
-                            <CheckCircle2 className="size-3" />
+                          <span className="rounded bg-accent px-2.5 py-0.5 text-sm font-semibold text-accent-fg">
                             Selesai
                           </span>
                         ) : isLate ? (
-                          <span className="inline-flex items-center gap-1 rounded border border-secondary px-2 py-0.5 text-xs font-semibold text-secondary">
-                            <AlertCircle className="size-3" />
+                          <span className="rounded border border-secondary px-2.5 py-0.5 text-sm font-semibold text-secondary">
                             Terlambat
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded bg-primary-soft px-2 py-0.5 text-xs font-semibold text-primary">
-                            <CheckCircle2 className="size-3" />
+                          <span className="rounded bg-primary-soft px-2.5 py-0.5 text-sm font-semibold text-primary">
                             Sesuai Jadwal
                           </span>
                         )}
                       </div>
                       <h3 className="text-lg font-bold text-fg">{program.name}</h3>
-                      <p className="text-sm text-fg-muted max-w-2xl">{program.description}</p>
+                      <p className="text-sm text-fg-muted max-w-3xl">{program.description}</p>
                     </div>
 
-                    <div className="flex items-center gap-2 text-xs text-fg-muted shrink-0 mt-2 sm:mt-0">
-                      <Calendar className="size-3.5" />
-                      <span className="tabular-nums">
-                        {program.start_date} s/d {program.end_date}
-                      </span>
+                    <div className="text-sm text-fg-muted tabular-nums shrink-0 mt-2 sm:mt-0 font-medium">
+                      {program.start_date} s/d {program.end_date}
                     </div>
                   </div>
 
                   <div className="grid gap-6 border-t border-border pt-5 sm:grid-cols-2 lg:grid-cols-3">
                     <div className="flex flex-col gap-2">
-                      <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center justify-between text-sm">
                         <span className="font-semibold text-fg">Realisasi Fisik</span>
                         <span className="font-bold tabular-nums text-primary">{progressPct}%</span>
                       </div>
@@ -304,13 +279,13 @@ export default async function AgencyPencapaianPage() {
                           style={{ width: `${progressPct}%` }}
                         />
                       </div>
-                      <p className="text-xs text-fg-muted tabular-nums">
+                      <p className="text-sm text-fg-muted tabular-nums">
                         Output: <span className="font-semibold text-fg">{program.realization_output}</span> dari {program.target_output} {program.target_unit}
                       </p>
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center justify-between text-sm">
                         <span className="font-semibold text-fg">Serapan Anggaran</span>
                         <span className="font-bold tabular-nums text-secondary">{budgetPct}%</span>
                       </div>
@@ -320,16 +295,16 @@ export default async function AgencyPencapaianPage() {
                           style={{ width: `${budgetPct}%` }}
                         />
                       </div>
-                      <p className="text-xs text-fg-muted tabular-nums">
+                      <p className="text-sm text-fg-muted tabular-nums">
                         Realisasi: <span className="font-semibold text-fg">{formatRupiah(program.budget_realization)}</span>
                       </p>
                     </div>
 
-                    <div className="flex flex-col justify-center rounded bg-surface-muted p-3">
-                      <span className="text-xs font-semibold text-fg-muted uppercase tracking-wider">
+                    <div className="flex flex-col justify-center rounded bg-surface-muted p-4">
+                      <span className="text-sm font-semibold text-fg-muted">
                         Pagu Anggaran Disetujui
                       </span>
-                      <span className="text-base font-bold tabular-nums text-fg mt-0.5">
+                      <span className="text-lg font-bold tabular-nums text-fg mt-1">
                         {formatRupiah(program.budget_pagu)}
                       </span>
                     </div>
