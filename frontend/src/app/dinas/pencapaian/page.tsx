@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   Clock,
   Coins,
-  MapPin,
   TrendingUp,
 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
@@ -33,14 +32,6 @@ interface ProgramItem {
   status: string;
   district_name?: string;
 }
-
-const OPD_UUID_MAP: Record<string, string> = {
-  "e0000000-0000-0000-0000-000000000001": "DBM-SDA",
-  "e0000000-0000-0000-0000-000000000002": "DLHK",
-  "e0000000-0000-0000-0000-000000000003": "DISHUB",
-  "e0000000-0000-0000-0000-000000000004": "DINKES",
-  "e0000000-0000-0000-0000-000000000007": "PUPR",
-};
 
 async function fetchAgencyPrograms(opdId?: string): Promise<ProgramItem[]> {
   const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
@@ -173,20 +164,20 @@ export default async function AgencyPencapaianPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="flex flex-col justify-between rounded-xl border border-border bg-surface p-5 shadow-xs">
+        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-5">
           <span className="text-sm font-semibold text-fg-muted">Total Program Kerja</span>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="text-4xl font-bold tracking-tight tabular-nums text-fg">
               {formatNumber(totalPrograms)}
             </span>
-            <span className="text-xs text-fg-muted">kegiatan terdaftar</span>
+            <span className="text-xs text-fg-muted">kegiatan</span>
           </div>
         </div>
 
-        <div className="flex flex-col justify-between rounded-xl border border-border bg-surface p-5 shadow-xs">
+        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-5">
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-fg-muted">Rata-rata Capaian Fisik</span>
-            <TrendingUp className="size-5 text-primary" />
+            <TrendingUp className="size-4 text-primary" />
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="text-4xl font-bold tracking-tight tabular-nums text-primary">
@@ -196,33 +187,33 @@ export default async function AgencyPencapaianPage() {
           </div>
         </div>
 
-        <div className="flex flex-col justify-between rounded-xl border border-border bg-surface p-5 shadow-xs">
+        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-5">
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-fg-muted">Status Pelaksanaan</span>
-            <Clock className="size-5 text-emerald-600" />
+            <Clock className="size-4 text-fg-muted" />
           </div>
           <div className="mt-3 flex items-baseline gap-3">
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold tabular-nums text-emerald-600">
+              <span className="text-2xl font-bold tabular-nums text-fg">
                 {formatNumber(onScheduleCount)}
               </span>
               <span className="text-xs text-fg-muted">sesuai</span>
             </div>
             {lateCount > 0 && (
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold tabular-nums text-amber-600">
+                <span className="text-2xl font-bold tabular-nums text-secondary">
                   {formatNumber(lateCount)}
                 </span>
-                <span className="text-xs text-fg-muted">terlambat</span>
+                <span className="text-xs text-secondary font-medium">terlambat</span>
               </div>
             )}
           </div>
         </div>
 
-        <div className="flex flex-col justify-between rounded-xl border border-border bg-surface p-5 shadow-xs">
+        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-5">
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-fg-muted">Serapan Anggaran</span>
-            <Coins className="size-5 text-fg-muted" />
+            <Coins className="size-4 text-fg-muted" />
           </div>
           <div className="mt-3 flex flex-col">
             <span className="text-xl font-bold tracking-tight tabular-nums text-fg">
@@ -259,38 +250,35 @@ export default async function AgencyPencapaianPage() {
                   : 0;
 
               const isLate = program.status === "TERLAMBAT";
+              const isDone = program.status === "SELESAI";
 
               return (
                 <div
                   key={program.id}
-                  className="flex flex-col gap-5 rounded-xl border border-border bg-surface p-6 shadow-xs transition-colors hover:border-border-strong"
+                  className="flex flex-col gap-5 rounded-lg border border-border bg-surface p-6 transition-colors hover:border-border-strong"
                 >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2">
-                        <span className="rounded bg-primary-soft px-2 py-0.5 font-mono text-xs font-bold text-primary">
+                        <span className="rounded bg-primary-soft px-2 py-0.5 font-mono text-xs font-semibold text-primary">
                           {program.code}
                         </span>
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold",
-                            isLate
-                              ? "bg-amber-100 text-amber-800 border border-amber-300"
-                              : "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                          )}
-                        >
-                          {isLate ? (
-                            <>
-                              <AlertCircle className="size-3" />
-                              Perlu Atensi / Terlambat
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle2 className="size-3" />
-                              Sesuai Jadwal
-                            </>
-                          )}
-                        </span>
+                        {isDone ? (
+                          <span className="inline-flex items-center gap-1 rounded bg-accent px-2 py-0.5 text-xs font-semibold text-accent-fg">
+                            <CheckCircle2 className="size-3" />
+                            Selesai
+                          </span>
+                        ) : isLate ? (
+                          <span className="inline-flex items-center gap-1 rounded border border-secondary px-2 py-0.5 text-xs font-semibold text-secondary">
+                            <AlertCircle className="size-3" />
+                            Terlambat
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded bg-primary-soft px-2 py-0.5 text-xs font-semibold text-primary">
+                            <CheckCircle2 className="size-3" />
+                            Sesuai Jadwal
+                          </span>
+                        )}
                       </div>
                       <h3 className="text-lg font-bold text-fg">{program.name}</h3>
                       <p className="text-sm text-fg-muted max-w-2xl">{program.description}</p>
@@ -310,9 +298,9 @@ export default async function AgencyPencapaianPage() {
                         <span className="font-semibold text-fg">Realisasi Fisik</span>
                         <span className="font-bold tabular-nums text-primary">{progressPct}%</span>
                       </div>
-                      <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-muted">
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-surface-muted">
                         <div
-                          className="h-full rounded-full bg-primary transition-all duration-500"
+                          className="h-full rounded-full bg-primary transition-all duration-300"
                           style={{ width: `${progressPct}%` }}
                         />
                       </div>
@@ -326,9 +314,9 @@ export default async function AgencyPencapaianPage() {
                         <span className="font-semibold text-fg">Serapan Anggaran</span>
                         <span className="font-bold tabular-nums text-secondary">{budgetPct}%</span>
                       </div>
-                      <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-muted">
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-surface-muted">
                         <div
-                          className="h-full rounded-full bg-secondary transition-all duration-500"
+                          className="h-full rounded-full bg-secondary transition-all duration-300"
                           style={{ width: `${budgetPct}%` }}
                         />
                       </div>
@@ -337,7 +325,7 @@ export default async function AgencyPencapaianPage() {
                       </p>
                     </div>
 
-                    <div className="flex flex-col justify-center rounded-lg bg-surface-muted p-3">
+                    <div className="flex flex-col justify-center rounded bg-surface-muted p-3">
                       <span className="text-xs font-semibold text-fg-muted uppercase tracking-wider">
                         Pagu Anggaran Disetujui
                       </span>

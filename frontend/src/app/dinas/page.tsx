@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  AlertTriangle,
   ArrowRight,
   CheckCircle2,
   Clock,
-  Flame,
   Inbox,
+  Siren,
   Sparkles,
   Users,
 } from "lucide-react";
@@ -85,11 +84,11 @@ export default async function AgencyDashboardPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="flex flex-col justify-between rounded-xl border border-border bg-surface p-5 shadow-xs">
+        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-5">
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-fg-muted">Laporan Masuk</span>
-            <div className="flex size-9 items-center justify-center rounded-lg bg-blue-100 text-primary">
-              <Inbox className="size-5" />
+            <div className="flex size-8 items-center justify-center rounded bg-primary-soft text-primary">
+              <Inbox className="size-4" />
             </div>
           </div>
           <div className="mt-4 flex items-baseline gap-2">
@@ -100,29 +99,32 @@ export default async function AgencyDashboardPage() {
           </div>
         </div>
 
-        <div className="flex flex-col justify-between rounded-xl border border-amber-300 bg-amber-50/50 p-5 shadow-xs">
+        <div className="flex flex-col justify-between rounded-lg border border-border border-l-4 border-l-secondary bg-surface p-5">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-amber-900">Laporan Urgent (AI)</span>
-            <div className="flex size-9 items-center justify-center rounded-lg bg-amber-200 text-amber-800">
-              <Flame className="size-5" />
-            </div>
+            <span className="text-sm font-semibold text-secondary flex items-center gap-1.5">
+              <Siren className="size-4 text-secondary" />
+              Laporan Urgent (AI)
+            </span>
+            <span className="rounded bg-secondary px-2 py-0.5 text-xs font-semibold text-secondary-fg">
+              Prioritas
+            </span>
           </div>
           <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-4xl font-bold tracking-tight tabular-nums text-amber-950">
+            <span className="text-4xl font-bold tracking-tight tabular-nums text-fg">
               {formatNumber(urgentCount)}
             </span>
-            <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-800">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
               <Sparkles className="size-3" />
-              Prioritas AI
+              Auto-Triage
             </span>
           </div>
         </div>
 
-        <div className="flex flex-col justify-between rounded-xl border border-border bg-surface p-5 shadow-xs">
+        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-5">
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-fg-muted">Sedang Diproses</span>
-            <div className="flex size-9 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700">
-              <Clock className="size-5" />
+            <div className="flex size-8 items-center justify-center rounded bg-primary-soft text-primary">
+              <Clock className="size-4" />
             </div>
           </div>
           <div className="mt-4 flex items-baseline gap-2">
@@ -133,18 +135,20 @@ export default async function AgencyDashboardPage() {
           </div>
         </div>
 
-        <div className="flex flex-col justify-between rounded-xl border border-border bg-surface p-5 shadow-xs">
+        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-5">
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-fg-muted">Tuntas Dikerjakan</span>
-            <div className="flex size-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
-              <CheckCircle2 className="size-5" />
+            <div className="flex size-8 items-center justify-center rounded bg-accent text-accent-fg">
+              <CheckCircle2 className="size-4" />
             </div>
           </div>
           <div className="mt-4 flex items-baseline gap-2">
             <span className="text-4xl font-bold tracking-tight tabular-nums text-fg">
               {formatNumber(selesaiCount)}
             </span>
-            <span className="text-xs text-emerald-700 font-medium">berhasil diselesaikan</span>
+            <span className="rounded bg-accent px-2 py-0.5 text-xs font-semibold text-accent-fg">
+              Selesai
+            </span>
           </div>
         </div>
       </div>
@@ -162,30 +166,30 @@ export default async function AgencyDashboardPage() {
               <h2 className="text-xl font-bold tracking-tight text-fg">
                 Laporan Urgent & Prioritas Penanganan AI
               </h2>
-              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
+              <span className="inline-flex items-center gap-1 rounded bg-primary-soft px-2 py-0.5 text-xs font-semibold text-primary">
                 <Sparkles className="size-3" />
-                AI Auto-Sorted
+                Disortir Otomatis oleh AI
               </span>
             </div>
             <p className="text-sm text-fg-muted">
-              Dianalisis dan disortir otomatis berdasarkan frekuensi pelapor, lonjakan dukungan isu, dan batas waktu SLA.
+              Dianalisis dan disortir otomatis berdasarkan frekuensi pelapor, dukungan isu, dan batas waktu SLA.
             </p>
           </div>
           <Link href="/dinas/laporan" className="text-sm font-semibold text-primary hover:underline">
-            Buka Semua ({allIssuesResult.total})
+            Lihat Semua ({allIssuesResult.total})
           </Link>
         </div>
 
         {urgentIssues.length > 0 ? (
-          <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
+          <div className="overflow-hidden rounded-lg border border-border bg-surface">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="border-b border-border bg-surface-muted text-xs font-semibold uppercase tracking-wider text-fg-muted">
                   <tr>
                     <th scope="col" className="px-4 py-3 sm:px-6">Isu & Lokasi</th>
-                    <th scope="col" className="px-4 py-3">Urgensi AI</th>
+                    <th scope="col" className="px-4 py-3">Urgensi</th>
                     <th scope="col" className="px-4 py-3">Status</th>
-                    <th scope="col" className="px-4 py-3 text-center">Dukungan / Pelapor</th>
+                    <th scope="col" className="px-4 py-3 text-center">Pelapor</th>
                     <th scope="col" className="px-4 py-3">Batas SLA</th>
                     <th scope="col" className="px-4 py-3 text-right">Aksi</th>
                   </tr>
@@ -193,14 +197,10 @@ export default async function AgencyDashboardPage() {
                 <tbody className="divide-y divide-border">
                   {urgentIssues.map((issue) => {
                     const sla = slaInfo(issue.sla_due_at, now);
-                    const isHighImpact = issue.reporter_count >= 3 || issue.urgency === "URGENT";
                     return (
                       <tr
                         key={issue.id}
-                        className={cn(
-                          "transition-colors hover:bg-surface-muted/60",
-                          isHighImpact && "bg-amber-50/20"
-                        )}
+                        className="transition-colors hover:bg-surface-muted/50"
                       >
                         <td className="px-4 py-3.5 sm:px-6">
                           <Link
@@ -216,14 +216,7 @@ export default async function AgencyDashboardPage() {
                           </Link>
                         </td>
                         <td className="px-4 py-3.5 whitespace-nowrap">
-                          <div className="flex items-center gap-1.5">
-                            <UrgencyMarker urgency={issue.urgency} />
-                            {issue.reporter_count >= 3 && (
-                              <span className="inline-flex items-center rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
-                                Viral
-                              </span>
-                            )}
-                          </div>
+                          <UrgencyMarker urgency={issue.urgency} />
                         </td>
                         <td className="px-4 py-3.5 whitespace-nowrap">
                           <IssueStatusBadge status={issue.status} />
@@ -238,7 +231,7 @@ export default async function AgencyDashboardPage() {
                           <span
                             className={cn(
                               "text-xs tabular-nums",
-                              sla.overdue ? "font-bold text-red-600" : "text-fg-muted"
+                              sla.overdue ? "font-semibold text-fg" : "text-fg-muted"
                             )}
                           >
                             {sla.text}
@@ -259,8 +252,8 @@ export default async function AgencyDashboardPage() {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border p-12 text-center bg-surface">
-            <CheckCircle2 className="size-10 text-emerald-600 mb-2" />
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-12 text-center bg-surface">
+            <CheckCircle2 className="size-8 text-primary mb-2" />
             <p className="font-semibold text-fg">Tidak ada laporan urgent saat ini</p>
             <p className="text-sm text-fg-muted mt-1">
               Seluruh laporan telah ditindaklanjuti atau sesuai jadwal penanganan.

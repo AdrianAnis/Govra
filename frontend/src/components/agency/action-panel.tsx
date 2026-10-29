@@ -207,7 +207,7 @@ function ActionPanel({ issueId, transitions }: ActionPanelProps) {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="flex flex-col gap-1.5">
                       <label htmlFor="started_at" className="text-sm font-semibold">
-                        Waktu Mulai Pengerjaan <span className="text-red-500">*</span>
+                        Waktu Mulai Pengerjaan <span className="text-secondary">*</span>
                       </label>
                       <input
                         id="started_at"
@@ -235,12 +235,12 @@ function ActionPanel({ issueId, transitions }: ActionPanelProps) {
                         className={cn(FIELD_CLASS, "py-2 text-sm tabular-nums")}
                       />
                       {errors.started_at && (
-                        <p className="text-xs font-medium text-red-500">{errors.started_at}</p>
+                        <p role="alert" className="text-xs font-medium text-fg">{errors.started_at}</p>
                       )}
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <label htmlFor="estimated_completion_at" className="text-sm font-semibold">
-                        Estimasi Selesai <span className="text-red-500">*</span>
+                        Estimasi Selesai <span className="text-secondary">*</span>
                       </label>
                       <input
                         id="estimated_completion_at"
@@ -268,7 +268,7 @@ function ActionPanel({ issueId, transitions }: ActionPanelProps) {
                         className={cn(FIELD_CLASS, "py-2 text-sm tabular-nums")}
                       />
                       {errors.estimated_completion_at && (
-                        <p className="text-xs font-medium text-red-500">{errors.estimated_completion_at}</p>
+                        <p role="alert" className="text-xs font-medium text-fg">{errors.estimated_completion_at}</p>
                       )}
                     </div>
                   </div>

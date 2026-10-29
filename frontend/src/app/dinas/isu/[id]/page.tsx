@@ -40,11 +40,11 @@ export default async function AgencyIssuePage({ params }: PageProps<"/dinas/isu/
   return (
     <div className="flex flex-col gap-8">
       <Link
-        href={AGENCY_HOME}
+        href="/dinas/laporan"
         className="inline-flex min-h-11 w-fit items-center gap-2 text-sm font-medium text-fg-muted hover:text-primary"
       >
         <ArrowLeft aria-hidden className="size-4" />
-        Inbox isu
+        Daftar seluruh laporan
       </Link>
       <header className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-2">

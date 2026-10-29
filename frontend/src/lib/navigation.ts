@@ -71,7 +71,6 @@ export const PANEL_SECTIONS = {
       { href: "/dinas", label: "Ringkasan", icon: LayoutDashboard, exact: true },
       { href: "/dinas/laporan", label: "Semua Laporan", icon: Inbox },
       { href: "/dinas/pencapaian", label: "Pencapaian Proker", icon: Award },
-      { href: "/dinas/statistik", label: "Statistik & Kinerja", icon: ChartColumn },
     ],
   },
   admin: {

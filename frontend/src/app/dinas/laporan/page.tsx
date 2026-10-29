@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, Clock, Filter, Search, Users } from "lucide-react";
+import { ArrowLeft, Users } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Pagination } from "@/components/pagination";
 import { IssueStatusBadge } from "@/components/status-badge";
@@ -14,7 +14,6 @@ import { getSessionUser } from "@/lib/data/session";
 import { formatNumber, formatRelativeTime } from "@/lib/format";
 import { agencyIssueHref } from "@/lib/routes";
 import { parseIssueFilters, type RawSearchParams } from "@/lib/search-params";
-import { ISSUE_STATUS } from "@/lib/status";
 import { activeParams } from "@/lib/url";
 import { cn } from "@/lib/utils";
 
@@ -82,9 +81,9 @@ export default async function AgencyAllReportsPage({
                 activeParams({ tab: tab.key, urgency: filters.urgency })
               ).toString()}`}
               className={cn(
-                "rounded-lg px-3.5 py-2 text-sm font-semibold transition-colors",
+                "rounded-md px-3.5 py-2 text-sm font-semibold transition-colors",
                 isActive
-                  ? "bg-primary text-white shadow-xs"
+                  ? "bg-secondary text-secondary-fg shadow-2xs"
                   : "bg-surface text-fg-muted hover:bg-surface-muted hover:text-fg"
               )}
             >
@@ -106,9 +105,9 @@ export default async function AgencyAllReportsPage({
               activeParams({ tab: activeTab.key })
             ).toString()}`}
             className={cn(
-              "rounded-md border px-2.5 py-1.5 text-xs font-medium",
+              "rounded-md border px-3 py-1.5 text-xs font-semibold",
               !filters.urgency
-                ? "border-primary bg-primary-soft text-primary font-bold"
+                ? "border-primary bg-primary-soft text-primary"
                 : "border-border text-fg-muted hover:bg-surface-muted"
             )}
           >
@@ -119,9 +118,9 @@ export default async function AgencyAllReportsPage({
               activeParams({ tab: activeTab.key, urgency: "URGENT" })
             ).toString()}`}
             className={cn(
-              "rounded-md border px-2.5 py-1.5 text-xs font-medium",
+              "rounded-md border px-3 py-1.5 text-xs font-semibold",
               filters.urgency === "URGENT"
-                ? "border-red-500 bg-red-50 text-red-700 font-bold"
+                ? "border-secondary bg-secondary text-secondary-fg"
                 : "border-border text-fg-muted hover:bg-surface-muted"
             )}
           >
@@ -131,7 +130,7 @@ export default async function AgencyAllReportsPage({
       </div>
 
       {issues.items.length > 0 ? (
-        <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
+        <div className="overflow-hidden rounded-lg border border-border bg-surface">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-border bg-surface-muted text-xs font-semibold uppercase tracking-wider text-fg-muted">
@@ -149,7 +148,7 @@ export default async function AgencyAllReportsPage({
                 {issues.items.map((issue) => {
                   const sla = slaInfo(issue.sla_due_at, now);
                   return (
-                    <tr key={issue.id} className="transition-colors hover:bg-surface-muted/60">
+                    <tr key={issue.id} className="transition-colors hover:bg-surface-muted/50">
                       <td className="px-4 py-3.5 sm:px-6">
                         <Link href={agencyIssueHref(issue.id)} className="group flex flex-col gap-0.5">
                           <span className="font-semibold text-fg group-hover:text-primary transition-colors">
@@ -176,7 +175,7 @@ export default async function AgencyAllReportsPage({
                         <span
                           className={cn(
                             "text-xs tabular-nums",
-                            sla.overdue ? "font-bold text-red-600" : "text-fg-muted"
+                            sla.overdue ? "font-semibold text-fg" : "text-fg-muted"
                           )}
                         >
                           {sla.text}
