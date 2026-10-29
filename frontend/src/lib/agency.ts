@@ -65,6 +65,15 @@ export const transitionSchema = z
       }
       if (!value.estimated_completion_at || value.estimated_completion_at.trim().length === 0) {
         context.addIssue({ code: "custom", path: ["estimated_completion_at"], message: "Estimasi selesai pengerjaan wajib diisi." });
+      } else if (
+        value.started_at &&
+        new Date(value.estimated_completion_at).getTime() <= new Date(value.started_at).getTime()
+      ) {
+        context.addIssue({
+          code: "custom",
+          path: ["estimated_completion_at"],
+          message: "Estimasi selesai harus lebih lambat dari waktu mulai pengerjaan.",
+        });
       }
     }
     if (value.to === "SELESAI" && (value.evidence_ids?.length ?? 0) < 1) {

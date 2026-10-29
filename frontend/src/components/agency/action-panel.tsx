@@ -213,7 +213,25 @@ function ActionPanel({ issueId, transitions }: ActionPanelProps) {
                         id="started_at"
                         type="datetime-local"
                         value={startedAt}
-                        onChange={(e) => setStartedAt(e.target.value)}
+                        onChange={(e) => {
+                          setStartedAt(e.target.value);
+                          if (
+                            estimatedCompletionAt &&
+                            e.target.value &&
+                            new Date(estimatedCompletionAt).getTime() <= new Date(e.target.value).getTime()
+                          ) {
+                            setErrors((prev) => ({
+                              ...prev,
+                              estimated_completion_at: "Estimasi selesai harus lebih lambat dari waktu mulai pengerjaan.",
+                            }));
+                          } else {
+                            setErrors((prev) => ({
+                              ...prev,
+                              started_at: undefined,
+                              estimated_completion_at: undefined,
+                            }));
+                          }
+                        }}
                         className={cn(FIELD_CLASS, "py-2 text-sm tabular-nums")}
                       />
                       {errors.started_at && (
@@ -228,7 +246,25 @@ function ActionPanel({ issueId, transitions }: ActionPanelProps) {
                         id="estimated_completion_at"
                         type="datetime-local"
                         value={estimatedCompletionAt}
-                        onChange={(e) => setEstimatedCompletionAt(e.target.value)}
+                        min={startedAt || undefined}
+                        onChange={(e) => {
+                          setEstimatedCompletionAt(e.target.value);
+                          if (
+                            startedAt &&
+                            e.target.value &&
+                            new Date(e.target.value).getTime() <= new Date(startedAt).getTime()
+                          ) {
+                            setErrors((prev) => ({
+                              ...prev,
+                              estimated_completion_at: "Estimasi selesai harus lebih lambat dari waktu mulai pengerjaan.",
+                            }));
+                          } else {
+                            setErrors((prev) => ({
+                              ...prev,
+                              estimated_completion_at: undefined,
+                            }));
+                          }
+                        }}
                         className={cn(FIELD_CLASS, "py-2 text-sm tabular-nums")}
                       />
                       {errors.estimated_completion_at && (

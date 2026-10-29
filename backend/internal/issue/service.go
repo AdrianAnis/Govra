@@ -57,8 +57,13 @@ func (s *service) Transition(ctx context.Context, issueID string, req Transition
 	if req.TargetStatus == StatusDitolak && req.RejectionReason == "" {
 		return errors.New("penolakan isu wajib menyertakan alasan penolakan")
 	}
-	if req.TargetStatus == StatusDiproses && (req.StartedAt == nil || req.EstimatedCompletionAt == nil) {
-		return errors.New("waktu mulai dan estimasi selesai pengerjaan wajib diisi")
+	if req.TargetStatus == StatusDiproses {
+		if req.StartedAt == nil || req.EstimatedCompletionAt == nil {
+			return errors.New("waktu mulai dan estimasi selesai pengerjaan wajib diisi")
+		}
+		if !req.EstimatedCompletionAt.After(*req.StartedAt) {
+			return errors.New("estimasi selesai harus lebih lambat dari waktu mulai pengerjaan")
+		}
 	}
 
 	note := req.Response
