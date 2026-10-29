@@ -212,6 +212,125 @@ func (r *repository) ListIssues(ctx context.Context, opdID, status, q string) ([
 }
 
 func (r *repository) GetIssueByID(ctx context.Context, id string) (*Issue, error) {
+	if r.db != nil && r.db.HasREST() {
+		opdNames := map[string]string{
+			"e0000000-0000-0000-0000-000000000001": "Dinas Bina Marga & SDA",
+			"e0000000-0000-0000-0000-000000000002": "Dinas Lingkungan Hidup & Kebersihan",
+			"e0000000-0000-0000-0000-000000000003": "Dinas Perhubungan",
+			"e0000000-0000-0000-0000-000000000004": "Dinas Kesehatan",
+			"e0000000-0000-0000-0000-000000000005": "Satuan Polisi Pamong Praja",
+			"e0000000-0000-0000-0000-000000000006": "Badan Penanggulangan Bencana Daerah",
+			"e0000000-0000-0000-0000-000000000007": "Dinas PUPR",
+		}
+
+		var restIssues []struct {
+			ID                   string     `json:"id"`
+			Code                 string     `json:"code"`
+			Title                string     `json:"title"`
+			Summary              string     `json:"summary"`
+			OpdID                *string    `json:"opd_id"`
+			DistrictID           *string    `json:"district_id"`
+			VillageID            *string    `json:"village_id"`
+			CenterLat            float64    `json:"center_lat"`
+			CenterLng            float64    `json:"center_lng"`
+			Status               string     `json:"status"`
+			Urgency              string     `json:"urgency"`
+			SafetyRisk           string     `json:"safety_risk"`
+			UniqueReportersCount int        `json:"unique_reporters_count"`
+			SlaDueAt             *time.Time `json:"sla_due_at"`
+			CoverPhotoURL        *string    `json:"cover_photo_url"`
+			CreatedAt            time.Time  `json:"created_at"`
+			UpdatedAt            time.Time  `json:"updated_at"`
+		}
+		_ = r.db.PostgRESTGet(ctx, fmt.Sprintf("issues?id=eq.%s&limit=1", url.QueryEscape(id)), &restIssues)
+		if len(restIssues) > 0 {
+			ri := restIssues[0]
+			opdID := ""
+			opdName := ""
+			if ri.OpdID != nil {
+				opdID = *ri.OpdID
+				opdName = opdNames[opdID]
+			}
+			coverPhoto := ""
+			if ri.CoverPhotoURL != nil {
+				coverPhoto = *ri.CoverPhotoURL
+			}
+			slaDue := time.Now().Add(24 * time.Hour)
+			if ri.SlaDueAt != nil {
+				slaDue = *ri.SlaDueAt
+			}
+			iss := Issue{
+				ID:                   ri.ID,
+				Code:                 ri.Code,
+				Title:                ri.Title,
+				Summary:              ri.Summary,
+				OpdID:                opdID,
+				OpdName:              opdName,
+				Point:                LocationPoint{Lat: ri.CenterLat, Lng: ri.CenterLng},
+				Status:               IssueStatus(ri.Status),
+				Urgency:              Urgency(ri.Urgency),
+				SafetyRisk:           ri.SafetyRisk,
+				UniqueReportersCount: ri.UniqueReportersCount,
+				SlaDueAt:             slaDue,
+				CoverPhotoURL:        coverPhoto,
+				CreatedAt:            ri.CreatedAt,
+				UpdatedAt:            ri.UpdatedAt,
+			}
+			return &iss, nil
+		}
+
+		var restReports []struct {
+			ID            string     `json:"id"`
+			Code          string     `json:"code"`
+			Title         string     `json:"title"`
+			Description   string     `json:"description"`
+			Status        string     `json:"status"`
+			OpdID         *string    `json:"opd_id"`
+			IssueID       *string    `json:"issue_id"`
+			Lat           float64    `json:"lat"`
+			Lng           float64    `json:"lng"`
+			AddressDetail string     `json:"address_detail"`
+			Urgency       string     `json:"urgency"`
+			CreatedAt     time.Time  `json:"created_at"`
+			UpdatedAt     *time.Time `json:"updated_at"`
+		}
+		_ = r.db.PostgRESTGet(ctx, fmt.Sprintf("reports?id=eq.%s&limit=1", url.QueryEscape(id)), &restReports)
+		if len(restReports) > 0 {
+			rr := restReports[0]
+			opdID := ""
+			opdName := ""
+			if rr.OpdID != nil {
+				opdID = *rr.OpdID
+				opdName = opdNames[opdID]
+			}
+			updAt := rr.CreatedAt
+			if rr.UpdatedAt != nil {
+				updAt = *rr.UpdatedAt
+			}
+			urg := rr.Urgency
+			if urg == "" {
+				urg = "NORMAL"
+			}
+			iss := Issue{
+				ID:                   rr.ID,
+				Code:                 rr.Code,
+				Title:                rr.Title,
+				Summary:              rr.Description,
+				OpdID:                opdID,
+				OpdName:              opdName,
+				Point:                LocationPoint{Lat: rr.Lat, Lng: rr.Lng},
+				AddressDetail:        rr.AddressDetail,
+				Status:               IssueStatus(rr.Status),
+				Urgency:              Urgency(urg),
+				UniqueReportersCount: 1,
+				SlaDueAt:             time.Now().Add(24 * time.Hour),
+				CreatedAt:            rr.CreatedAt,
+				UpdatedAt:            updAt,
+			}
+			return &iss, nil
+		}
+	}
+
 	if r.db != nil && r.db.Pool != nil {
 		query := `SELECT i.id, i.code, i.title, COALESCE(i.summary,''), 
 		          COALESCE(i.opd_id::text,''), COALESCE(o.name,''), 

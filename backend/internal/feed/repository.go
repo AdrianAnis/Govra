@@ -214,8 +214,12 @@ func (r *repository) ListFeeds(ctx context.Context, userID, tab string) ([]FeedI
 				shCount := r.shares[rep.ID]
 
 				hrStr := ""
+				anStr := ""
 				if rep.HideReason != nil {
 					hrStr = *rep.HideReason
+					if rep.Status == "DIPROSES" || strings.Contains(hrStr, "[JADWAL PENGERJAAN]") {
+						anStr = hrStr
+					}
 				}
 
 				items = append(items, FeedItem{
@@ -228,6 +232,7 @@ func (r *repository) ListFeeds(ctx context.Context, userID, tab string) ([]FeedI
 					Content:       rep.Description,
 					Status:        rep.Status,
 					HideReason:    hrStr,
+					ActionNote:    anStr,
 					Location:      location,
 					MediaType:     MediaImage,
 					MediaURL:      primaryPhoto,

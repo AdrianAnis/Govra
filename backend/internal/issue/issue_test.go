@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"govra/internal/issue"
 	pauth "govra/internal/platform/auth"
@@ -50,9 +51,13 @@ func TestAgencyTransition(t *testing.T) {
 	app, _, tm := setupIssueApp()
 	dinasToken, _ := tm.Generate("dinas-1", "dinas@kotacontoh.go.id", "Petugas DBM", "dinas", "e0000000-0000-0000-0000-000000000001")
 
+	startTime := time.Now()
+	estTime := startTime.Add(24 * time.Hour)
 	transBody, _ := json.Marshal(issue.TransitionRequest{
-		TargetStatus: issue.StatusDiproses,
-		Response:     "Tim perbaikan sedang meluncur ke lokasi",
+		TargetStatus:          issue.StatusDiproses,
+		Response:              "Tim perbaikan sedang meluncur ke lokasi",
+		StartedAt:             &startTime,
+		EstimatedCompletionAt: &estTime,
 	})
 	req := httptest.NewRequest(http.MethodPost, "/agency/issues/i0000000-0000-0000-0000-000000000001/transitions", bytes.NewReader(transBody))
 	req.Header.Set("Content-Type", "application/json")

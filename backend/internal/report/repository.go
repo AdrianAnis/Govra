@@ -424,6 +424,42 @@ func (r *repository) GetReportByCode(ctx context.Context, code string) (*Report,
 					Note:      "Laporan telah diverifikasi oleh Administrator Pusat dan diteruskan ke dinas terkait.",
 					CreatedAt: item.UpdatedAt,
 				})
+			} else if item.Status == "DIPROSES" {
+				rep.Timeline = append(rep.Timeline, TimelineEvent{
+					Status:    "DITERUSKAN",
+					Title:     "Laporan Diteruskan",
+					Note:      "Laporan telah diverifikasi oleh Administrator Pusat dan diteruskan ke dinas terkait.",
+					CreatedAt: item.CreatedAt,
+				})
+				diprosesNote := "Laporan sedang dalam proses pengerjaan oleh dinas terkait."
+				if item.HideReason != nil && *item.HideReason != "" {
+					diprosesNote = *item.HideReason
+				}
+				rep.Timeline = append(rep.Timeline, TimelineEvent{
+					Status:    "DIPROSES",
+					Title:     "Sedang Dikerjakan oleh Dinas",
+					Note:      diprosesNote,
+					CreatedAt: item.UpdatedAt,
+				})
+			} else if item.Status == "SELESAI" {
+				rep.Timeline = append(rep.Timeline, TimelineEvent{
+					Status:    "DITERUSKAN",
+					Title:     "Laporan Diteruskan",
+					Note:      "Laporan telah diverifikasi oleh Administrator Pusat dan diteruskan ke dinas terkait.",
+					CreatedAt: item.CreatedAt,
+				})
+				rep.Timeline = append(rep.Timeline, TimelineEvent{
+					Status:    "DIPROSES",
+					Title:     "Sedang Dikerjakan oleh Dinas",
+					Note:      "Laporan masuk tahap pengerjaan oleh dinas penanggung jawab.",
+					CreatedAt: item.UpdatedAt,
+				})
+				rep.Timeline = append(rep.Timeline, TimelineEvent{
+					Status:    "SELESAI",
+					Title:     "Penanganan Selesai",
+					Note:      "Penanganan laporan telah tuntas dilaksanakan oleh dinas terkait.",
+					CreatedAt: item.UpdatedAt,
+				})
 			}
 			if item.VoiceNoteTranscript != nil {
 				rep.VoiceNoteTranscript = *item.VoiceNoteTranscript
