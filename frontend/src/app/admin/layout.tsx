@@ -2,13 +2,16 @@ import { forbidden, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { PanelShell } from "@/components/layout/panel-shell";
 import { getSessionUser } from "@/lib/data/session";
-import { ADMIN_HOME } from "@/lib/routes";
+import { ADMIN_HOME, PEMERINTAH_HOME } from "@/lib/routes";
 import { loginHref } from "@/lib/session";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const user = await getSessionUser();
   if (!user) {
     redirect(loginHref(ADMIN_HOME));
+  }
+  if (user.role === "kepala_daerah") {
+    redirect(PEMERINTAH_HOME);
   }
   if (user.role !== "admin") {
     forbidden();

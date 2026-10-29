@@ -10,18 +10,20 @@ import {
 function StatusBadge({ label, weight, icon: Icon }: StatusMeta) {
   return (
     <Badge weight={weight}>
-      <Icon aria-hidden />
+      {Icon && <Icon aria-hidden />}
       {label}
     </Badge>
   );
 }
 
 function ProgramStatusBadge({ status }: { status: ProgramStatus }) {
-  return <StatusBadge {...PROGRAM_STATUS[status]} />;
+  const meta = PROGRAM_STATUS[status] ?? PROGRAM_STATUS.SESUAI_JADWAL;
+  return <StatusBadge {...meta} />;
 }
 
 function IssueStatusBadge({ status }: { status: IssueStatus }) {
-  return <StatusBadge {...ISSUE_STATUS[status]} />;
+  const meta = ISSUE_STATUS[status] ?? ISSUE_STATUS.DIAJUKAN;
+  return <StatusBadge {...meta} />;
 }
 
 export { IssueStatusBadge, ProgramStatusBadge, StatusBadge };

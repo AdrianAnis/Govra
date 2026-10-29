@@ -1,8 +1,10 @@
 import {
+  Building2,
   Inbox,
   LayoutDashboard,
   ScrollText,
   ShieldCheck,
+  Target,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -63,6 +65,15 @@ export const FOOTER_GROUPS: readonly FooterGroup[] = [
 ];
 
 export const PANEL_SECTIONS = {
+  pemerintah: {
+    title: "Govra · Eksekutif",
+    items: [
+      { href: "/pemerintah", label: "Ringkasan", icon: LayoutDashboard, exact: true },
+      { href: "/pemerintah/kinerja-opd", label: "Kinerja OPD", icon: Building2 },
+      { href: "/pemerintah/laporan", label: "Semua Laporan", icon: Inbox },
+      { href: "/pemerintah/proker", label: "Program Kerja", icon: Target },
+    ],
+  },
   dinas: {
     title: "Govra · Dinas",
     items: [

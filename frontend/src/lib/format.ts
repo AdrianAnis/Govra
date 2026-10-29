@@ -62,7 +62,7 @@ export function formatRupiah(value: number): string {
   return rupiahFormat.format(value);
 }
 
-export function formatRelativeTime(iso: string, now: Date): string {
+export function formatRelativeTime(iso: string, now: Date = new Date()): string {
   const diff = new Date(iso).getTime() - now.getTime();
   const match = RELATIVE_UNITS.find(({ ms }) => Math.abs(diff) >= ms);
   if (!match) {
