@@ -136,7 +136,7 @@ export default async function AgencyAllReportsPage({
               <thead className="border-b border-border bg-surface-muted text-sm font-semibold uppercase tracking-wider text-fg-muted">
                 <tr className="h-12">
                   <th scope="col" className="px-4 py-2 sm:px-6 whitespace-nowrap">Laporan & Lokasi</th>
-                  <th scope="col" className="px-4 py-2 whitespace-nowrap">Urgensi</th>
+                  <th scope="col" className="px-4 py-2 whitespace-nowrap"></th>
                   <th scope="col" className="px-4 py-2 whitespace-nowrap">Status</th>
                   <th scope="col" className="px-4 py-2 text-center whitespace-nowrap">Pelapor</th>
                   <th scope="col" className="px-4 py-2 whitespace-nowrap">Batas Penanganan</th>
