@@ -1,6 +1,4 @@
 import {
-  Award,
-  ChartColumn,
   Inbox,
   LayoutDashboard,
   ScrollText,
@@ -70,7 +68,6 @@ export const PANEL_SECTIONS = {
     items: [
       { href: "/dinas", label: "Ringkasan", icon: LayoutDashboard, exact: true },
       { href: "/dinas/laporan", label: "Semua Laporan", icon: Inbox },
-      { href: "/dinas/pencapaian", label: "Pencapaian Proker", icon: Award },
     ],
   },
   admin: {
