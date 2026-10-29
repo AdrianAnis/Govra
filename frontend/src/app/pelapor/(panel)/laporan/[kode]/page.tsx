@@ -82,6 +82,30 @@ export default async function MyReportPage({ params }: PageProps<"/pelapor/lapor
           )}
         </div>
       )}
+      {report.status === "DIPROSES" && (() => {
+        const processEvent = [...report.timeline].reverse().find((e) => e.to_status === "DIPROSES");
+        return (
+          <div className="flex flex-col gap-4 rounded-xl border border-primary/30 bg-primary-soft p-5 sm:p-6 shadow-xs">
+            <div className="flex items-center gap-2.5 text-secondary font-bold text-base sm:text-lg">
+              <span className="flex size-3 rounded-full bg-primary animate-pulse" />
+              <span>Laporan Sedang Dikerjakan</span>
+            </div>
+            <p className="text-sm font-medium text-secondary/90 leading-relaxed">
+              Laporan Anda telah diterima oleh dinas penanggung jawab dan saat ini sedang dalam proses pengerjaan di lapangan.
+            </p>
+            {processEvent?.note && (
+              <div className="rounded-lg border border-primary/20 bg-white p-4 shadow-2xs">
+                <span className="text-xs font-bold uppercase tracking-wider text-primary">
+                  Jadwal & Catatan Pengerjaan:
+                </span>
+                <p className="text-sm font-semibold text-zinc-900 mt-1 leading-relaxed whitespace-pre-line break-words">
+                  {processEvent.note}
+                </p>
+              </div>
+            )}
+          </div>
+        );
+      })()}
       <div className="grid gap-10 lg:grid-cols-3 lg:gap-12">
         <div className="flex flex-col gap-12 lg:col-span-2">
           <section className="flex flex-col gap-4">

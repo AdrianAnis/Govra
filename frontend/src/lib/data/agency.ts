@@ -356,6 +356,10 @@ export async function getAgencyIssue(id: string): Promise<Schema<"AgencyIssueDet
 }
 
 export async function transitionIssue(id: string, input: TransitionInput): Promise<Outcome<Schema<"TransitionResult">>> {
+  const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0c3NrbXhpcmNlZGhmZ2dxZW5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjY2MzM1MywiZXhwIjoyMTA4MjM5MzUzfQ.ATvm9u6Dm2cSZ_IiUkajOiIGgXA13jJgC8lU-LrXTXY";
   const issue = agencyIssues().find((item) => item.id === id);
   if (!issue) {
     return { ok: false, status: 404, message: "Isu tidak ditemukan." };
@@ -380,10 +384,87 @@ export async function transitionIssue(id: string, input: TransitionInput): Promi
     from_status: issue.status,
     to_status: input.to,
     actor_label: issue.opd.name,
-    note: `${reason}${input.response}`,
+    note: (input.to === "DIPROSES" && input.started_at && input.estimated_completion_at)
+      ? `[JADWAL PENGERJAAN] Mulai: ${new Date(input.started_at).toLocaleString("id-ID")} · Estimasi Selesai: ${new Date(input.estimated_completion_at).toLocaleString("id-ID")}\n\nCatatan: ${input.response}`
+      : `${reason}${input.response}`,
     evidence,
   };
   store.events.set(id, [...(store.events.get(id) ?? []), event]);
+
+  try {
+    const nowIso = new Date().toISOString();
+    const patchReport: Record<string, any> = {
+      status: input.to,
+      updated_at: nowIso,
+    };
+    if (input.to === "DITOLAK" || input.to === "DIALIHKAN") {
+      patchReport.hide_reason = event.note;
+    }
+    const patchIssue: Record<string, any> = {
+      status: input.to,
+      updated_at: nowIso,
+    };
+    if (input.to === "DIPROSES") {
+      if (input.started_at) {
+        patchIssue.first_responded_at = new Date(input.started_at).toISOString();
+      }
+      if (input.estimated_completion_at) {
+        patchIssue.sla_due_at = new Date(input.estimated_completion_at).toISOString();
+      }
+    } else if (input.to === "SELESAI") {
+      patchIssue.resolved_at = nowIso;
+    }
+
+    await Promise.allSettled([
+      fetch(`${supabaseUrl}/rest/v1/reports?id=eq.${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          "Content-Type": "application/json",
+          "Content-Profile": "app",
+        },
+        body: JSON.stringify(patchReport),
+      }),
+      fetch(`${supabaseUrl}/rest/v1/reports?issue_id=eq.${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          "Content-Type": "application/json",
+          "Content-Profile": "app",
+        },
+        body: JSON.stringify(patchReport),
+      }),
+      fetch(`${supabaseUrl}/rest/v1/issues?id=eq.${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          "Content-Type": "application/json",
+          "Content-Profile": "app",
+        },
+        body: JSON.stringify(patchIssue),
+      }),
+      fetch(`${supabaseUrl}/rest/v1/issue_events`, {
+        method: "POST",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          "Content-Type": "application/json",
+          "Content-Profile": "app",
+        },
+        body: JSON.stringify({
+          id: crypto.randomUUID(),
+          issue_id: id,
+          from_status: issue ? issue.status : "DITERUSKAN",
+          to_status: input.to,
+          note: event.note,
+          created_at: nowIso,
+        }),
+      }),
+    ]);
+  } catch {}
   return { ok: true, value: { status: input.to, event } };
 }
 

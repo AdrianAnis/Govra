@@ -50,6 +50,8 @@ export const transitionSchema = z
   .object({
     to: z.enum(["DIPROSES", "SELESAI", "DITOLAK", "DIALIHKAN"]),
     response: z.string().trim().min(1, "Tulis tanggapan terlebih dahulu.").max(MAX_RESPONSE_LENGTH),
+    started_at: z.string().optional(),
+    estimated_completion_at: z.string().optional(),
     rejection_reason: z
       .enum(["DUPLIKAT", "DATA_TIDAK_LENGKAP", "BUKAN_MASALAH_PUBLIK", "SUDAH_DITANGANI", "LAPORAN_TIDAK_BENAR"])
       .optional(),
@@ -57,6 +59,14 @@ export const transitionSchema = z
     evidence_ids: z.array(z.string().min(1)).max(MAX_EVIDENCE).optional(),
   })
   .superRefine((value, context) => {
+    if (value.to === "DIPROSES") {
+      if (!value.started_at || value.started_at.trim().length === 0) {
+        context.addIssue({ code: "custom", path: ["started_at"], message: "Waktu mulai pengerjaan wajib diisi." });
+      }
+      if (!value.estimated_completion_at || value.estimated_completion_at.trim().length === 0) {
+        context.addIssue({ code: "custom", path: ["estimated_completion_at"], message: "Estimasi selesai pengerjaan wajib diisi." });
+      }
+    }
     if (value.to === "SELESAI" && (value.evidence_ids?.length ?? 0) < 1) {
       context.addIssue({ code: "custom", path: ["evidence_ids"], message: "Unggah minimal satu foto bukti." });
     }

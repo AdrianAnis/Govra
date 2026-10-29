@@ -1,4 +1,5 @@
 import {
+  Award,
   ChartColumn,
   Inbox,
   LayoutDashboard,
@@ -67,8 +68,10 @@ export const PANEL_SECTIONS = {
   dinas: {
     title: "Govra · Dinas",
     items: [
-      { href: "/dinas", label: "Inbox Isu", icon: Inbox, exact: true },
-      { href: "/dinas/statistik", label: "Statistik", icon: ChartColumn },
+      { href: "/dinas", label: "Ringkasan", icon: LayoutDashboard, exact: true },
+      { href: "/dinas/laporan", label: "Semua Laporan", icon: Inbox },
+      { href: "/dinas/pencapaian", label: "Pencapaian Proker", icon: Award },
+      { href: "/dinas/statistik", label: "Statistik & Kinerja", icon: ChartColumn },
     ],
   },
   admin: {

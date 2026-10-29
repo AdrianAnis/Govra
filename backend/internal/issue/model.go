@@ -84,11 +84,13 @@ type Issue struct {
 }
 
 type TransitionRequest struct {
-	TargetStatus    IssueStatus `json:"target_status"`
-	Response        string      `json:"response"`
-	RejectionReason string      `json:"rejection_reason,omitempty"`
-	TransferReason  string      `json:"transfer_reason,omitempty"`
-	EvidencePhotos  []string    `json:"evidence_photos,omitempty"`
+	TargetStatus          IssueStatus `json:"target_status"`
+	Response              string      `json:"response"`
+	RejectionReason       string      `json:"rejection_reason,omitempty"`
+	TransferReason        string      `json:"transfer_reason,omitempty"`
+	EvidencePhotos        []string    `json:"evidence_photos,omitempty"`
+	StartedAt             *time.Time  `json:"started_at,omitempty"`
+	EstimatedCompletionAt *time.Time  `json:"estimated_completion_at,omitempty"`
 }
 
 type RouteIssueRequest struct {

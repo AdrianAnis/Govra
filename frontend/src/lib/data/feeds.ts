@@ -10,6 +10,7 @@ export interface FeedItem {
   issue_urgency?: string;
   status?: string;
   hide_reason?: string;
+  action_note?: string;
   location?: string;
   content: string;
   media_type: "IMAGE" | "VIDEO" | "REEL";

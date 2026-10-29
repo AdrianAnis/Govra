@@ -3,6 +3,7 @@ package issue
 import (
 	"context"
 	"errors"
+	"fmt"
 )
 
 type Service interface {
@@ -56,12 +57,25 @@ func (s *service) Transition(ctx context.Context, issueID string, req Transition
 	if req.TargetStatus == StatusDitolak && req.RejectionReason == "" {
 		return errors.New("penolakan isu wajib menyertakan alasan penolakan")
 	}
+	if req.TargetStatus == StatusDiproses && (req.StartedAt == nil || req.EstimatedCompletionAt == nil) {
+		return errors.New("waktu mulai dan estimasi selesai pengerjaan wajib diisi")
+	}
+
+	note := req.Response
+	if req.TargetStatus == StatusDiproses && req.StartedAt != nil && req.EstimatedCompletionAt != nil {
+		scheduleInfo := fmt.Sprintf("[JADWAL PENGERJAAN] Mulai: %s · Estimasi Selesai: %s", req.StartedAt.Format("02/01/2006 15:04"), req.EstimatedCompletionAt.Format("02/01/2006 15:04"))
+		if note != "" {
+			note = scheduleInfo + "\n\nCatatan: " + note
+		} else {
+			note = scheduleInfo
+		}
+	}
 
 	evt := IssueEvent{
 		FromStatus:     string(iss.Status),
 		ToStatus:       string(req.TargetStatus),
 		AuthorName:     authorName,
-		Note:           req.Response,
+		Note:           note,
 		EvidencePhotos: req.EvidencePhotos,
 	}
 	if err := s.repo.AddEvent(ctx, issueID, evt); err != nil {

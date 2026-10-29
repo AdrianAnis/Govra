@@ -312,6 +312,17 @@ func (r *repository) AddEvent(ctx context.Context, issueID string, evt IssueEven
 	}
 	evt.CreatedAt = time.Now()
 
+	if r.db != nil && r.db.HasREST() {
+		_ = r.db.PostgRESTPost(ctx, "issue_events", map[string]any{
+			"id":          evt.ID,
+			"issue_id":    issueID,
+			"from_status": evt.FromStatus,
+			"to_status":   evt.ToStatus,
+			"note":        evt.Note,
+			"created_at":  evt.CreatedAt,
+		}, nil)
+	}
+
 	if r.db != nil && r.db.Pool != nil {
 		photosJSON, _ := json.Marshal(evt.EvidencePhotos)
 		_, err := r.db.Pool.Exec(ctx, `INSERT INTO app.issue_events (id, issue_id, from_status, to_status, note, evidence_photos, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7)`, evt.ID, issueID, evt.FromStatus, evt.ToStatus, evt.Note, photosJSON, evt.CreatedAt)
@@ -330,6 +341,19 @@ func (r *repository) AddEvent(ctx context.Context, issueID string, evt IssueEven
 }
 
 func (r *repository) UpdateStatus(ctx context.Context, issueID string, status IssueStatus, coverPhoto string) error {
+	if r.db != nil && r.db.HasREST() {
+		patchPayload := map[string]any{
+			"status":     string(status),
+			"updated_at": time.Now(),
+		}
+		if coverPhoto != "" {
+			patchPayload["cover_photo_url"] = coverPhoto
+		}
+		_ = r.db.PostgRESTPatch(ctx, fmt.Sprintf("issues?id=eq.%s", url.QueryEscape(issueID)), patchPayload)
+		_ = r.db.PostgRESTPatch(ctx, fmt.Sprintf("reports?issue_id=eq.%s", url.QueryEscape(issueID)), patchPayload)
+		_ = r.db.PostgRESTPatch(ctx, fmt.Sprintf("reports?id=eq.%s", url.QueryEscape(issueID)), patchPayload)
+	}
+
 	if r.db != nil && r.db.Pool != nil {
 		query := `UPDATE app.issues SET status = $2, cover_photo_url = COALESCE(NULLIF($3, ''), cover_photo_url), updated_at = now() WHERE id = $1`
 		_, err := r.db.Pool.Exec(ctx, query, issueID, string(status), coverPhoto)

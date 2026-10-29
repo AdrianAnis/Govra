@@ -243,6 +243,28 @@ export function FeedCard({ item, now }: FeedCardProps) {
             </div>
           )}
 
+          {(item.status === "DIPROSES" || item.status === "DALAM_PENANGANAN") && (
+            <div className="flex flex-col gap-1.5 rounded-lg border border-primary/30 bg-primary-soft p-3 sm:p-3.5 shadow-2xs">
+              <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-secondary">
+                <span className="flex size-2 rounded-full bg-primary animate-pulse" />
+                <span>Sedang Dikerjakan oleh Dinas</span>
+              </div>
+              <p className="text-xs font-medium text-secondary/90 leading-relaxed">
+                Isu ini telah masuk tahap proses pengerjaan teknis di lapangan.
+              </p>
+              {item.action_note && (
+                <div className="mt-1 rounded-md bg-white p-2.5 shadow-2xs">
+                  <span className="text-[11px] font-bold text-primary block">
+                    Jadwal Pengerjaan:
+                  </span>
+                  <p className="text-xs font-semibold text-zinc-900 mt-0.5 leading-relaxed whitespace-pre-line break-words">
+                    {item.action_note}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           {photos.length > 0 && (
             <div className="flex flex-col gap-1.5 pt-1">
               {photos.length === 1 && photos[0] ? (
