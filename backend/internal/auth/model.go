@@ -21,6 +21,7 @@ type User struct {
 	DisplayName  string    `json:"display_name"`
 	Role         Role      `json:"role"`
 	OpdID        string    `json:"opd_id,omitempty"`
+	OpdName      string    `json:"opd_name,omitempty"`
 	Status       string    `json:"status"`
 	Phone        string    `json:"phone,omitempty"`
 	AvatarURL    string    `json:"avatar_url,omitempty"`

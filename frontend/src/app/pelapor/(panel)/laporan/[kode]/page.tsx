@@ -62,20 +62,20 @@ export default async function MyReportPage({ params }: PageProps<"/pelapor/lapor
         </p>
       </header>
       {report.status === "DITOLAK" && (
-        <div className="flex flex-col gap-3 rounded-xl border border-red-300 bg-red-50/90 dark:border-red-900/60 dark:bg-red-950/40 p-5 sm:p-6 shadow-xs">
-          <div className="flex items-center gap-2.5 text-red-800 dark:text-red-300 font-semibold text-base sm:text-lg">
-            <AlertCircle className="size-5 text-red-600 dark:text-red-400 shrink-0" />
+        <div className="flex flex-col gap-3.5 rounded-xl border border-red-300 bg-red-50 p-5 sm:p-6 shadow-xs">
+          <div className="flex items-center gap-2.5 text-red-900 font-bold text-base sm:text-lg">
+            <AlertCircle className="size-5 text-red-600 shrink-0" />
             <span>Laporan Ditolak</span>
           </div>
-          <p className="text-sm text-red-700 dark:text-red-300 leading-relaxed">
+          <p className="text-sm font-medium text-red-800 leading-relaxed">
             Laporan ini tidak dapat diteruskan ke dinas terkait dan telah ditolak oleh Administrator Pusat Kota Contoh.
           </p>
           {report.rejection_reason && (
-            <div className="rounded-lg border border-red-200 bg-white dark:border-red-900/40 dark:bg-zinc-900 p-4">
-              <span className="text-xs font-semibold uppercase tracking-wider text-red-600 dark:text-red-400">
+            <div className="rounded-lg border border-red-200 bg-white p-4 shadow-2xs">
+              <span className="text-xs font-bold uppercase tracking-wider text-red-700">
                 Alasan Penolakan:
               </span>
-              <p className="text-sm font-semibold text-fg mt-1 leading-relaxed">
+              <p className="text-sm font-semibold text-zinc-900 mt-1 leading-relaxed break-words">
                 {report.rejection_reason}
               </p>
             </div>

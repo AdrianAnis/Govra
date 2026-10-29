@@ -37,11 +37,30 @@ type MonthlyTrend struct {
 }
 
 type AdminOverview struct {
-	TotalIssues     int     `json:"total_issues"`
-	ActiveIssues    int     `json:"active_issues"`
-	ResolvedIssues  int     `json:"resolved_issues"`
-	UrgentIssues    int     `json:"urgent_issues"`
-	SlaCompliance   float64 `json:"sla_compliance"`
-	TotalPrograms   int     `json:"total_programs"`
-	AverageProgress float64 `json:"average_progress"`
+	PendingVerification int     `json:"pending_verification"`
+	PendingTransfer     int     `json:"pending_transfer"`
+	ReportsToday        int     `json:"reports_today"`
+	ActiveAgencyUsers   int     `json:"active_agency_users"`
+	DeadLetterJobs      int     `json:"dead_letter_jobs"`
+	TotalIssues         int     `json:"total_issues"`
+	ActiveIssues        int     `json:"active_issues"`
+	ResolvedIssues      int     `json:"resolved_issues"`
+	UrgentIssues        int     `json:"urgent_issues"`
+	SlaCompliance       float64 `json:"sla_compliance"`
+	TotalPrograms       int     `json:"total_programs"`
+	AverageProgress     float64 `json:"average_progress"`
+}
+
+type AdminUserItem struct {
+	ID           string     `json:"id"`
+	Email        string     `json:"email"`
+	DisplayName  string     `json:"display_name"`
+	Role         string     `json:"role"`
+	Status       string     `json:"status"`
+	OpdID        *string    `json:"opd_id"`
+	OpdCode      string     `json:"opd_code,omitempty"`
+	OpdName      string     `json:"opd_name,omitempty"`
+	OpdSlug      string     `json:"opd_slug,omitempty"`
+	LastSignInAt *time.Time `json:"last_sign_in_at,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
 }

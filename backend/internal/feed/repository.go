@@ -55,6 +55,7 @@ func (r *repository) ListFeeds(ctx context.Context, userID, tab string) ([]FeedI
 			Title         *string   `json:"title"`
 			Description   string    `json:"description"`
 			Status        string    `json:"status"`
+			HideReason    *string   `json:"hide_reason"`
 			AddressDetail *string   `json:"address_detail"`
 			DistrictID    *string   `json:"district_id"`
 			VillageID     *string   `json:"village_id"`
@@ -212,6 +213,11 @@ func (r *repository) ListFeeds(ctx context.Context, userID, tab string) ([]FeedI
 				cCount := max(dbCommentsCount[rep.ID], len(r.comments[rep.ID]))
 				shCount := r.shares[rep.ID]
 
+				hrStr := ""
+				if rep.HideReason != nil {
+					hrStr = *rep.HideReason
+				}
+
 				items = append(items, FeedItem{
 					ID:            rep.ID,
 					AuthorID:      "",
@@ -221,6 +227,7 @@ func (r *repository) ListFeeds(ctx context.Context, userID, tab string) ([]FeedI
 					IssueTitle:    title,
 					Content:       rep.Description,
 					Status:        rep.Status,
+					HideReason:    hrStr,
 					Location:      location,
 					MediaType:     MediaImage,
 					MediaURL:      primaryPhoto,

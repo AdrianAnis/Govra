@@ -12,6 +12,19 @@ import { agencyStore, type Publication } from "@/lib/mock/agency";
 import { DEMO_PROFILES } from "@/lib/mock/profile";
 import { checkFile } from "@/lib/report-draft";
 import type { Schema } from "@/lib/schema";
+import { categoryRef, locationOf, opdRef } from "@/lib/mock/reference";
+import { getSessionUser } from "@/lib/data/session";
+
+const OPD_LOOKUP: Record<string, { code: string; name: string }> = {
+  "e0000000-0000-0000-0000-000000000001": { code: "DBM-SDA", name: "Dinas Bina Marga & SDA" },
+  "e0000000-0000-0000-0000-000000000002": { code: "DLHK", name: "Dinas Lingkungan Hidup & Kebersihan" },
+  "e0000000-0000-0000-0000-000000000003": { code: "DISHUB", name: "Dinas Perhubungan" },
+  "e0000000-0000-0000-0000-000000000004": { code: "DINKES", name: "Dinas Kesehatan" },
+  "e0000000-0000-0000-0000-000000000005": { code: "SATPOL-PP", name: "Satuan Polisi Pamong Praja" },
+  "e0000000-0000-0000-0000-000000000006": { code: "BPBD", name: "Badan Penanggulangan Bencana Daerah" },
+  "e0000000-0000-0000-0000-000000000007": { code: "PUPR", name: "Dinas PUPR" },
+};
+
 
 type Issue = Schema<"IssueDetail">;
 type Status = Schema<"IssueStatus">;
@@ -129,7 +142,93 @@ function reportsOf(issue: Issue): AgencyReport[] {
   });
 }
 
-export async function listAgencyIssues(filters: AgencyFilters = {}): Promise<Schema<"AgencyIssueList">> {
+export async function listAgencyIssues(filters: AgencyFilters = {}, opdIdOverride?: string): Promise<Schema<"AgencyIssueList">> {
+  const user = await getSessionUser();
+  const targetOpdId = opdIdOverride || user?.opdId;
+  const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0c3NrbXhpcmNlZGhmZ2dxZW5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjY2MzM1MywiZXhwIjoyMTA4MjM5MzUzfQ.ATvm9u6Dm2cSZ_IiUkajOiIGgXA13jJgC8lU-LrXTXY";
+
+  if (targetOpdId) {
+    try {
+      let endpoint = `${supabaseUrl}/rest/v1/reports?opd_id=eq.${encodeURIComponent(targetOpdId)}&order=created_at.desc&limit=100`;
+      if (filters.status) {
+        endpoint += `&status=eq.${encodeURIComponent(filters.status)}`;
+      }
+      const [reportsRes, attachmentsRes] = await Promise.all([
+        fetch(endpoint, {
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`,
+            "Accept-Profile": "app",
+          },
+          next: { revalidate: 5 },
+        }),
+        fetch(`${supabaseUrl}/rest/v1/report_attachments?select=report_id,file_url&limit=300`, {
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`,
+            "Accept-Profile": "app",
+          },
+          next: { revalidate: 60 },
+        }).catch(() => null),
+      ]);
+
+      if (reportsRes.ok) {
+        const rows = await reportsRes.json();
+        if (Array.isArray(rows) && rows.length > 0) {
+          const photos: Record<string, string> = {};
+          if (attachmentsRes && attachmentsRes.ok) {
+            const atts = await attachmentsRes.json();
+            if (Array.isArray(atts)) {
+              for (const a of atts) {
+                if (a.file_url && !photos[a.report_id]) {
+                  photos[a.report_id] = a.file_url;
+                }
+              }
+            }
+          }
+          const opdCode = OPD_LOOKUP[targetOpdId]?.code || "DBM-SDA";
+          let refOpd: Schema<"OpdRef">;
+          try {
+            refOpd = opdRef(opdCode);
+          } catch {
+            refOpd = { code: opdCode, slug: opdCode.toLowerCase(), name: OPD_LOOKUP[targetOpdId]?.name || "Dinas" };
+          }
+
+          let defaultCat: Schema<"CategoryRef">;
+          try {
+            defaultCat = categoryRef("JALAN-RUSAK");
+          } catch {
+            defaultCat = { code: "UMUM", name: "Umum" };
+          }
+
+          const items: Schema<"AgencyIssueSummary">[] = rows.map((r: any) => ({
+            id: r.id,
+            title: r.title,
+            opd: refOpd,
+            category: defaultCat,
+            status: (r.status || "DITERUSKAN") as Status,
+            urgency: (r.urgency || "NORMAL") as Urgency,
+            reporter_count: r.support_count ? Number(r.support_count) + 1 : 1,
+            location: {
+              village: { id: r.village_id || "0197b000-0000-7000-8000-002800030000", name: "Kelurahan Setempat" },
+              district: { id: r.district_id || "0197a000-0000-7000-8000-002800000000", name: r.address_detail || "Kecamatan Kota" },
+              point: { lat: Number(r.lat) || -6.9175, lng: Number(r.lng) || 107.6191 },
+            },
+            created_at: r.created_at,
+            updated_at: r.updated_at || r.created_at,
+            cover_photo: photos[r.id] ? { url: String(photos[r.id]), mime: "image/jpeg" as const } : null,
+            response_overdue: false,
+            sla_due_at: null,
+          }));
+          return paginate(items, filters);
+        }
+      }
+    } catch {}
+  }
+
   const items = agencyIssues()
     .filter((issue) => (!filters.status || issue.status === filters.status) && (!filters.urgency || issue.urgency === filters.urgency))
     .map(toAgencySummary)
@@ -138,6 +237,111 @@ export async function listAgencyIssues(filters: AgencyFilters = {}): Promise<Sch
 }
 
 export async function getAgencyIssue(id: string): Promise<Schema<"AgencyIssueDetail"> | null> {
+  const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0c3NrbXhpcmNlZGhmZ2dxZW5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjY2MzM1MywiZXhwIjoyMTA4MjM5MzUzfQ.ATvm9u6Dm2cSZ_IiUkajOiIGgXA13jJgC8lU-LrXTXY";
+
+  try {
+    const [reportRes, attRes] = await Promise.all([
+      fetch(`${supabaseUrl}/rest/v1/reports?id=eq.${id}&select=*`, {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          "Accept-Profile": "app",
+        },
+        next: { revalidate: 5 },
+      }),
+      fetch(`${supabaseUrl}/rest/v1/report_attachments?report_id=eq.${id}&select=file_url`, {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          "Accept-Profile": "app",
+        },
+        next: { revalidate: 30 },
+      }).catch(() => null),
+    ]);
+
+    if (reportRes.ok) {
+      const rows = await reportRes.json();
+      if (Array.isArray(rows) && rows.length > 0) {
+        const r = rows[0];
+        const opdId = r.opd_id || "";
+        const opdCode = OPD_LOOKUP[opdId]?.code || "DBM-SDA";
+        let refOpd: Schema<"OpdRef">;
+        try {
+          refOpd = opdRef(opdCode);
+        } catch {
+          refOpd = { code: opdCode, slug: opdCode.toLowerCase(), name: OPD_LOOKUP[opdId]?.name || "Dinas" };
+        }
+
+        let defaultCat: Schema<"CategoryRef">;
+        try {
+          defaultCat = categoryRef("JALAN-RUSAK");
+        } catch {
+          defaultCat = { code: "UMUM", name: "Umum" };
+        }
+
+        let photoUrl: string | null = null;
+        if (attRes && attRes.ok) {
+          const atts = await attRes.json();
+          if (Array.isArray(atts) && atts.length > 0 && atts[0].file_url) {
+            photoUrl = atts[0].file_url;
+          }
+        }
+
+        const summary: Schema<"AgencyIssueSummary"> = {
+          id: r.id,
+          title: r.title,
+          opd: refOpd,
+          category: defaultCat,
+          status: (r.status || "DITERUSKAN") as Status,
+          urgency: (r.urgency || "NORMAL") as Urgency,
+          reporter_count: r.support_count ? Number(r.support_count) + 1 : 1,
+          location: {
+            village: { id: r.village_id || "0197b000-0000-7000-8000-002800030000", name: "Kelurahan Setempat" },
+            district: { id: r.district_id || "0197a000-0000-7000-8000-002800000000", name: r.address_detail || "Kecamatan Kota" },
+            point: { lat: Number(r.lat) || -6.9175, lng: Number(r.lng) || 107.6191 },
+          },
+          created_at: r.created_at,
+          updated_at: r.updated_at || r.created_at,
+          cover_photo: photoUrl ? { url: photoUrl, mime: "image/jpeg" as const } : null,
+          response_overdue: false,
+          sla_due_at: null,
+        };
+
+        return {
+          ...summary,
+          ai: { summary: r.title, confidence: 0.95, safety_risk: "NONE", sensitive: false },
+          reports: [
+            {
+              code: r.code || "GVR",
+              body: r.description || r.title,
+              visibility: "PUBLIK",
+              created_at: r.created_at,
+              location: summary.location,
+              attachments: photoUrl
+                ? [{ id: "att-1", url: photoUrl, mime: "image/jpeg", size_bytes: 200_000, public_ok: true, is_cover: true }]
+                : [],
+            },
+          ],
+          timeline: [
+            {
+              id: "ev-1",
+              at: r.created_at,
+              from_status: "DIAJUKAN",
+              to_status: r.status || "DITERUSKAN",
+              actor_label: "Admin Pusat",
+              note: "Diteruskan ke dinas terkait",
+              evidence: [],
+            },
+          ],
+          allowed_transitions: allowedTransitions(r.status as Status),
+        };
+      }
+    }
+  } catch {}
+
   const issue = agencyIssues().find((item) => item.id === id);
   if (!issue) {
     return null;

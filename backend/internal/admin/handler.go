@@ -17,11 +17,24 @@ func NewHandler(s Service) *Handler {
 func (h *Handler) RegisterRoutes(app fiber.Router) {
 	admin := app.Group("/admin", auth.RequireRole("admin"))
 	admin.Get("/overview", h.GetOverview)
+	admin.Get("/users", h.ListUsers)
 	admin.Get("/productivity", h.GetProductivity)
 	admin.Get("/executive-summary", h.GetExecutiveSummary)
 
 	agency := app.Group("/agency", auth.RequireRole("dinas", "admin"))
 	agency.Get("/stats", h.GetAgencyStats)
+}
+
+func (h *Handler) ListUsers(c *fiber.Ctx) error {
+	opd := c.Query("opd")
+	res, err := h.service.ListUsers(c.Context(), opd)
+	if err != nil {
+		return httpx.NewAppError(fiber.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+	}
+	return c.JSON(fiber.Map{
+		"items": res,
+		"total": len(res),
+	})
 }
 
 func (h *Handler) GetOverview(c *fiber.Ctx) error {

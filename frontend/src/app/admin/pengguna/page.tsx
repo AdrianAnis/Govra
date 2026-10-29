@@ -57,7 +57,9 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
                   <span className="text-xs font-normal text-fg-muted">{user.email}</span>
                 </span>
               </RowHead>
-              <DataCell>{user.opd?.name ?? "Belum ada OPD"}</DataCell>
+              <DataCell>
+                {user.opd?.name ?? (user.role === "ADMIN" ? "Pusat (Administrator)" : "Pusat / Umum")}
+              </DataCell>
               <DataCell>
                 <Badge weight={user.status === "ACTIVE" ? "berjalan" : "netral"}>
                   {user.status === "ACTIVE" ? "Aktif" : "Nonaktif"}

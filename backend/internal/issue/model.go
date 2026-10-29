@@ -114,6 +114,7 @@ type MapPoint struct {
 	ID            string        `json:"id"`
 	Code          string        `json:"code"`
 	Title         string        `json:"title"`
+	Description   string        `json:"description,omitempty"`
 	OpdID         string        `json:"opd_id"`
 	OpdName       string        `json:"opd_name"`
 	Status        IssueStatus   `json:"status"`

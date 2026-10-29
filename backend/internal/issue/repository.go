@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -77,6 +78,86 @@ func NewRepository(database *db.Database) Repository {
 }
 
 func (r *repository) ListIssues(ctx context.Context, opdID, status, q string) ([]Issue, error) {
+	if r.db != nil && r.db.HasREST() {
+		opdNames := map[string]string{
+			"e0000000-0000-0000-0000-000000000001": "Dinas Bina Marga & SDA",
+			"e0000000-0000-0000-0000-000000000002": "Dinas Lingkungan Hidup & Kebersihan",
+			"e0000000-0000-0000-0000-000000000003": "Dinas Perhubungan",
+			"e0000000-0000-0000-0000-000000000004": "Dinas Kesehatan",
+			"e0000000-0000-0000-0000-000000000005": "Satuan Polisi Pamong Praja",
+			"e0000000-0000-0000-0000-000000000006": "Badan Penanggulangan Bencana Daerah",
+			"e0000000-0000-0000-0000-000000000007": "Dinas PUPR",
+		}
+
+		var reports []struct {
+			ID            string    `json:"id"`
+			Code          string    `json:"code"`
+			Title         string    `json:"title"`
+			Description   string    `json:"description"`
+			Status        string    `json:"status"`
+			OpdID         *string   `json:"opd_id"`
+			Lat           float64   `json:"lat"`
+			Lng           float64   `json:"lng"`
+			AddressDetail string    `json:"address_detail"`
+			CreatedAt     time.Time `json:"created_at"`
+		}
+		_ = r.db.PostgRESTGet(ctx, "reports?order=created_at.desc", &reports)
+
+		var attachments []struct {
+			ReportID string `json:"report_id"`
+			FileURL  string `json:"file_url"`
+		}
+		_ = r.db.PostgRESTGet(ctx, "report_attachments?limit=500", &attachments)
+		photosByReport := make(map[string]string)
+		for _, a := range attachments {
+			if a.FileURL != "" && photosByReport[a.ReportID] == "" {
+				photosByReport[a.ReportID] = a.FileURL
+			}
+		}
+
+		var list []Issue
+		for _, rep := range reports {
+			opdStr := ""
+			opdNameStr := ""
+			if rep.OpdID != nil {
+				opdStr = *rep.OpdID
+				opdNameStr = opdNames[*rep.OpdID]
+			}
+			if opdID != "" && opdStr != opdID {
+				continue
+			}
+			if status != "" && rep.Status != status {
+				continue
+			}
+			if q != "" {
+				lowerQ := strings.ToLower(q)
+				if !strings.Contains(strings.ToLower(rep.Title), lowerQ) &&
+					!strings.Contains(strings.ToLower(rep.AddressDetail), lowerQ) &&
+					!strings.Contains(strings.ToLower(rep.Code), lowerQ) {
+					continue
+				}
+			}
+			iss := Issue{
+				ID:                   rep.ID,
+				Code:                 rep.Code,
+				Title:                rep.Title,
+				Summary:              rep.Description,
+				OpdID:                opdStr,
+				OpdName:              opdNameStr,
+				Status:               IssueStatus(rep.Status),
+				Urgency:              UrgencyNormal,
+				Point:                LocationPoint{Lat: rep.Lat, Lng: rep.Lng},
+				AddressDetail:        rep.AddressDetail,
+				CoverPhotoURL:        photosByReport[rep.ID],
+				UniqueReportersCount: 1,
+				CreatedAt:            rep.CreatedAt,
+				UpdatedAt:            rep.CreatedAt,
+			}
+			list = append(list, iss)
+		}
+		return list, nil
+	}
+
 	if r.db != nil && r.db.Pool != nil {
 		query := `SELECT i.id, i.code, i.title, COALESCE(i.summary,''), 
 		          COALESCE(i.opd_id::text,''), COALESCE(o.name,''), 
@@ -308,13 +389,70 @@ func (r *repository) RouteIssue(ctx context.Context, issueID, opdID, categoryID,
 			patchPayload["category_id"] = targetCatUUID
 		}
 
-		_ = r.db.PostgRESTPatch(ctx, fmt.Sprintf("issues?id=eq.%s", url.QueryEscape(issueID)), patchPayload)
-		_ = r.db.PostgRESTPatch(ctx, fmt.Sprintf("reports?issue_id=eq.%s", url.QueryEscape(issueID)), patchPayload)
+		var existingReport []struct {
+			ID          string  `json:"id"`
+			Code        string  `json:"code"`
+			Title       string  `json:"title"`
+			Description string  `json:"description"`
+			IssueID     *string `json:"issue_id"`
+			DistrictID  *string `json:"district_id"`
+			VillageID   *string `json:"village_id"`
+			Lat         float64 `json:"lat"`
+			Lng         float64 `json:"lng"`
+		}
+		_ = r.db.PostgRESTGet(ctx, fmt.Sprintf("reports?id=eq.%s", url.QueryEscape(issueID)), &existingReport)
+
+		realIssueID := issueID
+		if len(existingReport) > 0 {
+			rep := existingReport[0]
+			if rep.IssueID != nil && *rep.IssueID != "" {
+				realIssueID = *rep.IssueID
+			} else {
+				newIssueID := uuid.New().String()
+				issueCode := "ISU-" + strings.ToUpper(rep.Code)
+				if len(rep.Code) > 4 && strings.HasPrefix(rep.Code, "GVR-") {
+					issueCode = "ISU-" + rep.Code[4:]
+				}
+				newIssuePayload := map[string]any{
+					"id":                     newIssueID,
+					"code":                   issueCode,
+					"region_id":              "a0000000-0000-0000-0000-000000000001",
+					"title":                  rep.Title,
+					"summary":                rep.Description,
+					"status":                 "DITERUSKAN",
+					"urgency":                "NORMAL",
+					"safety_risk":            "NONE",
+					"unique_reporters_count": 1,
+					"center_lat":             rep.Lat,
+					"center_lng":             rep.Lng,
+					"created_at":             time.Now(),
+					"updated_at":             time.Now(),
+				}
+				if _, err := uuid.Parse(targetOpdUUID); err == nil {
+					newIssuePayload["opd_id"] = targetOpdUUID
+				}
+				if _, err := uuid.Parse(targetCatUUID); err == nil {
+					newIssuePayload["category_id"] = targetCatUUID
+				}
+				if rep.DistrictID != nil {
+					newIssuePayload["district_id"] = *rep.DistrictID
+				}
+				if rep.VillageID != nil {
+					newIssuePayload["village_id"] = *rep.VillageID
+				}
+				_ = r.db.PostgRESTPost(ctx, "issues", newIssuePayload, nil)
+				realIssueID = newIssueID
+				patchPayload["issue_id"] = newIssueID
+			}
+		}
+
+		_ = r.db.PostgRESTPatch(ctx, fmt.Sprintf("issues?id=eq.%s", url.QueryEscape(realIssueID)), patchPayload)
+		_ = r.db.PostgRESTPatch(ctx, fmt.Sprintf("reports?issue_id=eq.%s", url.QueryEscape(realIssueID)), patchPayload)
 		_ = r.db.PostgRESTPatch(ctx, fmt.Sprintf("reports?id=eq.%s", url.QueryEscape(issueID)), patchPayload)
 
 		_ = r.db.PostgRESTPost(ctx, "issue_events", map[string]any{
 			"id":          uuid.New().String(),
-			"issue_id":    issueID,
+			"issue_id":    realIssueID,
 			"from_status": "MENUNGGU_VERIFIKASI",
 			"to_status":   "DITERUSKAN",
 			"note":        note,
@@ -491,6 +629,7 @@ func (r *repository) ListVerificationQueue(ctx context.Context) ([]Issue, error)
 			ID          string    `json:"id"`
 			Code        string    `json:"code"`
 			IssueID     *string   `json:"issue_id"`
+			OpdID       *string   `json:"opd_id"`
 			Title       string    `json:"title"`
 			Description string    `json:"description"`
 			Status      string    `json:"status"`
@@ -572,47 +711,58 @@ func (r *repository) ListVerificationQueue(ctx context.Context) ([]Issue, error)
 		}
 
 		for _, rep := range reports {
-			if rep.Status == "DIAJUKAN" && (rep.IssueID == nil || !seenIssueIDs[*rep.IssueID]) {
-				targetID := rep.ID
-				if rep.IssueID != nil && *rep.IssueID != "" {
-					targetID = *rep.IssueID
-				}
-				iss := Issue{
-					ID:                   targetID,
-					Code:                 rep.Code,
-					Title:                rep.Title,
-					Summary:              rep.Description,
-					Status:               StatusMenungguVerifikasi,
-					Urgency:              UrgencyNormal,
-					UniqueReportersCount: 1,
-					CreatedAt:            rep.CreatedAt,
-					UpdatedAt:            rep.CreatedAt,
-					PhotoURLs:            photosByReport[rep.ID],
-				}
-				if cls, ok := aiByReport[rep.ID]; ok {
-					iss.AiOpdCode = cls.RawResponse.OpdCode
-					iss.AiOpdName = cls.RawResponse.OpdName
-					iss.AiCategoryCode = cls.RawResponse.CategoryCode
-					iss.AiCategoryName = cls.RawResponse.CategoryName
-					iss.AiConfidence = cls.Confidence
-					iss.AiSummary = cls.Summary
-					iss.IsUnregisteredOpd = cls.RawResponse.IsUnregisteredOpd
-					iss.AiRecommendation = cls.RawResponse.RecommendedAction
-				} else {
-					iss.AiOpdCode = "DBM-SDA"
-					iss.AiOpdName = "Dinas Bina Marga & SDA"
-					iss.AiCategoryCode = "JALAN-RUSAK"
-					iss.AiCategoryName = "Jalan Rusak & Berlubang"
-					iss.AiConfidence = 0.85
-					iss.AiSummary = rep.Title
-				}
-				list = append(list, iss)
+			targetID := rep.ID
+			if rep.IssueID != nil && *rep.IssueID != "" {
+				targetID = *rep.IssueID
 			}
+			if seenIssueIDs[targetID] {
+				continue
+			}
+			seenIssueIDs[targetID] = true
+
+			status := IssueStatus(rep.Status)
+			if rep.Status == "DIAJUKAN" {
+				status = StatusMenungguVerifikasi
+			}
+
+			iss := Issue{
+				ID:                   targetID,
+				Code:                 rep.Code,
+				Title:                rep.Title,
+				Summary:              rep.Description,
+				Status:               status,
+				Urgency:              UrgencyNormal,
+				UniqueReportersCount: 1,
+				CreatedAt:            rep.CreatedAt,
+				UpdatedAt:            rep.CreatedAt,
+				PhotoURLs:            photosByReport[rep.ID],
+			}
+			if cls, ok := aiByReport[rep.ID]; ok {
+				iss.AiOpdCode = cls.RawResponse.OpdCode
+				iss.AiOpdName = cls.RawResponse.OpdName
+				iss.AiCategoryCode = cls.RawResponse.CategoryCode
+				iss.AiCategoryName = cls.RawResponse.CategoryName
+				iss.AiConfidence = cls.Confidence
+				iss.AiSummary = cls.Summary
+				iss.IsUnregisteredOpd = cls.RawResponse.IsUnregisteredOpd
+				iss.AiRecommendation = cls.RawResponse.RecommendedAction
+			} else {
+				iss.AiOpdCode = "DBM-SDA"
+				iss.AiOpdName = "Dinas Bina Marga & SDA"
+				iss.AiCategoryCode = "JALAN-RUSAK"
+				iss.AiCategoryName = "Jalan Rusak & Berlubang"
+				iss.AiConfidence = 0.85
+				iss.AiSummary = rep.Title
+			}
+			if rep.OpdID != nil && *rep.OpdID != "" {
+				iss.OpdID = *rep.OpdID
+				iss.OpdCode = opdCodes[*rep.OpdID]
+				iss.OpdName = opdNames[*rep.OpdID]
+			}
+			list = append(list, iss)
 		}
 
-		if len(list) > 0 {
-			return list, nil
-		}
+		return list, nil
 	}
 
 	if r.db != nil && r.db.Pool != nil {

@@ -138,6 +138,10 @@ func (h *Handler) RejectIssue(c *fiber.Ctx) error {
 func (h *Handler) GetMapDistribution(c *fiber.Ctx) error {
 	role := auth.CurrentRole(c)
 	opdID := auth.CurrentOpdID(c)
+	if qOpd := c.Query("opd"); qOpd != "" {
+		opdID = qOpd
+		role = "dinas"
+	}
 	points, err := h.service.GetMapDistribution(c.Context(), role, opdID)
 	if err != nil {
 		return httpx.NewAppError(fiber.StatusInternalServerError, "INTERNAL_ERROR", err.Error())

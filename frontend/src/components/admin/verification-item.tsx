@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { AlertTriangle, ExternalLink, ImageIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { AlertTriangle, CheckCircle2, ExternalLink, ImageIcon } from "lucide-react";
 import { FormDialog } from "@/components/form-dialog";
 import { SelectField } from "@/components/select-field";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +32,7 @@ interface VerificationItemProps {
 }
 
 function VerificationItem({ item, opds, now }: VerificationItemProps) {
+  const router = useRouter();
   const suggestion = item.ai_suggestion as (Schema<"AiSuggestion"> & {
     is_unregistered_opd?: boolean;
     recommended_action?: string;
@@ -46,6 +49,8 @@ function VerificationItem({ item, opds, now }: VerificationItemProps) {
   const [reason, setReason] = useState<RejectionReason | null>(null);
   const [explanation, setExplanation] = useState("");
   const [activePhoto, setActivePhoto] = useState<string | null>(null);
+  const [successInfo, setSuccessInfo] = useState<{ title: string; message: string; opdName?: string } | null>(null);
+  const [isHandled, setIsHandled] = useState(false);
 
   const activeOpds = opds.filter((opd) => opd.active);
   const categories =
@@ -59,20 +64,59 @@ function VerificationItem({ item, opds, now }: VerificationItemProps) {
   };
 
   const route = async () => {
-    if (!opdCode || !categoryCode) {
-      throw new Error("Pilih OPD dan kategori terlebih dahulu.");
+    if (!opdCode) {
+      throw new Error("Pilih OPD tujuan terlebih dahulu.");
     }
-    await adminCall("POST", `/issues/${item.issue_id}/route`, { opd_code: opdCode, category_code: categoryCode });
-    window.location.reload();
+    const catCode = categoryCode || categories[0]?.code || "UMUM";
+    const targetOpd = activeOpds.find((o) => o.code === opdCode);
+    const targetOpdName = targetOpd?.name || opdCode;
+
+    await adminCall("POST", `/issues/${item.issue_id}/route`, {
+      opd_code: opdCode,
+      category_code: catCode,
+    });
+
+    setSuccessInfo({
+      title: "Laporan Berhasil Diteruskan!",
+      message: `Laporan warga "${item.title}" telah berhasil disetujui dan diteruskan ke ${targetOpdName}. Status di database telah diperbarui menjadi DITERUSKAN.`,
+      opdName: targetOpdName,
+    });
+    setIsHandled(true);
   };
 
   const reject = async () => {
     if (!reason) {
       throw new Error("Pilih alasan penolakan terlebih dahulu.");
     }
+    const reasonLabel = REJECTION_OPTIONS.find((o) => o.value === reason)?.label || reason;
     await adminCall("POST", `/issues/${item.issue_id}/reject`, { reason, explanation });
-    window.location.reload();
+
+    setSuccessInfo({
+      title: "Laporan Berhasil Ditolak",
+      message: `Laporan warga "${item.title}" telah ditolak dengan alasan: ${reasonLabel}. Status di database telah diperbarui menjadi DITOLAK.`,
+    });
+    setIsHandled(true);
   };
+
+  if (isHandled && !successInfo) {
+    return (
+      <article className="flex items-center justify-between gap-4 rounded-lg border border-emerald-200 bg-emerald-50/50 dark:border-emerald-900/50 dark:bg-emerald-950/20 p-4 transition-all">
+        <div className="flex items-center gap-3">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/60 dark:text-emerald-400">
+            <CheckCircle2 className="size-5" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold text-emerald-950 dark:text-emerald-200">
+              Laporan telah diproses: {item.title}
+            </span>
+            <span className="text-xs text-emerald-700 dark:text-emerald-400">
+              Perubahan status telah tersimpan ke database.
+            </span>
+          </div>
+        </div>
+      </article>
+    );
+  }
 
   const photos = item.photo_urls && item.photo_urls.length > 0 ? item.photo_urls : [];
 
@@ -257,6 +301,37 @@ function VerificationItem({ item, opds, now }: VerificationItemProps) {
               />
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(successInfo)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSuccessInfo(null);
+            router.refresh();
+          }
+        }}
+      >
+        <DialogContent className="max-w-md p-6 text-center flex flex-col items-center gap-4">
+          <div className="flex size-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">
+            <CheckCircle2 className="size-8" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <DialogTitle className="text-lg font-bold text-fg">{successInfo?.title}</DialogTitle>
+            <p className="text-sm text-fg-muted leading-relaxed">{successInfo?.message}</p>
+          </div>
+          <Button
+            type="button"
+            variant="primary"
+            className="w-full mt-2"
+            onClick={() => {
+              setSuccessInfo(null);
+              router.refresh();
+            }}
+          >
+            Selesai & Tutup
+          </Button>
         </DialogContent>
       </Dialog>
     </article>

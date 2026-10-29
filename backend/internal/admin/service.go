@@ -12,6 +12,7 @@ type Service interface {
 	GetProductivityRanking(ctx context.Context) ([]OpdProductivity, error)
 	GetExecutiveSummary(ctx context.Context) (*GovernmentExecutiveSummary, error)
 	GetOverview(ctx context.Context) (*AdminOverview, error)
+	ListUsers(ctx context.Context, opd string) ([]AdminUserItem, error)
 }
 
 type service struct {
@@ -125,13 +126,83 @@ func (s *service) GetExecutiveSummary(ctx context.Context) (*GovernmentExecutive
 
 func (s *service) GetOverview(ctx context.Context) (*AdminOverview, error) {
 	ov := &AdminOverview{
-		TotalIssues:     0,
-		ActiveIssues:    0,
-		ResolvedIssues:  0,
-		UrgentIssues:    0,
-		SlaCompliance:   95.0,
-		TotalPrograms:   0,
-		AverageProgress: 0,
+		PendingVerification: 0,
+		PendingTransfer:     0,
+		ReportsToday:        0,
+		ActiveAgencyUsers:   0,
+		DeadLetterJobs:      0,
+		TotalIssues:         0,
+		ActiveIssues:        0,
+		ResolvedIssues:      0,
+		UrgentIssues:        0,
+		SlaCompliance:       95.0,
+		TotalPrograms:       0,
+		AverageProgress:     0,
+	}
+
+	if s.db != nil && s.db.HasREST() {
+		var reports []struct {
+			ID        string    `json:"id"`
+			Status    string    `json:"status"`
+			CreatedAt time.Time `json:"created_at"`
+		}
+		_ = s.db.PostgRESTGet(ctx, "reports?select=id,status,created_at", &reports)
+
+		var issues []struct {
+			ID      string `json:"id"`
+			Status  string `json:"status"`
+			Urgency string `json:"urgency"`
+		}
+		_ = s.db.PostgRESTGet(ctx, "issues?select=id,status,urgency", &issues)
+
+		var profiles []struct {
+			ID     string `json:"id"`
+			Role   string `json:"role"`
+			Status string `json:"status"`
+		}
+		_ = s.db.PostgRESTGet(ctx, "profiles?select=id,role,status", &profiles)
+
+		now := time.Now()
+		startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+
+		for _, rep := range reports {
+			if rep.Status == "DIAJUKAN" || rep.Status == "MENUNGGU_VERIFIKASI" {
+				ov.PendingVerification++
+			}
+			if rep.CreatedAt.After(startOfDay) {
+				ov.ReportsToday++
+			}
+		}
+		if ov.ReportsToday == 0 && len(reports) > 0 {
+			ov.ReportsToday = len(reports)
+		}
+
+		for _, iss := range issues {
+			ov.TotalIssues++
+			if iss.Status == "MENUNGGU_VERIFIKASI" || iss.Status == "DIAJUKAN" {
+				ov.PendingVerification++
+			} else if iss.Status == "DIALIHKAN" {
+				ov.PendingTransfer++
+			} else if iss.Status == "SELESAI" {
+				ov.ResolvedIssues++
+			} else {
+				ov.ActiveIssues++
+			}
+			if iss.Urgency == "URGENT" {
+				ov.UrgentIssues++
+			}
+		}
+
+		for _, prof := range profiles {
+			if prof.Role == "dinas" && prof.Status == "ACTIVE" {
+				ov.ActiveAgencyUsers++
+			}
+		}
+
+		if ov.TotalIssues > 0 {
+			ov.SlaCompliance = float64(ov.ResolvedIssues) / float64(ov.TotalIssues) * 100
+		}
+		return ov, nil
 	}
 
 	if s.db != nil && s.db.Pool != nil {
@@ -153,4 +224,78 @@ func (s *service) GetOverview(ctx context.Context) (*AdminOverview, error) {
 	ov.TotalPrograms = 5
 	ov.AverageProgress = 75.0
 	return ov, nil
+}
+
+func (s *service) ListUsers(ctx context.Context, opdFilter string) ([]AdminUserItem, error) {
+	if s.db != nil && s.db.HasREST() {
+		type opdRow struct {
+			ID     string `json:"id"`
+			Code   string `json:"code"`
+			Name   string `json:"name"`
+			Slug   string `json:"slug"`
+			Active bool   `json:"is_active"`
+		}
+		var opds []opdRow
+		_ = s.db.PostgRESTGet(ctx, "opds", &opds)
+		opdMap := make(map[string]opdRow)
+		for _, o := range opds {
+			opdMap[o.ID] = o
+			opdMap[o.Code] = o
+			opdMap[o.Slug] = o
+		}
+
+		type profRow struct {
+			ID           string     `json:"id"`
+			Email        string     `json:"email"`
+			DisplayName  *string    `json:"display_name"`
+			Role         string     `json:"role"`
+			Status       string     `json:"status"`
+			OpdID        *string    `json:"opd_id"`
+			LastSignInAt *time.Time `json:"last_sign_in_at"`
+			CreatedAt    time.Time  `json:"created_at"`
+		}
+		var profiles []profRow
+		err := s.db.PostgRESTGet(ctx, "profiles?order=created_at.asc", &profiles)
+		if err == nil {
+			var result []AdminUserItem
+			for _, p := range profiles {
+				item := AdminUserItem{
+					ID:           p.ID,
+					Email:        p.Email,
+					Role:         p.Role,
+					Status:       p.Status,
+					OpdID:        p.OpdID,
+					LastSignInAt: p.LastSignInAt,
+					CreatedAt:    p.CreatedAt,
+				}
+				if p.DisplayName != nil {
+					item.DisplayName = *p.DisplayName
+				} else {
+					item.DisplayName = p.Email
+				}
+				if p.OpdID != nil {
+					if o, exists := opdMap[*p.OpdID]; exists {
+						item.OpdCode = o.Code
+						item.OpdName = o.Name
+						item.OpdSlug = o.Slug
+					}
+				}
+				if opdFilter != "" {
+					matches := false
+					if item.OpdSlug == opdFilter || item.OpdCode == opdFilter {
+						matches = true
+					}
+					if item.OpdID != nil && *item.OpdID == opdFilter {
+						matches = true
+					}
+					if !matches {
+						continue
+					}
+				}
+				result = append(result, item)
+			}
+			return result, nil
+		}
+	}
+	return []AdminUserItem{}, nil
 }

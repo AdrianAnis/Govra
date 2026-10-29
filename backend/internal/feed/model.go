@@ -21,6 +21,7 @@ type FeedItem struct {
 	IssueTitle    string    `json:"issue_title,omitempty"`
 	IssueUrgency  string    `json:"issue_urgency,omitempty"`
 	Status        string    `json:"status,omitempty"`
+	HideReason    string    `json:"hide_reason,omitempty"`
 	Location      string    `json:"location,omitempty"`
 	Content       string    `json:"content"`
 	MediaType     MediaType `json:"media_type"`

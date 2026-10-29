@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, MessageSquare, Share2, Users } from "lucide-react";
+import { AlertCircle, Heart, MessageSquare, Share2, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,39 +32,41 @@ function renderStatusBadge(status?: string) {
   switch (status) {
     case "SELESAI":
       return (
-        <Badge weight="selesai" className="text-[11px] sm:text-xs font-semibold px-2 py-0.5">
+        <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] sm:text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
           Selesai
-        </Badge>
+        </span>
       );
     case "DITOLAK":
       return (
-        <Badge weight="netral" className="text-[11px] sm:text-xs font-semibold px-2 py-0.5 bg-red-50 text-red-700 border-red-300">
+        <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] sm:text-xs font-semibold bg-red-100 text-red-800 border border-red-300">
           Ditolak
-        </Badge>
+        </span>
       );
     case "DITERUSKAN":
       return (
-        <Badge weight="berjalan" className="text-[11px] sm:text-xs font-semibold px-2 py-0.5">
+        <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] sm:text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-300">
           Diteruskan
-        </Badge>
+        </span>
       );
     case "DALAM_PENANGANAN":
+    case "DIPROSES":
       return (
-        <Badge weight="berjalan" className="text-[11px] sm:text-xs font-semibold px-2 py-0.5">
+        <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] sm:text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-300">
           Dalam Penanganan
-        </Badge>
+        </span>
       );
     case "DIAJUKAN":
+    case "MENUNGGU_VERIFIKASI":
       return (
-        <Badge weight="netral" className="text-[11px] sm:text-xs font-semibold px-2 py-0.5">
+        <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] sm:text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
           Diajukan
-        </Badge>
+        </span>
       );
     default:
       return (
-        <Badge weight="netral" className="text-[11px] sm:text-xs font-semibold px-2 py-0.5">
+        <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] sm:text-xs font-semibold bg-zinc-100 text-zinc-800 border border-zinc-300">
           {status || "Laporan"}
-        </Badge>
+        </span>
       );
   }
 }
@@ -133,7 +135,7 @@ export function FeedCard({ item, now }: FeedCardProps) {
     try {
       const res = await shareFeed(item.id);
       setSharesCount(res.shares_count);
-    } catch {}
+    } catch { }
 
     const shareUrl =
       typeof window !== "undefined"
@@ -148,7 +150,7 @@ export function FeedCard({ item, now }: FeedCardProps) {
           url: shareUrl,
         });
         return;
-      } catch {}
+      } catch { }
     }
 
     if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -221,8 +223,23 @@ export function FeedCard({ item, now }: FeedCardProps) {
           </p>
 
           {isRejected && (
-            <div className="rounded-md border border-red-200 bg-red-50/80 dark:border-red-900/50 dark:bg-red-950/30 px-3 py-2 text-xs text-red-700 dark:text-red-300 font-medium">
-              Laporan ini ditolak oleh Administrator Pusat.
+            <div className="flex flex-col gap-1.5 rounded-lg bg-red-50 p-3 sm:p-3.5 shadow-2xs">
+              <div className="flex items-center gap-1.5 font-bold text-xs sm:text-sm text-red-900">
+                <span>Laporan Ditolak</span>
+              </div>
+              <p className="text-xs font-medium text-red-800 bg-red-50 leading-relaxed">
+                Laporan ini tidak dapat diteruskan ke dinas terkait dan telah ditolak oleh Administrator Pusat.
+              </p>
+              {item.hide_reason && (
+                <div className="mt-1 rounded-md  bg-white p-2.5 shadow-2xs">
+                  <span className="text-[12px] font-bold  shrink-0 text-red-600">
+                    Alasan Penolakan:
+                  </span>
+                  <p className="text-xs font-semibold text-zinc-900 mt-0.5 leading-relaxed break-words">
+                    {item.hide_reason}
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -377,7 +394,7 @@ export function FeedCard({ item, now }: FeedCardProps) {
                   variant="outline"
                   size="sm"
                   disabled
-                  className="h-9 px-3 sm:px-4 font-semibold text-xs sm:text-sm bg-accent/10 border-accent/40 text-accent-fg cursor-default shrink-0"
+                  className="h-9 px-3 sm:px-4 font-semibold text-xs sm:text-sm bg-emerald-50 border border-emerald-300 text-emerald-800 cursor-default shrink-0"
                 >
                   Selesai Ditangani ({supportCount})
                 </Button>
@@ -387,7 +404,7 @@ export function FeedCard({ item, now }: FeedCardProps) {
                   variant="outline"
                   size="sm"
                   disabled
-                  className="h-9 px-3 sm:px-4 font-semibold text-xs sm:text-sm bg-red-50 border-red-200 text-red-600 cursor-default shrink-0"
+                  className="h-9 px-3 sm:px-4 font-semibold text-xs sm:text-sm bg-red-50 border border-red-300 text-red-800 cursor-default shrink-0"
                 >
                   Laporan Ditolak
                 </Button>
@@ -402,7 +419,7 @@ export function FeedCard({ item, now }: FeedCardProps) {
                     "h-9 px-3 sm:px-4 font-semibold text-xs sm:text-sm transition-all shrink-0 active:scale-98",
                     supported
                       ? "bg-primary text-primary-fg shadow-xs"
-                      : "hover:border-primary hover:text-primary",
+                      : "border border-border-strong text-fg hover:border-primary hover:text-primary hover:bg-surface-muted",
                   )}
                 >
                   {supported ? `Didukung (${supportCount})` : `Dukung Isu (${supportCount})`}

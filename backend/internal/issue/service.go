@@ -124,6 +124,7 @@ func (s *service) GetMapDistribution(ctx context.Context, role, userOpdID string
 			ID:            iss.ID,
 			Code:          iss.Code,
 			Title:         iss.Title,
+			Description:   iss.Summary,
 			OpdID:         iss.OpdID,
 			OpdName:       iss.OpdName,
 			Status:        iss.Status,

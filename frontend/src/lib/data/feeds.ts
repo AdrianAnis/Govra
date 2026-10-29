@@ -9,6 +9,7 @@ export interface FeedItem {
   issue_title?: string;
   issue_urgency?: string;
   status?: string;
+  hide_reason?: string;
   location?: string;
   content: string;
   media_type: "IMAGE" | "VIDEO" | "REEL";
