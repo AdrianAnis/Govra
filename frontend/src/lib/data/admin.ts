@@ -435,7 +435,11 @@ export async function listUsers(
     if (res.ok) {
       const data = await res.json();
       const raw = Array.isArray(data.items) ? data.items : [];
-      const mapped: Schema<"AdminUser">[] = raw.map((u: Record<string, any>) => {
+      const dinasOnly = raw.filter((u: Record<string, any>) => {
+        const r = (u.role || "").toLowerCase();
+        return r === "dinas" || Boolean(u.opd_code) || Boolean(u.opd_id);
+      });
+      const mapped: Schema<"AdminUser">[] = dinasOnly.map((u: Record<string, any>) => {
         let role = "DINAS";
         const r = (u.role || "").toLowerCase();
         if (r === "admin") role = "ADMIN";
@@ -457,7 +461,7 @@ export async function listUsers(
   } catch {}
 
   return paginate(
-    adminStore().users.filter((user) => !params.opd || user.opd?.slug === params.opd),
+    adminStore().users.filter((user) => user.role === "DINAS" && (!params.opd || user.opd?.slug === params.opd)),
     params,
   );
 }

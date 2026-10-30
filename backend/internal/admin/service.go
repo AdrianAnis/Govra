@@ -3,6 +3,7 @@ package admin
 import (
 	"context"
 	"sort"
+	"strings"
 	"time"
 
 	"govra/internal/platform/db"
@@ -259,6 +260,9 @@ func (s *service) ListUsers(ctx context.Context, opdFilter string) ([]AdminUserI
 		if err == nil {
 			var result []AdminUserItem
 			for _, p := range profiles {
+				if strings.ToLower(p.Role) != "dinas" {
+					continue
+				}
 				item := AdminUserItem{
 					ID:           p.ID,
 					Email:        p.Email,

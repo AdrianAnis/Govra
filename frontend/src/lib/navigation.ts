@@ -69,11 +69,11 @@ export const PANEL_SECTIONS = {
     title: "Govra · Admin Pusat",
     items: [
       { href: "/pemerintah", label: "Ringkasan", icon: LayoutDashboard, exact: true },
+      { href: "/admin/verifikasi", label: "Verifikasi", icon: ShieldCheck },
       { href: "/pemerintah/proker", label: "Program Kerja", icon: Target },
       { href: "/pemerintah/laporan", label: "Semua Laporan", icon: Inbox },
       { href: "/pemerintah/kinerja-opd", label: "Kinerja OPD", icon: Building2 },
-      { href: "/admin/pengguna", label: "Pengguna", icon: Users },
-      { href: "/admin/verifikasi", label: "Verifikasi", icon: ShieldCheck },
+      { href: "/admin/pengguna", label: "Akun Dinas", icon: Users },
     ],
   },
   dinas: {
@@ -88,11 +88,11 @@ export const PANEL_SECTIONS = {
     title: "Govra · Admin Pusat",
     items: [
       { href: "/pemerintah", label: "Ringkasan", icon: LayoutDashboard, exact: true },
+      { href: "/admin/verifikasi", label: "Verifikasi", icon: ShieldCheck },
       { href: "/pemerintah/proker", label: "Program Kerja", icon: Target },
       { href: "/pemerintah/laporan", label: "Semua Laporan", icon: Inbox },
       { href: "/pemerintah/kinerja-opd", label: "Kinerja OPD", icon: Building2 },
-      { href: "/admin/pengguna", label: "Pengguna", icon: Users },
-      { href: "/admin/verifikasi", label: "Verifikasi", icon: ShieldCheck },
+      { href: "/admin/pengguna", label: "Akun Dinas", icon: Users },
     ],
   },
 } satisfies Record<string, { title: string; items: readonly PanelNavItem[] }>;

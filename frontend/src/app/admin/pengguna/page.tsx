@@ -11,7 +11,7 @@ import { listOpdsAdmin, listUsers } from "@/lib/data/admin";
 import { formatRelativeTime } from "@/lib/format";
 import { parsePage, type RawSearchParams } from "@/lib/search-params";
 
-export const metadata: Metadata = { title: "Pengguna" };
+export const metadata: Metadata = { title: "Akun Dinas" };
 
 const PAGE_SIZE = 20;
 const HEADERS = ["Akun", "OPD", "Status", "Terakhir masuk", "Tindakan"] as const;
@@ -32,7 +32,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
 
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader title="Pengguna" description="Akun Dinas dan OPD yang menjadi wewenangnya.">
+      <PageHeader title="Akun Dinas" description="Daftar akun petugas dinas dan OPD yang menjadi wewenangnya.">
         <div>
           <CreateUserDialog opds={opds.items} />
         </div>
@@ -58,7 +58,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
                 </span>
               </RowHead>
               <DataCell>
-                {user.opd?.name ?? (user.role === "ADMIN" ? "Pusat (Administrator)" : "Pusat / Umum")}
+                {user.opd?.name ?? "Pusat / Dinas"}
               </DataCell>
               <DataCell>
                 <Badge weight={user.status === "ACTIVE" ? "berjalan" : "netral"}>
@@ -75,7 +75,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
           ))}
         </DataTable>
       ) : (
-        <EmptyState title="Belum ada akun" description="Tidak ada akun yang cocok dengan filter yang dipilih." />
+        <EmptyState title="Belum ada akun dinas" description="Tidak ada akun dinas yang cocok dengan filter yang dipilih." />
       )}
       <Pagination
         page={users.page}
