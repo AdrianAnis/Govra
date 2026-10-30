@@ -78,6 +78,7 @@ export const PANEL_SECTIONS = {
     title: "Govra · Dinas",
     items: [
       { href: "/dinas", label: "Ringkasan", icon: LayoutDashboard, exact: true },
+      { href: "/dinas/tugas-proker", label: "Tugas Proker", icon: Target },
       { href: "/dinas/laporan", label: "Semua Laporan", icon: Inbox },
     ],
   },

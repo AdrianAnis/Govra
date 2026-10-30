@@ -61,12 +61,20 @@ export interface PemerintahReportItem {
   supportCount: number;
 }
 
+export interface AssignedOpd {
+  id: string;
+  code: string;
+  name: string;
+}
+
 export interface PemerintahProgramItem {
   id: string;
   code: string;
   name: string;
   description: string;
+  opdId: string;
   opdName: string;
+  assignedOpds: AssignedOpd[];
   budgetPagu: number;
   budgetRealization: number;
   budgetPercent: number;
@@ -74,7 +82,39 @@ export interface PemerintahProgramItem {
   realizationOutput: number;
   physicalPercent: number;
   targetUnit: string;
+  startDate: string;
+  endDate: string;
   status: string;
+}
+
+export interface CreateProgramInput {
+  name: string;
+  code?: string;
+  description?: string;
+  assignedOpdIds: string[];
+  budgetPagu: number;
+  budgetRealization?: number;
+  targetOutput: number;
+  realizationOutput?: number;
+  targetUnit: string;
+  startDate?: string;
+  endDate?: string;
+  status?: string;
+}
+
+export interface UpdateProgramInput {
+  name?: string;
+  code?: string;
+  description?: string;
+  assignedOpdIds?: string[];
+  budgetPagu?: number;
+  budgetRealization?: number;
+  targetOutput?: number;
+  realizationOutput?: number;
+  targetUnit?: string;
+  startDate?: string;
+  endDate?: string;
+  status?: string;
 }
 
 export async function getPemerintahOverview(): Promise<PemerintahOverview> {
@@ -334,24 +374,39 @@ export async function getPemerintahReports(): Promise<PemerintahReportItem[]> {
 
 export async function getPemerintahPrograms(): Promise<PemerintahProgramItem[]> {
   try {
-    const [programsRes, opdsRes] = await Promise.all([
+    const [programsRes, opdsRes, updatesRes] = await Promise.all([
       fetch(
-        `${supabaseUrl}/rest/v1/programs?select=id,code,name,description,opd_id,budget_pagu,budget_realization,target_output,realization_output,target_unit,status&order=code.asc`,
+        `${supabaseUrl}/rest/v1/programs?select=id,code,name,description,opd_id,budget_pagu,budget_realization,target_output,realization_output,target_unit,start_date,end_date,status&order=code.asc`,
         {
           headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app" },
-          next: { revalidate: 30 },
+          cache: "no-store",
         }
       ),
-      fetch(`${supabaseUrl}/rest/v1/opds?select=id,name`, {
+      fetch(`${supabaseUrl}/rest/v1/opds?select=id,code,name&order=code.asc`, {
         headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app" },
-        next: { revalidate: 60 },
+        cache: "no-store",
+      }),
+      fetch(`${supabaseUrl}/rest/v1/program_updates?title=eq.PENUGASAN_OPD&select=program_id,opd_id`, {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app" },
+        cache: "no-store",
       }),
     ]);
 
     if (!programsRes.ok) return [];
     const programs = await programsRes.json();
-    const opds: Array<{ id: string; name: string }> = opdsRes.ok ? await opdsRes.json() : [];
-    const opdMap = new Map(opds.map((o) => [o.id, o.name]));
+    const opds: Array<{ id: string; code: string; name: string }> = opdsRes.ok ? await opdsRes.json() : [];
+    const updates: Array<{ program_id: string; opd_id: string }> = updatesRes.ok ? await updatesRes.json() : [];
+
+    const opdMap = new Map(opds.map((o) => [o.id, o]));
+    const assignedMap = new Map<string, Set<string>>();
+
+    for (const u of updates) {
+      if (!u.program_id || !u.opd_id) continue;
+      if (!assignedMap.has(u.program_id)) {
+        assignedMap.set(u.program_id, new Set());
+      }
+      assignedMap.get(u.program_id)!.add(u.opd_id);
+    }
 
     return programs.map((p: any) => {
       const pagu = Number(p.budget_pagu) || 0;
@@ -361,12 +416,34 @@ export async function getPemerintahPrograms(): Promise<PemerintahProgramItem[]> 
       const realTarget = Number(p.realization_output) || 0;
       const physicalPercent = target > 0 ? Math.min(100, Math.round((realTarget / target) * 100)) : 0;
 
+      const opdSet = new Set<string>();
+      if (p.opd_id) opdSet.add(p.opd_id);
+      const extraOpds = assignedMap.get(p.id);
+      if (extraOpds) {
+        for (const oid of extraOpds) opdSet.add(oid);
+      }
+
+      const assignedOpds: AssignedOpd[] = [];
+      for (const oid of opdSet) {
+        const found = opdMap.get(oid);
+        if (found) {
+          assignedOpds.push({ id: found.id, code: found.code, name: found.name });
+        }
+      }
+
+      const primaryOpd = p.opd_id ? opdMap.get(p.opd_id) : null;
+      const opdName = assignedOpds.length > 1
+        ? `${primaryOpd ? primaryOpd.name : (assignedOpds[0]?.name ?? "Pemerintah Kota")} (+${assignedOpds.length - 1} dinas)`
+        : primaryOpd ? primaryOpd.name : "Pemerintah Kota";
+
       return {
         id: p.id,
         code: p.code || "-",
         name: p.name || "Program Strategis",
-        description: p.description || "-",
-        opdName: (p.opd_id && opdMap.get(p.opd_id)) || "Pemerintah Kota",
+        description: p.description || "",
+        opdId: p.opd_id || (assignedOpds[0]?.id ?? ""),
+        opdName,
+        assignedOpds,
         budgetPagu: pagu,
         budgetRealization: realisasi,
         budgetPercent,
@@ -374,6 +451,8 @@ export async function getPemerintahPrograms(): Promise<PemerintahProgramItem[]> 
         realizationOutput: realTarget,
         physicalPercent,
         targetUnit: p.target_unit || "%",
+        startDate: p.start_date || "2026-01-01",
+        endDate: p.end_date || "2026-12-31",
         status: (() => {
           const s = (p.status || "").toUpperCase();
           if (s === "SELESAI") return "SELESAI";
@@ -386,5 +465,264 @@ export async function getPemerintahPrograms(): Promise<PemerintahProgramItem[]> 
     });
   } catch {
     return [];
+  }
+}
+
+export async function createPemerintahProgram(input: CreateProgramInput) {
+  try {
+    const assignedIds = input.assignedOpdIds && input.assignedOpdIds.length > 0 ? input.assignedOpdIds : [];
+    let leadOpdId = assignedIds[0] || null;
+
+    if (!leadOpdId) {
+      const opdsRes = await fetch(`${supabaseUrl}/rest/v1/opds?select=id&limit=1`, {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app" },
+      });
+      if (opdsRes.ok) {
+        const opds = await opdsRes.json();
+        leadOpdId = opds[0]?.id || null;
+      }
+    }
+
+    let programCode = (input.code || "").trim().toUpperCase();
+    if (!programCode) {
+      const randomSuffix = Math.floor(100 + Math.random() * 900);
+      programCode = `PRK-${randomSuffix}`;
+    }
+
+    const payload = {
+      name: input.name.trim(),
+      code: programCode,
+      description: (input.description || "").trim(),
+      opd_id: leadOpdId,
+      budget_pagu: Number(input.budgetPagu) || 0,
+      budget_realization: Number(input.budgetRealization) || 0,
+      target_output: String(Number(input.targetOutput) || 100),
+      realization_output: Number(input.realizationOutput) || 0,
+      target_unit: (input.targetUnit || "%").trim(),
+      start_date: input.startDate || "2026-01-01",
+      end_date: input.endDate || "2026-12-31",
+      status: input.status || "SESUAI_JADWAL",
+      approval_status: "APPROVED",
+    };
+
+    const res = await fetch(`${supabaseUrl}/rest/v1/programs`, {
+      method: "POST",
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        "Accept-Profile": "app",
+        "Content-Profile": "app",
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      return { success: false, error: errText };
+    }
+
+    const createdRows = await res.json();
+    const created = Array.isArray(createdRows) ? createdRows[0] : createdRows;
+
+    if (created && created.id && assignedIds.length > 0) {
+      const updatesPayload = assignedIds.map((oid) => ({
+        program_id: created.id,
+        opd_id: oid,
+        title: "PENUGASAN_OPD",
+        content: "Amanah Pelaksanaan Program Kerja dari Kepala Daerah",
+        progress_percentage: 0,
+      }));
+
+      await fetch(`${supabaseUrl}/rest/v1/program_updates`, {
+        method: "POST",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          "Accept-Profile": "app",
+          "Content-Profile": "app",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatesPayload),
+      });
+    }
+
+    return { success: true, program: created };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Gagal membuat program kerja" };
+  }
+}
+
+export async function updatePemerintahProgram(id: string, input: UpdateProgramInput) {
+  try {
+    const payload: Record<string, any> = {};
+    if (input.name !== undefined) payload.name = input.name.trim();
+    if (input.code !== undefined) payload.code = input.code.trim().toUpperCase();
+    if (input.description !== undefined) payload.description = input.description.trim();
+    if (input.budgetPagu !== undefined) payload.budget_pagu = Number(input.budgetPagu) || 0;
+    if (input.budgetRealization !== undefined) payload.budget_realization = Number(input.budgetRealization) || 0;
+    if (input.targetOutput !== undefined) payload.target_output = String(Number(input.targetOutput) || 100);
+    if (input.realizationOutput !== undefined) payload.realization_output = Number(input.realizationOutput) || 0;
+    if (input.targetUnit !== undefined) payload.target_unit = input.targetUnit.trim();
+    if (input.startDate !== undefined) payload.start_date = input.startDate;
+    if (input.endDate !== undefined) payload.end_date = input.endDate;
+    if (input.status !== undefined) payload.status = input.status;
+
+    if (input.assignedOpdIds && input.assignedOpdIds.length > 0) {
+      payload.opd_id = input.assignedOpdIds[0];
+    }
+
+    const res = await fetch(`${supabaseUrl}/rest/v1/programs?id=eq.${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        "Accept-Profile": "app",
+        "Content-Profile": "app",
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      return { success: false, error: errText };
+    }
+
+    if (input.assignedOpdIds && input.assignedOpdIds.length > 0) {
+      await fetch(
+        `${supabaseUrl}/rest/v1/program_updates?program_id=eq.${encodeURIComponent(id)}&title=eq.PENUGASAN_OPD`,
+        {
+          method: "DELETE",
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`,
+            "Accept-Profile": "app",
+            "Content-Profile": "app",
+          },
+        }
+      );
+
+      const updatesPayload = input.assignedOpdIds.map((oid) => ({
+        program_id: id,
+        opd_id: oid,
+        title: "PENUGASAN_OPD",
+        content: "Amanah Pelaksanaan Program Kerja dari Kepala Daerah",
+        progress_percentage: 0,
+      }));
+
+      await fetch(`${supabaseUrl}/rest/v1/program_updates`, {
+        method: "POST",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          "Accept-Profile": "app",
+          "Content-Profile": "app",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatesPayload),
+      });
+    }
+
+    const updated = await res.json();
+    return { success: true, program: Array.isArray(updated) ? updated[0] : updated };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Gagal memperbarui program kerja" };
+  }
+}
+
+export async function deletePemerintahProgram(id: string) {
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1/programs?id=eq.${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        "Accept-Profile": "app",
+        "Content-Profile": "app",
+      },
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      return { success: false, error: errText };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Gagal menghapus program kerja" };
+  }
+}
+
+export async function getDinasAssignedPrograms(opdId: string): Promise<PemerintahProgramItem[]> {
+  const allPrograms = await getPemerintahPrograms();
+  return allPrograms.filter((p) => {
+    if (p.opdId === opdId) return true;
+    return p.assignedOpds.some((o) => o.id === opdId);
+  });
+}
+
+export async function addDinasProgramProgress(
+  programId: string,
+  opdId: string,
+  input: {
+    title?: string;
+    content: string;
+    realizationOutput?: number;
+    budgetRealization?: number;
+    status?: string;
+  }
+) {
+  try {
+    const updatePayload = {
+      program_id: programId,
+      opd_id: opdId,
+      title: (input.title || "").trim() || "Laporan Perkembangan Pengerjaan",
+      content: (input.content || "").trim(),
+      progress_percentage: 0,
+    };
+
+    await fetch(`${supabaseUrl}/rest/v1/program_updates`, {
+      method: "POST",
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        "Accept-Profile": "app",
+        "Content-Profile": "app",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updatePayload),
+    });
+
+    const progPatch: Record<string, any> = {};
+    if (input.realizationOutput !== undefined) {
+      progPatch.realization_output = Number(input.realizationOutput) || 0;
+    }
+    if (input.budgetRealization !== undefined) {
+      progPatch.budget_realization = Number(input.budgetRealization) || 0;
+    }
+    if (input.status) {
+      progPatch.status = input.status;
+    }
+
+    if (Object.keys(progPatch).length > 0) {
+      await fetch(`${supabaseUrl}/rest/v1/programs?id=eq.${encodeURIComponent(programId)}`, {
+        method: "PATCH",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          "Accept-Profile": "app",
+          "Content-Profile": "app",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(progPatch),
+      });
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Gagal mencatat perkembangan program" };
   }
 }

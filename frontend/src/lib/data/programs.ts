@@ -1,8 +1,12 @@
 import { matchesQuery, paginate, type PageParams } from "@/lib/data/paging";
 import { PROGRAM_DETAILS } from "@/lib/mock/programs";
+import { goalRef, districtRef, opdRef } from "@/lib/mock/reference";
 import type { Schema } from "@/lib/schema";
 
-const BFF_KEY = process.env.BFF_SHARED_KEY || "413016c9d4970e8030a87654f65c11321dd77c97ecf9f4d95d1beca837faddb2";
+const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
+const supabaseKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0c3NrbXhpcmNlZGhmZ2dxZW5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjY2MzM1MywiZXhwIjoyMTA4MjM5MzUzfQ.ATvm9u6Dm2cSZ_IiUkajOiIGgXA13jJgC8lU-LrXTXY";
 
 export interface ProgramFilters extends PageParams {
   q?: string | undefined;
@@ -10,45 +14,6 @@ export interface ProgramFilters extends PageParams {
   district_id?: string | undefined;
   goal?: string | undefined;
   status?: Schema<"ProgramStatus"> | undefined;
-}
-
-interface ApiMilestone {
-  id: string;
-  title: string;
-  target_date: string;
-  completed_at?: string | null;
-  is_completed?: boolean;
-}
-
-interface ApiUpdate {
-  id: string;
-  title: string;
-  content: string;
-  progress_percentage?: number;
-  documentation_photos?: string[];
-  created_at: string;
-}
-
-interface ApiProgram {
-  code: string;
-  name: string;
-  opd_id?: string;
-  opd_code?: string;
-  opd_name?: string;
-  goal_id?: string;
-  goal_code?: string;
-  district_id?: string;
-  district_name?: string;
-  status?: string;
-  progress?: number;
-  expected_progress?: number;
-  expected?: number;
-  start_date?: string;
-  end_date?: string;
-  related_issues?: number;
-  budget?: { pagu?: number; realization?: number };
-  milestones?: ApiMilestone[];
-  updates?: ApiUpdate[];
 }
 
 type Program = Schema<"ProgramDetail">;
@@ -80,85 +45,175 @@ function matches(program: Program, filters: ProgramFilters): boolean {
   );
 }
 
-function mapApiToDetail(item: ApiProgram): Program {
-  const opdCode = item.opd_code || "BMSDA";
+function mapSupabaseToDetail(
+  p: any,
+  opdMap: Map<string, { code: string; name: string; slug: string }>,
+  updatesMap: Map<string, any[]>
+): Program {
+  const opdInfo = (p.opd_id && opdMap.get(p.opd_id)) || {
+    code: "BMSDA",
+    name: "Dinas Bina Marga dan Penataan Ruang",
+    slug: "bmsda",
+  };
+
+  const target = Number(p.target_output) || 100;
+  const realization = Number(p.realization_output) || 0;
+  const progressPercent = target > 0 ? Math.min(100, Math.round((realization / target) * 100)) : 0;
+
+  const startMs = Date.parse(p.start_date || "2026-01-01");
+  const endMs = Date.parse(p.end_date || "2026-12-31");
+  const nowMs = Date.now();
+  const duration = Math.max(1, endMs - startMs);
+  const elapsed = Math.max(0, Math.min(duration, nowMs - startMs));
+  const expectedPercent = Math.round((elapsed / duration) * 100);
+
+  let status: Schema<"ProgramStatus"> = "SESUAI_JADWAL";
+  const rawStatus = (p.status || "").toUpperCase();
+  if (rawStatus === "SELESAI" || progressPercent >= 100) {
+    status = "SELESAI";
+  } else if (rawStatus === "BELUM_DIMULAI" || nowMs < startMs) {
+    status = "BELUM_DIMULAI";
+  } else if (rawStatus === "MELEWATI_TENGGAT" || nowMs > endMs) {
+    status = "MELEWATI_TENGGAT";
+  } else if (rawStatus === "TERLAMBAT" || progressPercent < expectedPercent - 15) {
+    status = "TERLAMBAT";
+  }
+
+  const pUpdates = updatesMap.get(p.id) || [];
+
   return {
-    code: item.code,
-    name: item.name,
+    code: p.code,
+    name: p.name,
     opd: {
-      code: opdCode,
-      name: item.opd_name || "Dinas Bina Marga dan Sumber Daya Air",
-      slug: (item.opd_code || "bmsda").toLowerCase(),
+      code: opdInfo.code,
+      name: opdInfo.name,
+      slug: opdInfo.slug,
     },
     goal: {
-      code: item.goal_code || "INFRA_JALAN",
+      code: "INFRA_JALAN",
       name: "Infrastruktur jalan mantap",
     },
     district: {
-      id: item.district_id || "0197a000-0000-7000-8000-000000000001",
-      name: item.district_name || "Kecamatan Utara",
+      id: "0197a000-0000-7000-8000-000000000001",
+      name: "Kecamatan Utara",
     },
-    status: (item.status || "SESUAI_JADWAL") as Schema<"ProgramStatus">,
-    progress_percent: item.progress ?? 50,
-    expected_percent: item.expected_progress ?? item.expected ?? 50,
-    start_date: item.start_date || "2026-01-01",
-    end_date: item.end_date || "2026-12-31",
-    related_issue_count: item.related_issues ?? 0,
-    indicator: "Persentase Capaian Program",
-    target: 100,
-    unit: "%",
-    realization: item.progress ?? 50,
+    status,
+    progress_percent: progressPercent,
+    expected_percent: expectedPercent,
+    start_date: p.start_date || "2026-01-01",
+    end_date: p.end_date || "2026-12-31",
+    related_issue_count: 0,
+    indicator: "Persentase Capaian Program Kerja",
+    target,
+    unit: p.target_unit || "%",
+    realization,
     budget: {
-      ceiling: item.budget?.pagu ?? 0,
-      realized: item.budget?.realization ?? 0,
+      ceiling: Number(p.budget_pagu) || 0,
+      realized: Number(p.budget_realization) || 0,
     },
-    milestones: (item.milestones || []).map((m: ApiMilestone) => ({
-      name: m.title,
-      due_date: m.target_date,
-      done: Boolean(m.is_completed),
-    })),
+    milestones: [
+      { name: "Perencanaan dan Pelelangan", due_date: p.start_date || "2026-01-01", done: true },
+      { name: "Pelaksanaan Konstruksi / Pengerjaan", due_date: "2026-06-30", done: progressPercent >= 50 },
+      { name: "Serah Terima Hasil Pekerjaan", due_date: p.end_date || "2026-12-31", done: progressPercent >= 100 },
+    ],
     documentation: [],
-    updates: (item.updates || []).map((u: ApiUpdate) => ({
-      date: u.created_at ? u.created_at.slice(0, 10) : "2026-10-24",
+    updates: pUpdates.map((u: any) => ({
+      date: (u.created_at || "").slice(0, 10) || "2026-10-30",
       note: u.title ? `${u.title}: ${u.content}` : u.content,
-      progress_percent: u.progress_percentage ?? 0,
+      progress_percent: u.progress_percentage ?? progressPercent,
     })),
   };
 }
 
 export async function listPrograms(filters: ProgramFilters = {}): Promise<Schema<"ProgramList">> {
-  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
   try {
-    const res = await fetch(`${apiBase}/programs`, {
-      headers: { "X-BFF-Key": BFF_KEY },
-      next: { revalidate: 10 },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        const details = (data as ApiProgram[]).map(mapApiToDetail);
+    const [progsRes, opdsRes, updatesRes] = await Promise.all([
+      fetch(`${supabaseUrl}/rest/v1/programs?select=*&order=code.asc`, {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app" },
+        cache: "no-store",
+      }),
+      fetch(`${supabaseUrl}/rest/v1/opds?select=id,code,name,slug`, {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app" },
+        cache: "no-store",
+      }),
+      fetch(`${supabaseUrl}/rest/v1/program_updates?select=*&order=created_at.desc`, {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app" },
+        cache: "no-store",
+      }),
+    ]);
+
+    if (progsRes.ok && opdsRes.ok) {
+      const progs = await progsRes.json();
+      const opds = await opdsRes.json();
+      const updates = updatesRes.ok ? await updatesRes.json() : [];
+
+      if (Array.isArray(progs) && progs.length > 0) {
+        const opdMap = new Map<string, { code: string; name: string; slug: string }>();
+        for (const o of opds) {
+          opdMap.set(o.id, { code: o.code, name: o.name, slug: o.slug || o.code.toLowerCase() });
+        }
+
+        const updatesMap = new Map<string, any[]>();
+        for (const u of updates) {
+          if (!u.program_id) continue;
+          if (!updatesMap.has(u.program_id)) {
+            updatesMap.set(u.program_id, []);
+          }
+          updatesMap.get(u.program_id)!.push(u);
+        }
+
+        const details = progs.map((p) => mapSupabaseToDetail(p, opdMap, updatesMap));
         const filtered = details.filter((p) => matches(p, filters)).map(toSummary);
         return paginate(filtered, filters);
       }
     }
   } catch {}
+
   const items = PROGRAM_DETAILS.filter((program) => matches(program, filters)).map(toSummary);
   return paginate(items, filters);
 }
 
 export async function getProgram(code: string): Promise<Program | null> {
-  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
   try {
-    const res = await fetch(`${apiBase}/programs/${encodeURIComponent(code)}`, {
-      headers: { "X-BFF-Key": BFF_KEY },
-      next: { revalidate: 10 },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.code) {
-        return mapApiToDetail(data as ApiProgram);
+    const [progsRes, opdsRes, updatesRes] = await Promise.all([
+      fetch(`${supabaseUrl}/rest/v1/programs?code=eq.${encodeURIComponent(code)}&select=*`, {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app" },
+        cache: "no-store",
+      }),
+      fetch(`${supabaseUrl}/rest/v1/opds?select=id,code,name,slug`, {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app" },
+        cache: "no-store",
+      }),
+      fetch(`${supabaseUrl}/rest/v1/program_updates?select=*&order=created_at.desc`, {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app" },
+        cache: "no-store",
+      }),
+    ]);
+
+    if (progsRes.ok && opdsRes.ok) {
+      const progs = await progsRes.json();
+      const opds = await opdsRes.json();
+      const updates = updatesRes.ok ? await updatesRes.json() : [];
+
+      if (Array.isArray(progs) && progs.length > 0) {
+        const opdMap = new Map<string, { code: string; name: string; slug: string }>();
+        for (const o of opds) {
+          opdMap.set(o.id, { code: o.code, name: o.name, slug: o.slug || o.code.toLowerCase() });
+        }
+
+        const updatesMap = new Map<string, any[]>();
+        for (const u of updates) {
+          if (!u.program_id) continue;
+          if (!updatesMap.has(u.program_id)) {
+            updatesMap.set(u.program_id, []);
+          }
+          updatesMap.get(u.program_id)!.push(u);
+        }
+
+        return mapSupabaseToDetail(progs[0], opdMap, updatesMap);
       }
     }
   } catch {}
+
   return PROGRAM_DETAILS.find((program) => program.code === code) ?? null;
 }
