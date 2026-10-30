@@ -664,6 +664,18 @@ export async function getDinasAssignedPrograms(opdId: string): Promise<Pemerinta
   });
 }
 
+export interface ProgramUpdateItem {
+  id: string;
+  programId: string;
+  opdId: string | null;
+  opdName: string;
+  title: string;
+  content: string;
+  progressPercentage: number;
+  documentationPhotos: string[];
+  createdAt: string;
+}
+
 export async function addDinasProgramProgress(
   programId: string,
   opdId: string,
@@ -673,6 +685,7 @@ export async function addDinasProgramProgress(
     realizationOutput?: number;
     budgetRealization?: number;
     status?: string;
+    documentationPhotos?: string[];
   }
 ) {
   try {
@@ -682,6 +695,7 @@ export async function addDinasProgramProgress(
       title: (input.title || "").trim() || "Laporan Perkembangan Pengerjaan",
       content: (input.content || "").trim(),
       progress_percentage: 0,
+      documentation_photos: input.documentationPhotos || [],
     };
 
     await fetch(`${supabaseUrl}/rest/v1/program_updates`, {
@@ -724,5 +738,49 @@ export async function addDinasProgramProgress(
     return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message || "Gagal mencatat perkembangan program" };
+  }
+}
+
+export async function getProgramUpdateHistory(programId: string): Promise<ProgramUpdateItem[]> {
+  try {
+    const [updatesRes, opdsRes] = await Promise.all([
+      fetch(
+        `${supabaseUrl}/rest/v1/program_updates?program_id=eq.${encodeURIComponent(programId)}&order=created_at.desc`,
+        {
+          headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app" },
+          cache: "no-store",
+        }
+      ),
+      fetch(`${supabaseUrl}/rest/v1/opds?select=id,code,name`, {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app" },
+        cache: "no-store",
+      }),
+    ]);
+
+    if (!updatesRes.ok) return [];
+    const updates = await updatesRes.json();
+    const opds: Array<{ id: string; code: string; name: string }> = opdsRes.ok ? await opdsRes.json() : [];
+    const opdMap = new Map(opds.map((o) => [o.id, o]));
+
+    return updates.map((u: any) => {
+      const opd = u.opd_id ? opdMap.get(u.opd_id) : null;
+      let photos: string[] = [];
+      if (Array.isArray(u.documentation_photos)) {
+        photos = u.documentation_photos.filter((p: any) => typeof p === "string" && p.trim().length > 0);
+      }
+      return {
+        id: u.id,
+        programId: u.program_id,
+        opdId: u.opd_id,
+        opdName: opd ? `${opd.code} - ${opd.name}` : "Pemerintah Kota",
+        title: u.title || "Laporan Perkembangan",
+        content: u.content || "",
+        progressPercentage: Number(u.progress_percentage) || 0,
+        documentationPhotos: photos,
+        createdAt: u.created_at || new Date().toISOString(),
+      };
+    });
+  } catch {
+    return [];
   }
 }

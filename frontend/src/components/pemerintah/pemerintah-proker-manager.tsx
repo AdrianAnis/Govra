@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Edit, Plus, Search, Trash2, X } from "lucide-react";
+import { Check, Edit, History, Loader2, Plus, Search, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,8 +13,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ProgramStatusBadge } from "@/components/status-badge";
-import { formatNumber, formatRupiah } from "@/lib/format";
-import type { PemerintahProgramItem } from "@/lib/data/pemerintah";
+import { formatDate, formatNumber, formatRupiah } from "@/lib/format";
+import type { PemerintahProgramItem, ProgramUpdateItem } from "@/lib/data/pemerintah";
 
 interface OpdOption {
   id: string;
@@ -40,6 +40,11 @@ export function PemerintahProkerManager({ initialPrograms, opdList }: Props) {
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingProgram, setDeletingProgram] = useState<PemerintahProgramItem | null>(null);
+
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyProgram, setHistoryProgram] = useState<PemerintahProgramItem | null>(null);
+  const [historyList, setHistoryList] = useState<ProgramUpdateItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -131,6 +136,24 @@ export function PemerintahProkerManager({ initialPrograms, opdList }: Props) {
         return [...prev, id];
       }
     });
+  }
+
+  async function openHistoryDialog(program: PemerintahProgramItem) {
+    setHistoryProgram(program);
+    setHistoryOpen(true);
+    setHistoryLoading(true);
+    setHistoryList([]);
+
+    try {
+      const res = await fetch(`/api/pemerintah/programs/${program.id}/updates`);
+      if (res.ok) {
+        const data = await res.json();
+        setHistoryList(data.updates || []);
+      }
+    } catch {
+    } finally {
+      setHistoryLoading(false);
+    }
   }
 
   async function handleSaveProgram(e: React.FormEvent) {
@@ -357,6 +380,16 @@ export function PemerintahProkerManager({ initialPrograms, opdList }: Props) {
                     </td>
                     <td className="py-2 px-4 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1.5">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openHistoryDialog(program)}
+                          className="h-8 gap-1 text-xs"
+                          title="Lihat riwayat perkembangan & bukti foto dinas"
+                        >
+                          <History className="size-3.5" />
+                          <span>Bukti</span>
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
@@ -619,6 +652,98 @@ export function PemerintahProkerManager({ initialPrograms, opdList }: Props) {
             </Button>
           </div>
         </DialogContent>
+      </Dialog>
+
+      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+        {historyProgram && (
+          <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
+            <DialogHeader>
+              <div className="flex items-center gap-2 text-xs text-fg-muted">
+                <span className="font-mono font-semibold">{historyProgram.code}</span>
+                <span>•</span>
+                <span>{historyProgram.assignedOpds.length} Dinas Pelaksana</span>
+              </div>
+              <DialogTitle className="text-lg font-bold">
+                Riwayat Perkembangan & Dokumentasi Lapangan
+              </DialogTitle>
+              <DialogDescription className="text-xs text-fg-muted">
+                {historyProgram.name}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex-1 overflow-y-auto py-3">
+              {historyLoading ? (
+                <div className="flex items-center justify-center py-12 text-xs text-fg-muted gap-2">
+                  <Loader2 className="size-4 animate-spin text-primary" />
+                  <span>Memuat riwayat dokumentasi...</span>
+                </div>
+              ) : historyList.length === 0 ? (
+                <div className="py-12 text-center text-xs text-fg-muted">
+                  Belum ada laporan perkembangan atau dokumentasi yang diserahkan oleh dinas terkait.
+                </div>
+              ) : (
+                <div className="flex flex-col divide-y divide-border rounded-lg border bg-surface">
+                  {historyList.map((item) => {
+                    const isAssignment = item.title === "PENUGASAN_OPD";
+                    return (
+                      <div key={item.id} className="p-4 flex flex-col gap-2.5">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
+                              {item.opdName}
+                            </span>
+                            <span className="text-xs font-semibold text-fg">
+                              {isAssignment ? "Amanah Penugasan Awal" : item.title}
+                            </span>
+                          </div>
+                          <span className="text-xs text-fg-muted tabular-nums">
+                            {formatDate(item.createdAt)}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-fg leading-relaxed whitespace-pre-wrap">
+                          {item.content}
+                        </p>
+
+                        {item.documentationPhotos && item.documentationPhotos.length > 0 && (
+                          <div className="flex flex-col gap-1.5 pt-1">
+                            <span className="text-[11px] font-semibold text-fg-muted">
+                              Foto Dokumentasi ({item.documentationPhotos.length}):
+                            </span>
+                            <div className="flex flex-wrap gap-2">
+                              {item.documentationPhotos.map((photoUrl, pIdx) => (
+                                <a
+                                  key={pIdx}
+                                  href={photoUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="group relative size-20 overflow-hidden rounded-md border bg-surface-muted transition hover:border-primary"
+                                >
+                                  <img
+                                    src={photoUrl}
+                                    alt="Dokumentasi pengerjaan"
+                                    className="size-full object-cover transition duration-150 group-hover:scale-105"
+                                    loading="lazy"
+                                  />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-3 border-t">
+              <Button variant="outline" size="sm" onClick={() => setHistoryOpen(false)}>
+                Tutup
+              </Button>
+            </div>
+          </DialogContent>
+        )}
       </Dialog>
     </div>
   );

@@ -1,6 +1,24 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/data/session";
-import { addDinasProgramProgress } from "@/lib/data/pemerintah";
+import { addDinasProgramProgress, getProgramUpdateHistory } from "@/lib/data/pemerintah";
+
+export async function GET(
+  _request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  const user = await getSessionUser();
+  if (!user || (user.role !== "dinas" && user.role !== "kepala_daerah" && user.role !== "admin")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  const { id } = await context.params;
+  try {
+    const history = await getProgramUpdateHistory(id);
+    return NextResponse.json({ updates: history }, { status: 200 });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || "Gagal mengambil riwayat" }, { status: 500 });
+  }
+}
 
 export async function POST(
   request: Request,

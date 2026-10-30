@@ -116,12 +116,38 @@ function mapSupabaseToDetail(
       { name: "Pelaksanaan Konstruksi / Pengerjaan", due_date: "2026-06-30", done: progressPercent >= 50 },
       { name: "Serah Terima Hasil Pekerjaan", due_date: p.end_date || "2026-12-31", done: progressPercent >= 100 },
     ],
-    documentation: [],
-    updates: pUpdates.map((u: any) => ({
-      date: (u.created_at || "").slice(0, 10) || "2026-10-30",
-      note: u.title ? `${u.title}: ${u.content}` : u.content,
-      progress_percent: u.progress_percentage ?? progressPercent,
-    })),
+    documentation: (() => {
+      const docs: Array<{ url: string; caption: string }> = [];
+      for (const u of pUpdates) {
+        if (Array.isArray(u.documentation_photos)) {
+          for (const photoUrl of u.documentation_photos) {
+            if (typeof photoUrl === "string" && photoUrl.trim().length > 0) {
+              docs.push({
+                url: photoUrl,
+                caption: u.title || "Dokumentasi Lapangan",
+              });
+            }
+          }
+        }
+      }
+      return docs;
+    })(),
+    updates: pUpdates
+      .filter((u: any) => u.title !== "PENUGASAN_OPD")
+      .map((u: any) => {
+        let photos: string[] = [];
+        if (Array.isArray(u.documentation_photos)) {
+          photos = u.documentation_photos.filter(
+            (url: any) => typeof url === "string" && url.trim().length > 0
+          );
+        }
+        return {
+          date: (u.created_at || "").slice(0, 10) || "2026-10-30",
+          note: u.title ? `${u.title}: ${u.content}` : u.content,
+          progress_percent: u.progress_percentage ?? progressPercent,
+          photos,
+        };
+      }),
   };
 }
 
