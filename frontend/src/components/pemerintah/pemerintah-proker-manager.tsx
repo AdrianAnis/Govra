@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ProgramStatusBadge } from "@/components/status-badge";
+import { RupiahInput } from "@/components/ui/rupiah-input";
 import { formatDate, formatNumber, formatRupiah } from "@/lib/format";
 import type { PemerintahProgramItem, ProgramUpdateItem } from "@/lib/data/pemerintah";
 
@@ -90,7 +91,7 @@ export function PemerintahProkerManager({ initialPrograms, opdList }: Props) {
     setFormCode("");
     setFormDescription("");
     setFormAssignedOpds(opdList.length > 0 && opdList[0] ? [opdList[0].id] : []);
-    setFormBudgetPagu(1000000000);
+    setFormBudgetPagu(0);
     setFormBudgetRealization(0);
     setFormTargetOutput(100);
     setFormRealizationOutput(0);
@@ -522,25 +523,17 @@ export function PemerintahProkerManager({ initialPrograms, opdList }: Props) {
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-fg">Pagu Anggaran (Rp)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1000000"
+                <RupiahInput
                   value={formBudgetPagu}
-                  onChange={(e) => setFormBudgetPagu(Number(e.target.value))}
-                  className="h-9 rounded-md border bg-surface px-3 text-sm tabular-nums text-fg focus:outline-none focus:ring-1 focus:ring-primary"
+                  onChange={(val) => setFormBudgetPagu(val)}
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-fg">Realisasi Anggaran (Rp)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1000000"
+                <RupiahInput
                   value={formBudgetRealization}
-                  onChange={(e) => setFormBudgetRealization(Number(e.target.value))}
-                  className="h-9 rounded-md border bg-surface px-3 text-sm tabular-nums text-fg focus:outline-none focus:ring-1 focus:ring-primary"
+                  onChange={(val) => setFormBudgetRealization(val)}
                 />
               </div>
 
@@ -551,7 +544,10 @@ export function PemerintahProkerManager({ initialPrograms, opdList }: Props) {
                   min="0"
                   step="any"
                   value={formTargetOutput}
-                  onChange={(e) => setFormTargetOutput(Number(e.target.value))}
+                  onFocus={(e) => {
+                    if (e.currentTarget.value === "0") e.currentTarget.select();
+                  }}
+                  onChange={(e) => setFormTargetOutput(Number(e.target.value.replace(/^0+(?=\d)/, "")))}
                   className="h-9 rounded-md border bg-surface px-3 text-sm tabular-nums text-fg focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
@@ -565,7 +561,10 @@ export function PemerintahProkerManager({ initialPrograms, opdList }: Props) {
                       min="0"
                       step="any"
                       value={formRealizationOutput}
-                      onChange={(e) => setFormRealizationOutput(Number(e.target.value))}
+                      onFocus={(e) => {
+                        if (e.currentTarget.value === "0") e.currentTarget.select();
+                      }}
+                      onChange={(e) => setFormRealizationOutput(Number(e.target.value.replace(/^0+(?=\d)/, "")))}
                       className="h-9 rounded-md border bg-surface px-3 text-sm tabular-nums text-fg focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                   </div>

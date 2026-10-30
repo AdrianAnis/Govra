@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ProgramStatusBadge } from "@/components/status-badge";
+import { RupiahInput } from "@/components/ui/rupiah-input";
 import { formatDate, formatNumber, formatPercent, formatRupiah } from "@/lib/format";
 import type { PemerintahProgramItem, ProgramUpdateItem } from "@/lib/data/pemerintah";
 
@@ -371,7 +372,10 @@ export function DinasTugasProkerManager({
                     min="0"
                     step="any"
                     value={realizationOutput}
-                    onChange={(e) => setRealizationOutput(Number(e.target.value))}
+                    onFocus={(e) => {
+                      if (e.currentTarget.value === "0") e.currentTarget.select();
+                    }}
+                    onChange={(e) => setRealizationOutput(Number(e.target.value.replace(/^0+(?=\d)/, "")))}
                     className="h-9 rounded-md border bg-surface px-3 text-sm tabular-nums text-fg focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
@@ -380,13 +384,9 @@ export function DinasTugasProkerManager({
                   <label className="text-xs font-semibold text-fg">
                     Realisasi Anggaran Terpakai (Rp)
                   </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1000000"
+                  <RupiahInput
                     value={budgetRealization}
-                    onChange={(e) => setBudgetRealization(Number(e.target.value))}
-                    className="h-9 rounded-md border bg-surface px-3 text-sm tabular-nums text-fg focus:outline-none focus:ring-1 focus:ring-primary"
+                    onChange={(val) => setBudgetRealization(val)}
                   />
                 </div>
               </div>
