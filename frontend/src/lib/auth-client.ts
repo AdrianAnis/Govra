@@ -2,7 +2,7 @@ import "@/lib/zod-config";
 import { z } from "zod";
 import { jsonInit, request } from "@/lib/http";
 
-const okSchema = z.object({ ok: z.literal(true) });
+const okSchema = z.object({ ok: z.literal(true), message: z.string().optional() });
 const nextSchema = z.object({ next: z.string() });
 
 interface SignupInput {
@@ -28,8 +28,8 @@ export function resendCode() {
   return request("/api/auth/kirim-ulang", { method: "POST" }, okSchema);
 }
 
-export function resetPassword(password: string) {
-  return request("/api/auth/atur-ulang", jsonInit({ password }), nextSchema);
+export function resetPassword(password: string, email?: string, token?: string, code?: string) {
+  return request("/api/auth/atur-ulang", jsonInit({ password, email, token, code }), nextSchema);
 }
 
 export function deleteAccount() {

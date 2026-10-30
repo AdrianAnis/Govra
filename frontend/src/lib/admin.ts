@@ -39,7 +39,7 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
 const code = z
   .string()
   .trim()
-  .regex(/^[A-Z0-9_]+$/, "Hanya huruf besar, angka, dan garis bawah.")
+  .regex(/^[A-Z0-9_-]+$/, "Hanya huruf besar, angka, garis bawah, dan tanda hubung.")
   .max(40);
 
 const slug = z

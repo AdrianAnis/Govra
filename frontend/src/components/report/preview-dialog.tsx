@@ -33,8 +33,8 @@ const CHIP_CLASS = "inline-flex items-center gap-1.5 rounded-full border bg-surf
 
 function PreviewDialog({ open, onOpenChange, draft, districts, pending, error, onConfirm }: PreviewDialogProps) {
   const district = districts.find((item) => item.id === draft.districtId);
-  const village = district?.villages.find((item) => item.id === draft.villageId);
-  const place = [village?.name, district?.name].filter(Boolean).join(", ");
+  const village = (district?.villages ?? []).find((item) => item.id === draft.villageId);
+  const place = [draft.addressDetail, village?.name, district?.name].filter(Boolean).join(", ");
   const visibility = VISIBILITY[draft.visibility];
   const title = draft.title.trim();
 

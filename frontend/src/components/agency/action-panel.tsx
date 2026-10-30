@@ -43,11 +43,18 @@ interface Evidence {
   url: string;
 }
 
-type ErrorField = "response" | "rejection_reason" | "transfer_reason" | "evidence_ids";
+type ErrorField = "response" | "rejection_reason" | "transfer_reason" | "evidence_ids" | "started_at" | "estimated_completion_at";
 type Errors = { [K in ErrorField]?: string | undefined };
 
 function isErrorField(value: unknown): value is ErrorField {
-  return value === "response" || value === "rejection_reason" || value === "transfer_reason" || value === "evidence_ids";
+  return (
+    value === "response" ||
+    value === "rejection_reason" ||
+    value === "transfer_reason" ||
+    value === "evidence_ids" ||
+    value === "started_at" ||
+    value === "estimated_completion_at"
+  );
 }
 
 function ActionPanel({ issueId, transitions }: ActionPanelProps) {
@@ -56,6 +63,8 @@ function ActionPanel({ issueId, transitions }: ActionPanelProps) {
   const [active, setActive] = useState<AgencyTransition | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [response, setResponse] = useState("");
+  const [startedAt, setStartedAt] = useState("");
+  const [estimatedCompletionAt, setEstimatedCompletionAt] = useState("");
   const [rejection, setRejection] = useState<RejectionReason | null>(null);
   const [transfer, setTransfer] = useState<TransferReason | null>(null);
   const [evidence, setEvidence] = useState<Evidence[]>([]);
@@ -67,6 +76,8 @@ function ActionPanel({ issueId, transitions }: ActionPanelProps) {
     setActive(to);
     setConfirming(false);
     setResponse("");
+    setStartedAt("");
+    setEstimatedCompletionAt("");
     setRejection(null);
     setTransfer(null);
     setEvidence([]);
@@ -85,6 +96,7 @@ function ActionPanel({ issueId, transitions }: ActionPanelProps) {
   const payload = (to: AgencyTransition) => ({
     to,
     response,
+    ...(to === "DIPROSES" ? { started_at: startedAt, estimated_completion_at: estimatedCompletionAt } : {}),
     ...(rejection ? { rejection_reason: rejection } : {}),
     ...(transfer ? { transfer_reason: transfer } : {}),
     ...(to === "SELESAI" ? { evidence_ids: evidence.map((item) => item.id) } : {}),
@@ -191,6 +203,76 @@ function ActionPanel({ issueId, transitions }: ActionPanelProps) {
                     onChange={setRejection}
                   />
                 )}
+                {active === "DIPROSES" && (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="started_at" className="text-sm font-semibold">
+                        Waktu Mulai Pengerjaan <span className="text-secondary">*</span>
+                      </label>
+                      <input
+                        id="started_at"
+                        type="datetime-local"
+                        value={startedAt}
+                        onChange={(e) => {
+                          setStartedAt(e.target.value);
+                          if (
+                            estimatedCompletionAt &&
+                            e.target.value &&
+                            new Date(estimatedCompletionAt).getTime() <= new Date(e.target.value).getTime()
+                          ) {
+                            setErrors((prev) => ({
+                              ...prev,
+                              estimated_completion_at: "Estimasi selesai harus lebih lambat dari waktu mulai pengerjaan.",
+                            }));
+                          } else {
+                            setErrors((prev) => ({
+                              ...prev,
+                              started_at: undefined,
+                              estimated_completion_at: undefined,
+                            }));
+                          }
+                        }}
+                        className={cn(FIELD_CLASS, "py-2 text-sm tabular-nums")}
+                      />
+                      {errors.started_at && (
+                        <p role="alert" className="text-xs font-medium text-fg">{errors.started_at}</p>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="estimated_completion_at" className="text-sm font-semibold">
+                        Estimasi Selesai <span className="text-secondary">*</span>
+                      </label>
+                      <input
+                        id="estimated_completion_at"
+                        type="datetime-local"
+                        value={estimatedCompletionAt}
+                        min={startedAt || undefined}
+                        onChange={(e) => {
+                          setEstimatedCompletionAt(e.target.value);
+                          if (
+                            startedAt &&
+                            e.target.value &&
+                            new Date(e.target.value).getTime() <= new Date(startedAt).getTime()
+                          ) {
+                            setErrors((prev) => ({
+                              ...prev,
+                              estimated_completion_at: "Estimasi selesai harus lebih lambat dari waktu mulai pengerjaan.",
+                            }));
+                          } else {
+                            setErrors((prev) => ({
+                              ...prev,
+                              estimated_completion_at: undefined,
+                            }));
+                          }
+                        }}
+                        className={cn(FIELD_CLASS, "py-2 text-sm tabular-nums")}
+                      />
+                      {errors.estimated_completion_at && (
+                        <p role="alert" className="text-xs font-medium text-fg">{errors.estimated_completion_at}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
                 {active === "DIALIHKAN" && (
                   <SelectField
                     id="transfer"
@@ -291,6 +373,18 @@ function ActionPanel({ issueId, transitions }: ActionPanelProps) {
                   <dt className="text-fg-muted">Tindakan</dt>
                   <dd className="font-semibold">{TRANSITION_TITLE[active]}</dd>
                 </div>
+                {active === "DIPROSES" && (
+                  <>
+                    <div className="flex flex-col gap-0.5">
+                      <dt className="text-fg-muted">Waktu Mulai Pengerjaan</dt>
+                      <dd className="font-semibold tabular-nums">{startedAt ? new Date(startedAt).toLocaleString("id-ID") : "-"}</dd>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <dt className="text-fg-muted">Estimasi Selesai</dt>
+                      <dd className="font-semibold tabular-nums">{estimatedCompletionAt ? new Date(estimatedCompletionAt).toLocaleString("id-ID") : "-"}</dd>
+                    </div>
+                  </>
+                )}
                 {reasonLabel && (
                   <div className="flex flex-col gap-0.5">
                     <dt className="text-fg-muted">Alasan</dt>

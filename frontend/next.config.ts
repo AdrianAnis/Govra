@@ -6,9 +6,28 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     qualities: [60, 75],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "gtsskmxircedhfggqena.supabase.co",
+      },
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.unsplash.com",
+      },
+    ],
   },
   experimental: {
     authInterrupts: true,
+    cpus: 2,
   },
   async redirects() {
     return [

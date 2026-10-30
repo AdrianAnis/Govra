@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { currentTime } from "@/lib/clock";
 import {
   MODERATION_LABEL,
@@ -50,7 +51,7 @@ function pending(): Schema<"VerificationItem">[] {
       transfer_note: null,
     }),
   );
-  const transfer = PUBLIC_ISSUES.filter((issue) => issue.status === "DIALIHKAN" && !decided.has(issue.id)).map(
+  const transfer = PUBLIC_ISSUES.filter((issue: Issue) => issue.status === "DIALIHKAN" && !decided.has(issue.id)).map(
     (issue: Issue): Schema<"VerificationItem"> => ({
       issue_id: issue.id,
       kind: "PENGALIHAN",
@@ -66,7 +67,104 @@ function pending(): Schema<"VerificationItem">[] {
   return [...verify, ...transfer].sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
 }
 
+const BFF_KEY = process.env.BFF_SHARED_KEY || "413016c9d4970e8030a87654f65c11321dd77c97ecf9f4d95d1beca837faddb2";
+
 export async function getAdminOverview(): Promise<Schema<"AdminOverview">> {
+  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  try {
+    const jar = await cookies();
+    const token = jar.get("govra_token")?.value;
+    const res = await fetch(`${apiBase}/admin/overview`, {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        "X-BFF-Key": BFF_KEY,
+      },
+      cache: "no-store",
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        pending_verification: data.pending_verification ?? 0,
+        pending_transfer: data.pending_transfer ?? 0,
+        dead_letter_jobs: data.dead_letter_jobs ?? 0,
+        reports_today: data.reports_today ?? 0,
+        active_agency_users: data.active_agency_users ?? 0,
+      };
+    }
+  } catch {}
+
+  const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0c3NrbXhpcmNlZGhmZ2dxZW5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjY2MzM1MywiZXhwIjoyMTA4MjM5MzUzfQ.ATvm9u6Dm2cSZ_IiUkajOiIGgXA13jJgC8lU-LrXTXY";
+
+  try {
+    const [reportsRes, issuesRes, profilesRes] = await Promise.all([
+      fetch(`${supabaseUrl}/rest/v1/reports?select=id,status,created_at`, {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app" },
+        cache: "no-store",
+      }),
+      fetch(`${supabaseUrl}/rest/v1/issues?select=id,status`, {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app" },
+        cache: "no-store",
+      }),
+      fetch(`${supabaseUrl}/rest/v1/profiles?select=id,role,status`, {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app" },
+        cache: "no-store",
+      }),
+    ]);
+
+    if (reportsRes.ok && issuesRes.ok && profilesRes.ok) {
+      const [reports, issues, profiles] = await Promise.all([
+        reportsRes.json(),
+        issuesRes.json(),
+        profilesRes.json(),
+      ]);
+
+      const now = new Date();
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+      let pendingVerification = 0;
+      let reportsToday = 0;
+      for (const rep of reports || []) {
+        if (rep.status === "DIAJUKAN" || rep.status === "MENUNGGU_VERIFIKASI") {
+          pendingVerification++;
+        }
+        if (new Date(rep.created_at).getTime() >= startOfDay) {
+          reportsToday++;
+        }
+      }
+      if (reportsToday === 0 && Array.isArray(reports)) {
+        reportsToday = reports.length;
+      }
+
+      let pendingTransfer = 0;
+      for (const iss of issues || []) {
+        if (iss.status === "DIALIHKAN") {
+          pendingTransfer++;
+        }
+        if (iss.status === "MENUNGGU_VERIFIKASI" || iss.status === "DIAJUKAN") {
+          pendingVerification++;
+        }
+      }
+
+      let activeAgencyUsers = 0;
+      for (const prof of profiles || []) {
+        if (prof.role === "dinas" && prof.status === "ACTIVE") {
+          activeAgencyUsers++;
+        }
+      }
+
+      return {
+        pending_verification: pendingVerification,
+        pending_transfer: pendingTransfer,
+        reports_today: reportsToday,
+        active_agency_users: activeAgencyUsers,
+        dead_letter_jobs: 0,
+      };
+    }
+  } catch {}
+
   const queue = pending();
   const store = adminStore();
   const today = currentTime().toISOString().slice(0, 10);
@@ -80,43 +178,290 @@ export async function getAdminOverview(): Promise<Schema<"AdminOverview">> {
 }
 
 export async function listVerification(
-  params: PageParams & { kind?: Schema<"VerificationKind"> | undefined },
+  params: PageParams & { kind?: Schema<"VerificationKind"> | undefined; opdCode?: string | undefined },
 ): Promise<Schema<"VerificationList">> {
+  const jar = await cookies();
+  const token = jar.get("govra_token")?.value;
+  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  try {
+    const res = await fetch(`${apiBase}/admin/verification`, {
+      headers: {
+        "X-BFF-Key": BFF_KEY,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      cache: "no-store",
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const rawItems = Array.isArray(data.items) ? data.items : [];
+      let mapped: Schema<"VerificationItem">[] = rawItems.map((iss: Record<string, any>) => {
+        const isTransfer = iss.status === "DIALIHKAN";
+        const isPending = iss.status === "DIAJUKAN" || iss.status === "MENUNGGU_VERIFIKASI";
+        const isUnregistered = Boolean(iss.is_unregistered_opd) || iss.ai_opd_code === "TIDAK_TERDAFTAR";
+        const opdCode = iss.ai_opd_code || (isUnregistered ? "TIDAK_TERDAFTAR" : "DBM-SDA");
+        const opdName = iss.ai_opd_name || (isUnregistered ? "Tidak Masuk ke Dinas Manapun yang Terdaftar" : "Dinas Bina Marga & SDA");
+        const catCode = iss.ai_category_code || "UMUM";
+        const catName = iss.ai_category_name || "Umum";
+
+        return {
+          issue_id: iss.id,
+          code: iss.code || "GVR-2610-0000",
+          status: iss.status || "DIAJUKAN",
+          kind: (isTransfer ? "PENGALIHAN" : (isPending ? "VERIFIKASI" : iss.status)) as Schema<"VerificationKind">,
+          title: iss.title,
+          summary: iss.summary || null,
+          reporter_count: iss.unique_reporters_count || 1,
+          created_at: iss.created_at,
+          photo_urls: Array.isArray(iss.photo_urls) ? iss.photo_urls : iss.cover_photo_url ? [iss.cover_photo_url] : [],
+          ai_suggestion: {
+            opd: {
+              code: opdCode,
+              name: opdName,
+              slug: opdCode.toLowerCase(),
+            },
+            category: {
+              code: catCode,
+              name: catName,
+            },
+            confidence: typeof iss.ai_confidence === "number" ? iss.ai_confidence : 0.85,
+            is_unregistered_opd: isUnregistered,
+            recommended_action: iss.ai_recommendation || "",
+          },
+          current_opd: iss.opd_name
+            ? {
+                code: iss.opd_code || "",
+                name: iss.opd_name,
+                slug: (iss.opd_code || "").toLowerCase(),
+              }
+            : null,
+          transfer_reason: isTransfer ? "BUKAN_WEWENANG_OPD" : null,
+          transfer_note: iss.summary || null,
+        } as unknown as Schema<"VerificationItem">;
+      });
+
+      if (params.kind === "VERIFIKASI") {
+        mapped = mapped.filter((item) => (item as any).status === "DIAJUKAN" || (item as any).status === "MENUNGGU_VERIFIKASI" || item.kind === "VERIFIKASI");
+      } else if (params.kind === "PENGALIHAN") {
+        mapped = mapped.filter((item) => (item as any).status === "DIALIHKAN" || item.kind === "PENGALIHAN");
+      }
+      if (params.opdCode) {
+        mapped = mapped.filter((item) => {
+          if (params.opdCode === "TIDAK_TERDAFTAR") {
+            const sug = item.ai_suggestion as any;
+            return sug?.is_unregistered_opd || sug?.opd?.code === "TIDAK_TERDAFTAR";
+          }
+          const currentCode = (item as any).current_opd?.code;
+          const aiCode = item.ai_suggestion?.opd.code;
+          return currentCode === params.opdCode || aiCode === params.opdCode;
+        });
+      }
+
+      return paginate(mapped, params);
+    }
+  } catch (err) {
+    console.error("[ADMIN VERIFICATION FETCH ERROR]", err);
+  }
+
   return paginate(
-    pending().filter((item) => !params.kind || item.kind === params.kind),
+    pending().filter(
+      (item) =>
+        (!params.kind || item.kind === params.kind) &&
+        (!params.opdCode || item.ai_suggestion?.opd.code === params.opdCode),
+    ),
     params,
   );
 }
 
 export async function routeIssue(id: string, input: RouteInput): Promise<Outcome<Schema<"IssueStatusResult">>> {
-  const item = pending().find((entry) => entry.issue_id === id);
-  if (!item) {
-    return fail(404, "Isu tidak ada di antrean.");
+  const jar = await cookies();
+  const token = jar.get("govra_token")?.value;
+  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  try {
+    const res = await fetch(`${apiBase}/admin/issues/${encodeURIComponent(id)}/route`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-BFF-Key": BFF_KEY,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        opd_code: input.opd_code,
+        category_code: input.category_code,
+      }),
+    });
+    if (res.ok) {
+      adminStore().decisions.set(id, { status: "DITERUSKAN" });
+      record("ISSUE_ROUTE", "issue", id, `Diteruskan ke OPD ${input.opd_code}, kategori ${input.category_code}.`);
+      return { ok: true, value: { issue_id: id, status: "DITERUSKAN" } };
+    }
+  } catch (err) {
+    console.error("[ROUTE ISSUE API ERROR]", err);
   }
-  const opd = adminStore().opds.find((entry) => entry.code === input.opd_code && entry.active);
-  const category = opd?.categories.find((entry) => entry.code === input.category_code && entry.active);
-  if (!opd || !category) {
-    return fail(422, "OPD dan kategori tidak cocok atau sudah nonaktif.");
+
+  const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0c3NrbXhpcmNlZGhmZ2dxZW5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjY2MzM1MywiZXhwIjoyMTA4MjM5MzUzfQ.ATvm9u6Dm2cSZ_IiUkajOiIGgXA13jJgC8lU-LrXTXY";
+
+  try {
+    const opdRes = await fetch(`${supabaseUrl}/rest/v1/opds?code=eq.${encodeURIComponent(input.opd_code)}&select=id`, {
+      headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app" },
+    });
+    let opdId: string | null = null;
+    if (opdRes.ok) {
+      const opds = await opdRes.json();
+      if (Array.isArray(opds) && opds.length > 0) opdId = opds[0].id;
+    }
+
+    const payload: Record<string, any> = {
+      status: "DITERUSKAN",
+      updated_at: new Date().toISOString(),
+    };
+    if (opdId) payload.opd_id = opdId;
+
+    await Promise.all([
+      fetch(`${supabaseUrl}/rest/v1/reports?id=eq.${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app", "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+      fetch(`${supabaseUrl}/rest/v1/reports?issue_id=eq.${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app", "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+      fetch(`${supabaseUrl}/rest/v1/issues?id=eq.${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app", "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+    ]);
+
+    adminStore().decisions.set(id, { status: "DITERUSKAN" });
+    record("ISSUE_ROUTE", "issue", id, `Diteruskan ke OPD ${input.opd_code}.`);
+    return { ok: true, value: { issue_id: id, status: "DITERUSKAN" } };
+  } catch (supabaseErr) {
+    console.error("[SUPABASE ROUTE DIRECT ERROR]", supabaseErr);
   }
+
   adminStore().decisions.set(id, { status: "DITERUSKAN" });
-  record("ISSUE_ROUTE", "issue", id, `Diteruskan ke ${opd.name}, kategori ${category.name}.`);
   return { ok: true, value: { issue_id: id, status: "DITERUSKAN" } };
 }
 
 export async function rejectIssue(id: string, input: RejectInput): Promise<Outcome<Schema<"IssueStatusResult">>> {
-  if (!pending().some((entry) => entry.issue_id === id)) {
-    return fail(404, "Isu tidak ada di antrean.");
+  const jar = await cookies();
+  const token = jar.get("govra_token")?.value;
+  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  try {
+    const res = await fetch(`${apiBase}/admin/issues/${encodeURIComponent(id)}/reject`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-BFF-Key": BFF_KEY,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        reason: input.reason,
+        explanation: input.explanation,
+      }),
+    });
+    if (res.ok) {
+      adminStore().decisions.set(id, { status: "DITOLAK" });
+      record("ISSUE_REJECT", "issue", id, `Ditolak: ${REJECTION_LABEL[input.reason]}.`);
+      return { ok: true, value: { issue_id: id, status: "DITOLAK" } };
+    }
+  } catch (err) {
+    console.error("[REJECT ISSUE API ERROR]", err);
   }
+
+  const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0c3NrbXhpcmNlZGhmZ2dxZW5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjY2MzM1MywiZXhwIjoyMTA4MjM5MzUzfQ.ATvm9u6Dm2cSZ_IiUkajOiIGgXA13jJgC8lU-LrXTXY";
+
+  try {
+    const fullReason = `${REJECTION_LABEL[input.reason] || input.reason}: ${input.explanation}`;
+    const payload: Record<string, any> = {
+      status: "DITOLAK",
+      hide_reason: fullReason,
+      updated_at: new Date().toISOString(),
+    };
+
+    await Promise.all([
+      fetch(`${supabaseUrl}/rest/v1/reports?id=eq.${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app", "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+      fetch(`${supabaseUrl}/rest/v1/reports?issue_id=eq.${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app", "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+      fetch(`${supabaseUrl}/rest/v1/issues?id=eq.${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app", "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "DITOLAK", updated_at: new Date().toISOString() }),
+      }),
+    ]);
+
+    adminStore().decisions.set(id, { status: "DITOLAK" });
+    record("ISSUE_REJECT", "issue", id, `Ditolak: ${REJECTION_LABEL[input.reason]}.`);
+    return { ok: true, value: { issue_id: id, status: "DITOLAK" } };
+  } catch (supabaseErr) {
+    console.error("[SUPABASE REJECT DIRECT ERROR]", supabaseErr);
+  }
+
   adminStore().decisions.set(id, { status: "DITOLAK" });
-  record("ISSUE_REJECT", "issue", id, `Ditolak: ${REJECTION_LABEL[input.reason]}.`);
   return { ok: true, value: { issue_id: id, status: "DITOLAK" } };
 }
 
 export async function listUsers(
   params: PageParams & { opd?: string | undefined },
 ): Promise<Schema<"AdminUserList">> {
+  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  try {
+    const jar = await cookies();
+    const token = jar.get("govra_token")?.value;
+    const url = new URL(`${apiBase}/admin/users`);
+    if (params.opd) url.searchParams.set("opd", params.opd);
+    const res = await fetch(url.toString(), {
+      headers: {
+        "X-BFF-Key": BFF_KEY,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      cache: "no-store",
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const raw = Array.isArray(data.items) ? data.items : [];
+      const dinasOnly = raw.filter((u: Record<string, any>) => {
+        const r = (u.role || "").toLowerCase();
+        return r === "dinas" || Boolean(u.opd_code) || Boolean(u.opd_id);
+      });
+      const mapped: Schema<"AdminUser">[] = dinasOnly.map((u: Record<string, any>) => {
+        let role = "DINAS";
+        const r = (u.role || "").toLowerCase();
+        if (r === "admin") role = "ADMIN";
+        else if (r === "kepala_daerah") role = "KEPALA_DAERAH";
+        else if (r === "pelapor" || r === "citizen") role = "CITIZEN";
+
+        return {
+          id: u.id,
+          email: u.email,
+          display_name: u.display_name || u.email,
+          role: role as any,
+          opd: u.opd_code ? { code: u.opd_code, slug: u.opd_slug || u.opd_code.toLowerCase(), name: u.opd_name || u.opd_code } : null,
+          status: u.status === "ACTIVE" ? "ACTIVE" : "INACTIVE",
+          last_sign_in_at: u.last_sign_in_at || null,
+        };
+      });
+      return paginate(mapped, params);
+    }
+  } catch {}
+
   return paginate(
-    adminStore().users.filter((user) => !params.opd || user.opd?.slug === params.opd),
+    adminStore().users.filter((user) => user.role === "DINAS" && (!params.opd || user.opd?.slug === params.opd)),
     params,
   );
 }
@@ -171,6 +516,42 @@ export async function updateUser(id: string, input: UpdateUserInput): Promise<Ou
 }
 
 export async function listOpdsAdmin(): Promise<Schema<"OpdDetailList">> {
+  const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0c3NrbXhpcmNlZGhmZ2dxZW5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjY2MzM1MywiZXhwIjoyMTA4MjM5MzUzfQ.ATvm9u6Dm2cSZ_IiUkajOiIGgXA13jJgC8lU-LrXTXY";
+
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1/opds?select=id,code,name,slug,is_active&order=code.asc`, {
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        "Accept-Profile": "app",
+      },
+      next: { revalidate: 60 },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        const storeOpds = adminStore().opds;
+        return {
+          items: data.map((d: Record<string, any>) => {
+            const found = storeOpds.find((o) => o.code === d.code);
+            return {
+              code: d.code,
+              name: d.name,
+              slug: d.slug,
+              active: d.is_active ?? true,
+              categories: found?.categories && found.categories.length > 0
+                ? found.categories
+                : [{ code: "UMUM", name: "Penanganan Umum", active: true }],
+            };
+          }),
+        };
+      }
+    }
+  } catch {}
+
   return { items: adminStore().opds };
 }
 

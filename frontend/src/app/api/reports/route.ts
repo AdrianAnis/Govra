@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { errorResponse } from "@/lib/api-response";
 import { createReport } from "@/lib/data/reports";
 import { rejectCrossOrigin } from "@/lib/origin";
@@ -5,9 +6,36 @@ import { checkFile, createReportSchema, MAX_FILES } from "@/lib/report-draft";
 
 const CREATED_STATUS = 201;
 const INVALID_STATUS = 422;
+const BFF_KEY = process.env.BFF_SHARED_KEY || "413016c9d4970e8030a87654f65c11321dd77c97ecf9f4d95d1beca837faddb2";
 
 function textOf(value: FormDataEntryValue | null): string {
   return typeof value === "string" ? value : "";
+}
+
+async function uploadToSupabaseStorage(file: File): Promise<string | null> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
+  const serviceKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0c3NrbXhpcmNlZGhmZ2dxZW5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjY2MzM1MywiZXhwIjoyMTA4MjM5MzUzfQ.ATvm9u6Dm2cSZ_IiUkajOiIGgXA13jJgC8lU-LrXTXY";
+  const ext = file.name.split(".").pop() || "jpg";
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const res = await fetch(`${supabaseUrl}/storage/v1/object/reports/${filename}`, {
+      method: "POST",
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        "Content-Type": file.type || "image/jpeg",
+      },
+      body: buffer,
+    });
+    if (res.ok) {
+      return `${supabaseUrl}/storage/v1/object/public/reports/${filename}`;
+    }
+  } catch {}
+  return null;
 }
 
 export async function POST(request: Request) {
@@ -19,7 +47,9 @@ export async function POST(request: Request) {
   const parsed = createReportSchema.safeParse({
     title: textOf(form.get("title")),
     body: textOf(form.get("body")),
+    district_id: textOf(form.get("district_id")),
     village_id: textOf(form.get("village_id")),
+    address_detail: textOf(form.get("address_detail")),
     lat: textOf(form.get("lat")),
     lng: textOf(form.get("lng")),
     visibility: textOf(form.get("visibility")),
@@ -33,11 +63,73 @@ export async function POST(request: Request) {
   if (files.length > MAX_FILES || problem) {
     return errorResponse("VALIDATION_ERROR", problem ?? `Maksimal ${MAX_FILES} foto.`, INVALID_STATUS);
   }
+
+  const attachments = await Promise.all(
+    files.map(async (file, idx) => {
+      let url = await uploadToSupabaseStorage(file);
+      if (!url) {
+        const buf = Buffer.from(await file.arrayBuffer());
+        url = `data:${file.type || "image/jpeg"};base64,${buf.toString("base64")}`;
+      }
+      const cleanMime: "image/webp" | "image/jpeg" | "image/png" =
+        file.type === "image/png" ? "image/png" : file.type === "image/webp" ? "image/webp" : "image/jpeg";
+      return {
+        id: crypto.randomUUID(),
+        file_url: url,
+        url,
+        mime_type: cleanMime,
+        mime: cleanMime,
+        file_size: file.size,
+        size_bytes: file.size,
+        is_cover: idx === 0,
+        is_public_ok: true,
+      };
+    }),
+  );
+
+  const jar = await cookies();
+  const token = jar.get("govra_token")?.value;
+  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+
+  if (token) {
+    try {
+      const latNum = Number(parsed.data.lat) || -6.9175;
+      const lngNum = Number(parsed.data.lng) || 107.6191;
+      const backendRes = await fetch(`${apiBase}/reports`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          "X-BFF-Key": BFF_KEY,
+        },
+        body: JSON.stringify({
+          title: parsed.data.title,
+          description: parsed.data.body,
+          district_id: parsed.data.district_id,
+          village_id: parsed.data.village_id,
+          address_detail: parsed.data.address_detail,
+          lat: latNum,
+          lng: lngNum,
+          visibility: parsed.data.visibility,
+          attachments,
+        }),
+      });
+      if (backendRes.ok) {
+        const data = await backendRes.json();
+        return Response.json(
+          { code: data.code, status: data.status || "DIAJUKAN", created_at: data.created_at || new Date().toISOString() },
+          { status: CREATED_STATUS },
+        );
+      }
+    } catch {}
+  }
+
   const created = await createReport({
     title: parsed.data.title,
     body: parsed.data.body,
     villageId: parsed.data.village_id,
     visibility: parsed.data.visibility,
+    attachments,
   });
   if (!created) {
     return errorResponse("VALIDATION_ERROR", "Kelurahan tidak dikenali.", INVALID_STATUS);

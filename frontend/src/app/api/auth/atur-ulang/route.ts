@@ -1,20 +1,43 @@
-import { cookies } from "next/headers";
-import { RESET_COOKIE, resetSchema } from "@/lib/auth-flow";
-import { authGuard, invalid, readJson } from "@/lib/auth-route";
+import { errorResponse } from "@/lib/api-response";
+import { resetSchema } from "@/lib/auth-flow";
+import { invalid, readJson } from "@/lib/auth-route";
+
+const BFF_KEY = process.env.BFF_SHARED_KEY || "413016c9d4970e8030a87654f65c11321dd77c97ecf9f4d95d1beca837faddb2";
 
 export async function POST(request: Request) {
-  const blocked = authGuard(request);
-  if (blocked) {
-    return blocked;
-  }
-  const parsed = resetSchema.safeParse(await readJson(request));
+  const json = (await readJson(request)) as Record<string, unknown> | null;
+  const parsed = resetSchema.safeParse(json);
   if (!parsed.success) {
     return invalid(parsed.error.issues[0]?.message);
   }
-  const jar = await cookies();
-  if (!jar.has(RESET_COOKIE)) {
-    return invalid("Sesi atur ulang berakhir. Mulai lagi dari lupa kata sandi.");
+
+  const email = String(json?.email || "");
+  const token = String(json?.token || "");
+  const code = String(json?.code || "");
+
+  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  try {
+    const res = await fetch(`${apiBase}/auth/reset-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-BFF-Key": BFF_KEY,
+      },
+      body: JSON.stringify({
+        email,
+        token,
+        code,
+        new_password: parsed.data.password,
+      }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return errorResponse("RESET_FAILED", data.message || "Gagal mengatur ulang kata sandi", res.status);
+    }
+
+    return Response.json({ next: "/masuk?reset=sukses" });
+  } catch {
+    return errorResponse("SERVER_ERROR", "Gagal menghubungi server", 500);
   }
-  jar.delete(RESET_COOKIE);
-  return Response.json({ next: "/masuk" });
 }

@@ -1,4 +1,4 @@
-import { categoryRef, locationOf, opdRef, VILLAGE_ID } from "@/lib/mock/reference";
+import { categoryRef, locationOf, opdRef } from "@/lib/mock/reference";
 import type { Schema } from "@/lib/schema";
 
 type Status = Schema<"IssueStatus">;
@@ -62,28 +62,7 @@ function coverFor(title: string): Schema<"CoverPhoto"> | null {
   return url ? { url, mime: "image/jpeg" } : null;
 }
 
-const ISSUE_SEEDS: readonly IssueSeed[] = [
-  { title: "Jalan berlubang di Jalan Melati membahayakan pengendara", opd: "BMSDA", category: "JALAN_RUSAK", village: VILLAGE_ID.melati, status: "DIPROSES", urgency: "URGENT", reporters: 12, created: "2026-10-15T01:10:00Z", response: 27, finish: 0, overdue: false },
-  { title: "Tumpukan sampah di pinggir jalan Kelurahan Anggrek", opd: "LHK", category: "SAMPAH", village: VILLAGE_ID.anggrek, status: "SELESAI", urgency: "NORMAL", reporters: 2, created: "2026-10-02T03:00:00Z", response: 18, finish: 160, overdue: false },
-  { title: "Lampu lalu lintas mati di perempatan Desa Mawar", opd: "PERHUB", category: "LAMPU_LALIN", village: VILLAGE_ID.mawar, status: "DITERUSKAN", urgency: "TINGGI", reporters: 6, created: "2026-10-12T02:00:00Z", response: 0, finish: 0, overdue: true },
-  { title: "Genangan air tidak surut di Desa Kenanga setiap hujan", opd: "BMSDA", category: "DRAINASE", village: VILLAGE_ID.kenanga, status: "DIPROSES", urgency: "TINGGI", reporters: 8, created: "2026-10-08T05:00:00Z", response: 40, finish: 0, overdue: false },
-  { title: "Atap ruang kelas SD bocor di Kelurahan Dahlia", opd: "DIKBUD", category: "SEKOLAH_RUSAK", village: VILLAGE_ID.dahlia, status: "DITERUSKAN", urgency: "NORMAL", reporters: 3, created: "2026-10-19T03:20:00Z", response: 0, finish: 0, overdue: false },
-  { title: "Pelayanan loket puskesmas Desa Teratai terlalu lama", opd: "KES", category: "PUSKESMAS", village: VILLAGE_ID.teratai, status: "DIPROSES", urgency: "NORMAL", reporters: 5, created: "2026-10-05T04:00:00Z", response: 52, finish: 0, overdue: false },
-  { title: "Sampah tidak diangkut dua minggu di Desa Flamboyan", opd: "LHK", category: "SAMPAH", village: VILLAGE_ID.flamboyan, status: "DIPROSES", urgency: "TINGGI", reporters: 9, created: "2026-10-03T02:30:00Z", response: 30, finish: 0, overdue: false },
-  { title: "Saluran drainase tersumbat di Kelurahan Cempaka", opd: "BMSDA", category: "DRAINASE", village: VILLAGE_ID.cempaka, status: "SELESAI", urgency: "NORMAL", reporters: 4, created: "2026-09-25T06:00:00Z", response: 22, finish: 120, overdue: false },
-  { title: "Jalan retak dan ambles dekat jembatan Desa Flamboyan", opd: "BMSDA", category: "JALAN_RUSAK", village: VILLAGE_ID.flamboyan, status: "DIALIHKAN", urgency: "NORMAL", reporters: 2, created: "2026-10-01T07:00:00Z", response: 36, finish: 0, overdue: false },
-  { title: "Puskesmas Kelurahan Cempaka kehabisan obat dasar", opd: "KES", category: "PUSKESMAS", village: VILLAGE_ID.cempaka, status: "SELESAI", urgency: "TINGGI", reporters: 11, created: "2026-09-22T03:00:00Z", response: 20, finish: 96, overdue: false },
-  { title: "Lampu lalu lintas berkedip terus di Kelurahan Dahlia", opd: "PERHUB", category: "LAMPU_LALIN", village: VILLAGE_ID.dahlia, status: "DITOLAK", urgency: "NORMAL", reporters: 1, created: "2026-10-10T08:00:00Z", response: 48, finish: 0, overdue: false },
-  { title: "Pagar sekolah roboh di Desa Kenanga", opd: "DIKBUD", category: "SEKOLAH_RUSAK", village: VILLAGE_ID.kenanga, status: "DIPROSES", urgency: "URGENT", reporters: 14, created: "2026-10-20T01:00:00Z", response: 8, finish: 0, overdue: false },
-  { title: "Tumpukan sampah di saluran air Kelurahan Melati", opd: "LHK", category: "SAMPAH", village: VILLAGE_ID.melati, status: "DIBUKA_ULANG", urgency: "TINGGI", reporters: 7, created: "2026-09-28T04:00:00Z", response: 24, finish: 72, overdue: false },
-  { title: "Lubang besar di jalan utama Desa Mawar", opd: "BMSDA", category: "JALAN_RUSAK", village: VILLAGE_ID.mawar, status: "DIAJUKAN", urgency: "NORMAL", reporters: 1, created: "2026-10-23T09:00:00Z", response: 0, finish: 0, overdue: false },
-  { title: "Papan nama puskesmas Kelurahan Anggrek rusak", opd: "KES", category: "PUSKESMAS", village: VILLAGE_ID.anggrek, status: "MENUNGGU_VERIFIKASI", urgency: "NORMAL", reporters: 1, created: "2026-10-22T14:00:00Z", response: 0, finish: 0, overdue: false },
-  { title: "Banjir lokal di jalan Kelurahan Dahlia", opd: "BMSDA", category: "DRAINASE", village: VILLAGE_ID.dahlia, status: "DITERUSKAN", urgency: "URGENT", reporters: 10, created: "2026-10-22T02:00:00Z", response: 0, finish: 0, overdue: true },
-  { title: "Ruang kelas kekurangan meja di Desa Teratai", opd: "DIKBUD", category: "SEKOLAH_RUSAK", village: VILLAGE_ID.teratai, status: "SELESAI", urgency: "NORMAL", reporters: 3, created: "2026-09-21T03:00:00Z", response: 30, finish: 200, overdue: false },
-  { title: "Lampu jalan padam di Desa Kenanga", opd: "PERHUB", category: "LAMPU_LALIN", village: VILLAGE_ID.kenanga, status: "DIPROSES", urgency: "TINGGI", reporters: 5, created: "2026-10-14T05:30:00Z", response: 60, finish: 0, overdue: false },
-  { title: "Tempat sampah umum rusak di Kelurahan Cempaka", opd: "LHK", category: "SAMPAH", village: VILLAGE_ID.cempaka, status: "SELESAI", urgency: "NORMAL", reporters: 2, created: "2026-09-24T02:00:00Z", response: 15, finish: 50, overdue: false },
-  { title: "Jembatan penghubung berderit di Desa Flamboyan", opd: "BMSDA", category: "JALAN_RUSAK", village: VILLAGE_ID.flamboyan, status: "DITERUSKAN", urgency: "TINGGI", reporters: 4, created: "2026-10-21T03:00:00Z", response: 0, finish: 0, overdue: false },
-];
+const ISSUE_SEEDS: readonly IssueSeed[] = [];
 
 function padId(prefix: string, value: number): string {
   return `${prefix}-${String(value).padStart(12, "0")}`;

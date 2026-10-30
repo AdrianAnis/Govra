@@ -1,5 +1,6 @@
-import { ArrowLeft, ArrowRight, MapPin } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, ExternalLink, MapPin } from "lucide-react";
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AsideCard } from "@/components/aside-card";
@@ -25,6 +26,15 @@ export default async function MyReportPage({ params }: PageProps<"/pelapor/lapor
     notFound();
   }
 
+  const locationSummary = [
+    report.address_detail,
+    report.location.village.name,
+    report.location.district.name,
+    "Kota Bandung",
+  ]
+    .filter(Boolean)
+    .join(", ");
+
   return (
     <Container className="flex flex-col gap-8 py-10">
       <Link
@@ -45,23 +55,133 @@ export default async function MyReportPage({ params }: PageProps<"/pelapor/lapor
         </h1>
         <p className="flex flex-wrap items-center gap-x-6 gap-y-1 text-fg-muted">
           <span className="inline-flex items-center gap-2">
-            <MapPin aria-hidden className="size-4" />
-            {report.location.village.name}, {report.location.district.name}
+            <MapPin aria-hidden className="size-4 text-primary" />
+            {locationSummary}
           </span>
           <span>Dikirim {formatDateTime(report.created_at)}</span>
         </p>
       </header>
+      {report.status === "DITOLAK" && (
+        <div className="flex flex-col gap-3.5 rounded-xl border border-red-300 bg-red-50 p-5 sm:p-6 shadow-xs">
+          <div className="flex items-center gap-2.5 text-red-900 font-bold text-base sm:text-lg">
+            <AlertCircle className="size-5 text-red-600 shrink-0" />
+            <span>Laporan Ditolak</span>
+          </div>
+          <p className="text-sm font-medium text-red-800 leading-relaxed">
+            Laporan ini tidak dapat diteruskan ke dinas terkait dan telah ditolak oleh Administrator Pusat Kota Contoh.
+          </p>
+          {report.rejection_reason && (
+            <div className="rounded-lg border border-red-200 bg-white p-4 shadow-2xs">
+              <span className="text-xs font-bold uppercase tracking-wider text-red-700">
+                Alasan Penolakan:
+              </span>
+              <p className="text-sm font-semibold text-zinc-900 mt-1 leading-relaxed break-words">
+                {report.rejection_reason}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+      {report.status === "DIPROSES" && (() => {
+        const processEvent = [...report.timeline].reverse().find((e) => e.to_status === "DIPROSES");
+        return (
+          <div className="flex flex-col gap-4 rounded-xl border border-primary/30 bg-primary-soft p-5 sm:p-6 shadow-xs">
+            <div className="flex items-center gap-2.5 text-secondary font-bold text-base sm:text-lg">
+              <span className="flex size-3 rounded-full bg-primary animate-pulse" />
+              <span>Laporan Sedang Dikerjakan</span>
+            </div>
+            <p className="text-sm font-medium text-secondary/90 leading-relaxed">
+              Laporan Anda telah diterima oleh dinas penanggung jawab dan saat ini sedang dalam proses pengerjaan di lapangan.
+            </p>
+            {processEvent?.note && (
+              <div className="rounded-lg border border-primary/20 bg-white p-4 shadow-2xs">
+                <span className="text-xs font-bold uppercase tracking-wider text-primary">
+                  Jadwal & Catatan Pengerjaan:
+                </span>
+                <p className="text-sm font-semibold text-zinc-900 mt-1 leading-relaxed whitespace-pre-line break-words">
+                  {processEvent.note}
+                </p>
+              </div>
+            )}
+          </div>
+        );
+      })()}
       <div className="grid gap-10 lg:grid-cols-3 lg:gap-12">
         <div className="flex flex-col gap-12 lg:col-span-2">
           <section className="flex flex-col gap-4">
             <h2 className="text-2xl font-bold tracking-tight">Isi laporan</h2>
-            <p className="max-w-prose whitespace-pre-line">{report.body}</p>
+            <p className="max-w-prose whitespace-pre-line text-base leading-relaxed">{report.body}</p>
           </section>
+
+          {report.attachments.length > 0 && (
+            <section className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold tracking-tight">Foto lampiran</h2>
+                <span className="text-sm text-fg-muted">{report.attachments.length} foto</span>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {report.attachments.map((attachment, index) => (
+                  <a
+                    key={attachment.id}
+                    href={attachment.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative aspect-4/3 overflow-hidden rounded-xl border border-border-strong bg-surface-muted shadow-xs transition duration-200 ease-ui hover:border-primary hover:shadow-md"
+                  >
+                    <Image
+                      src={attachment.url}
+                      alt={`Foto lampiran laporan ${index + 1}`}
+                      fill
+                      sizes="(min-width: 1024px) 260px, (min-width: 640px) 50vw, 100vw"
+                      className="object-cover transition-transform duration-300 ease-ui group-hover:scale-105"
+                      unoptimized={attachment.url.startsWith("data:")}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                    <div className="absolute right-3 bottom-3 left-3 flex items-center justify-between text-xs text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      <span className="font-medium">Foto {index + 1}</span>
+                      <span className="inline-flex items-center gap-1 font-semibold">
+                        Lihat foto
+                        <ExternalLink aria-hidden className="size-3.5" />
+                      </span>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section className="flex flex-col gap-4 rounded-xl border border-border-strong bg-surface p-6">
+            <h2 className="text-xl font-bold tracking-tight">Lokasi kejadian</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <p className="text-xs font-semibold text-fg-muted uppercase tracking-wider">Kecamatan</p>
+                <p className="text-base font-medium">{report.location.district.name}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-fg-muted uppercase tracking-wider">Kelurahan</p>
+                <p className="text-base font-medium">{report.location.village.name}</p>
+              </div>
+              {report.address_detail && (
+                <div className="sm:col-span-2">
+                  <p className="text-xs font-semibold text-fg-muted uppercase tracking-wider">Nama Jalan / Patokan</p>
+                  <p className="text-base font-medium">{report.address_detail}</p>
+                </div>
+              )}
+              <div className="sm:col-span-2">
+                <p className="text-xs font-semibold text-fg-muted uppercase tracking-wider">Koordinat Titik Peta</p>
+                <p className="font-mono text-sm text-fg-muted">
+                  {report.location.point.lat.toFixed(6)}, {report.location.point.lng.toFixed(6)}
+                </p>
+              </div>
+            </div>
+          </section>
+
           <section className="flex flex-col gap-8">
             <h2 className="text-2xl font-bold tracking-tight">Perkembangan penanganan</h2>
             <IssueTimeline events={report.timeline} now={currentTime()} />
           </section>
         </div>
+
         <aside className="flex flex-col gap-4">
           <ResolutionFeedback code={report.code} feedback={report.feedback} />
           {report.issue && report.visibility === "PUBLIK" && (
@@ -80,9 +200,33 @@ export default async function MyReportPage({ params }: PageProps<"/pelapor/lapor
             </Link>
           )}
           <AsideCard title="Foto lampiran">
-            <p className="text-fg-muted">
-              {report.attachments.length > 0 ? `${report.attachments.length} foto terlampir.` : "Tidak ada foto."}
-            </p>
+            {report.attachments.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                <div className="grid grid-cols-3 gap-2">
+                  {report.attachments.map((att, i) => (
+                    <a
+                      key={att.id}
+                      href={att.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group relative aspect-square overflow-hidden rounded-md border border-border-strong bg-surface-muted"
+                    >
+                      <Image
+                        src={att.url}
+                        alt={`Thumbnail ${i + 1}`}
+                        fill
+                        sizes="80px"
+                        className="object-cover transition-transform duration-200 group-hover:scale-105"
+                        unoptimized={att.url.startsWith("data:")}
+                      />
+                    </a>
+                  ))}
+                </div>
+                <p className="text-xs text-fg-muted">{report.attachments.length} foto terlampir.</p>
+              </div>
+            ) : (
+              <p className="text-sm text-fg-muted">Tidak ada foto.</p>
+            )}
           </AsideCard>
         </aside>
       </div>

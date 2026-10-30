@@ -1,4 +1,4 @@
-import { List, Map as MapIcon } from "lucide-react";
+import { Map as MapIcon, Rss } from "lucide-react";
 import Link from "next/link";
 import { buildHref } from "@/lib/url";
 import { cn } from "@/lib/utils";
@@ -11,8 +11,8 @@ interface IssueViewToggleProps {
 }
 
 const OPTIONS = [
-  { view: "daftar", label: "Daftar", icon: List },
-  { view: "peta", label: "Peta", icon: MapIcon },
+  { view: "daftar", label: "Feed Warga", icon: Rss },
+  { view: "peta", label: "Peta Sebaran", icon: MapIcon },
 ] as const;
 
 function IssueViewToggle({ view, params }: IssueViewToggleProps) {

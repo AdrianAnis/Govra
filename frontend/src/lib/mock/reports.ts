@@ -1,5 +1,5 @@
 import { PUBLIC_ISSUES, toSummary } from "@/lib/mock/issues";
-import { locationOf, VILLAGE_ID } from "@/lib/mock/reference";
+import { locationOf } from "@/lib/mock/reference";
 import type { Schema } from "@/lib/schema";
 
 type Detail = Schema<"MyReportDetail">;
@@ -24,44 +24,7 @@ const STORE_KEY = Symbol.for("govra.report-store");
 const FEEDBACK_WINDOW_DAYS = 5;
 const MS_PER_DAY = 86_400_000;
 
-const SEEDS: readonly SeedReport[] = [
-  {
-    code: "TLK-2610-A1B2",
-    title: "Banjir lokal di jalan Kelurahan Dahlia",
-    body: "Setiap hujan deras jalan di depan Pasar Dahlia tergenang setinggi lutut dan motor sulit lewat.",
-    visibility: "PUBLIK",
-    issueTitle: "Banjir lokal di jalan Kelurahan Dahlia",
-    village: VILLAGE_ID.dahlia,
-    created: "2026-10-22T02:10:00Z",
-  },
-  {
-    code: "TLK-2610-C3D4",
-    title: "Pagar sekolah roboh",
-    body: "Pagar SDN Kenanga roboh sepanjang kurang lebih sepuluh meter dan anak-anak bermain di dekatnya.",
-    visibility: "PUBLIK",
-    issueTitle: "Pagar sekolah roboh di Desa Kenanga",
-    village: VILLAGE_ID.kenanga,
-    created: "2026-10-20T01:30:00Z",
-  },
-  {
-    code: "TLK-2610-G7H8",
-    title: null,
-    body: "Saya ingin melaporkan dugaan pungutan liar di loket pelayanan. Mohon identitas saya dirahasiakan.",
-    visibility: "RAHASIA",
-    issueTitle: null,
-    village: VILLAGE_ID.melati,
-    created: "2026-10-23T08:00:00Z",
-  },
-  {
-    code: "TLK-2609-E5F6",
-    title: "Tempat sampah umum rusak",
-    body: "Tempat sampah di taman Kelurahan Cempaka pecah dan sampahnya berserakan ke jalan.",
-    visibility: "PUBLIK",
-    issueTitle: "Tempat sampah umum rusak di Kelurahan Cempaka",
-    village: VILLAGE_ID.cempaka,
-    created: "2026-09-24T02:30:00Z",
-  },
-];
+const SEEDS: readonly SeedReport[] = [];
 
 const VERIFYING: readonly Schema<"IssueStatus">[] = ["DIAJUKAN", "MENUNGGU_VERIFIKASI"];
 

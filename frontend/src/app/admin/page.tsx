@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdminDistributionMap } from "@/components/admin/admin-distribution-map";
 import { PageHeader } from "@/components/page-header";
 import { getAdminOverview } from "@/lib/data/admin";
+import { getDistributionPoints } from "@/lib/data/map";
 import { formatNumber } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Ringkasan" };
@@ -13,13 +15,15 @@ interface Tile {
 }
 
 export default async function AdminOverviewPage() {
-  const overview = await getAdminOverview();
+  const [overview, mapPoints] = await Promise.all([
+    getAdminOverview(),
+    getDistributionPoints(),
+  ]);
+
   const tiles: Tile[] = [
-    { label: "Menunggu verifikasi", value: overview.pending_verification, href: "/admin/verifikasi?jenis=VERIFIKASI" },
-    { label: "Permintaan pengalihan", value: overview.pending_transfer, href: "/admin/verifikasi?jenis=PENGALIHAN" },
-    { label: "Laporan masuk hari ini", value: overview.reports_today, href: "/admin/moderasi" },
+    { label: "Menunggu verifikasi", value: overview.pending_verification, href: "/admin/verifikasi" },
+    { label: "Laporan masuk hari ini", value: overview.reports_today, href: "/admin/verifikasi" },
     { label: "Akun Dinas aktif", value: overview.active_agency_users, href: "/admin/pengguna" },
-    { label: "Tugas latar gagal", value: overview.dead_letter_jobs },
   ];
 
   return (
@@ -51,6 +55,12 @@ export default async function AdminOverviewPage() {
           );
         })}
       </ul>
+
+      <AdminDistributionMap
+        points={mapPoints}
+        mode="admin"
+        title="Peta Sebaran Laporan Seluruh Kota"
+      />
     </div>
   );
 }

@@ -7,11 +7,39 @@ export interface IndicatorItemFilters extends PageParams {
   opd?: string | undefined;
 }
 
+const BFF_KEY = process.env.BFF_SHARED_KEY || "413016c9d4970e8030a87654f65c11321dd77c97ecf9f4d95d1beca837faddb2";
+
 export async function getScorecard(): Promise<Schema<"Scorecard">> {
+  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  try {
+    const res = await fetch(`${apiBase}/scorecard`, {
+      headers: { "X-BFF-Key": BFF_KEY },
+      next: { revalidate: 60 },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.period && typeof data.period === "object" && Array.isArray(data.by_opd)) {
+        return data;
+      }
+    }
+  } catch {}
   return SCORECARD;
 }
 
 export async function getMethodology(): Promise<Schema<"Methodology">> {
+  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  try {
+    const res = await fetch(`${apiBase}/methodology`, {
+      headers: { "X-BFF-Key": BFF_KEY },
+      next: { revalidate: 3600 },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.indicators) {
+        return data;
+      }
+    }
+  } catch {}
   return METHODOLOGY;
 }
 

@@ -26,6 +26,7 @@ export interface ReportDraft {
   body: string;
   districtId: string;
   villageId: string;
+  addressDetail: string;
   point: DraftPoint | null;
   files: readonly DraftFile[];
   visibility: Schema<"Visibility">;
@@ -38,6 +39,7 @@ export const EMPTY_DRAFT: ReportDraft = {
   body: "",
   districtId: "",
   villageId: "",
+  addressDetail: "",
   point: null,
   files: [],
   visibility: "PUBLIK",
@@ -98,7 +100,9 @@ export function validateLocation(draft: ReportDraft, bounds: readonly number[]):
 export const createReportSchema = z.object({
   title: z.string().trim().max(TITLE_MAX),
   body: z.string().trim().min(BODY_MIN).max(BODY_MAX),
+  district_id: z.string().optional(),
   village_id: z.string().min(1),
+  address_detail: z.string().trim().max(300).optional(),
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),
   visibility: z.enum(["PUBLIK", "RAHASIA"]),

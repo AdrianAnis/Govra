@@ -1,5 +1,4 @@
 import { LazyChatWidget } from "@/components/chat/lazy-chat-widget";
-import { ScrollProgress } from "@/components/layout/scroll-progress";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { listNotifications } from "@/lib/data/notifications";
@@ -11,9 +10,8 @@ export default async function PublicLayout({ children }: LayoutProps<"/">) {
 
   return (
     <>
-      <ScrollProgress />
       <SiteHeader user={user} notifications={notifications} />
-      <main id="konten" tabIndex={-1} className="outline-none flex-1">
+      <main id="konten" tabIndex={-1} className="outline-none flex-1 max-w-full overflow-x-clip">
         {children}
       </main>
       {!user && <SiteFooter />}

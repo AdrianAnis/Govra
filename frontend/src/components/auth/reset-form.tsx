@@ -10,7 +10,12 @@ import { PASSWORD_MIN, resetSchema } from "@/lib/auth-flow";
 
 type Errors = Partial<Record<string, string>>;
 
-function ResetForm() {
+interface ResetFormProps {
+  token?: string;
+  email?: string;
+}
+
+function ResetForm({ token, email }: ResetFormProps) {
   const router = useRouter();
   const [errors, setErrors] = useState<Errors>({});
   const [pending, setPending] = useState(false);
@@ -24,13 +29,13 @@ function ResetForm() {
       return;
     }
     if (form.get("konfirmasi") !== parsed.data.password) {
-      setErrors({ konfirmasi: "Kata sandi tidak sama." });
+      setErrors({ konfirmasi: "Konfirmasi kata sandi tidak cocok." });
       return;
     }
     setErrors({});
     setPending(true);
     try {
-      const result = await resetPassword(parsed.data.password);
+      const result = await resetPassword(parsed.data.password, email, token);
       router.push(result.next);
     } catch (failure) {
       setErrors({ form: failure instanceof Error ? failure.message : "Terjadi kendala. Coba lagi." });
@@ -55,7 +60,7 @@ function ResetForm() {
         <PasswordField
           id="konfirmasi"
           name="konfirmasi"
-          label="Ulangi Kata Sandi"
+          label="Ulangi Kata Sandi Baru"
           autoComplete="new-password"
           aria-invalid={errors.konfirmasi ? true : undefined}
         />
@@ -63,7 +68,7 @@ function ResetForm() {
       </div>
       <FieldError message={errors.form} />
       <Button type="submit" size="lg" disabled={pending}>
-        {pending ? "Menyimpan..." : "Simpan Kata Sandi"}
+        {pending ? "Menyimpan kata sandi..." : "Simpan Kata Sandi"}
       </Button>
     </form>
   );

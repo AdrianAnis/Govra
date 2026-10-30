@@ -98,7 +98,9 @@ function MilestoneSection({ milestones }: { milestones: Program["milestones"] })
   );
 }
 
-function UpdateSection({ updates }: { updates: Program["updates"] }) {
+type ProgramUpdateWithPhotos = Schema<"ProgramUpdate"> & { photos?: string[] };
+
+function UpdateSection({ updates }: { updates: ProgramUpdateWithPhotos[] }) {
   return (
     <section className="flex flex-1 flex-col gap-8">
       <PanelTitle>Riwayat pembaruan</PanelTitle>
@@ -106,15 +108,37 @@ function UpdateSection({ updates }: { updates: Program["updates"] }) {
         <p className="flex-1 rounded-lg border bg-surface p-6 text-fg-muted">Belum ada pembaruan.</p>
       ) : (
         <ol className="flex flex-1 flex-col divide-y rounded-lg border bg-surface">
-          {updates.map((update) => (
-            <li key={update.date} className="grid gap-2 p-6 sm:grid-cols-4 sm:gap-6">
+          {updates.map((update, idx) => (
+            <li key={idx} className="grid gap-2 p-6 sm:grid-cols-4 sm:gap-6">
               <div className="flex flex-col">
                 <span className="text-2xl font-bold tracking-tight tabular-nums">
                   {formatPercent(update.progress_percent)}
                 </span>
                 <span className="text-sm text-fg-muted tabular-nums">{formatDate(update.date)}</span>
               </div>
-              <p className="sm:col-span-3">{update.note}</p>
+              <div className="sm:col-span-3 flex flex-col gap-3">
+                <p className="leading-relaxed text-fg">{update.note}</p>
+                {update.photos && update.photos.length > 0 && (
+                  <div className="flex flex-wrap gap-2.5 pt-1">
+                    {update.photos.map((photoUrl, pIdx) => (
+                      <a
+                        key={pIdx}
+                        href={photoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group relative block size-24 overflow-hidden rounded-md border bg-surface-muted transition hover:border-primary"
+                      >
+                        <img
+                          src={photoUrl}
+                          alt="Foto dokumentasi progres"
+                          className="size-full object-cover transition-transform duration-200 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
             </li>
           ))}
         </ol>
@@ -178,16 +202,40 @@ function SummaryAside({ program }: { program: Program }) {
             {program.documentation.length === 0 ? (
               <p className="text-fg-muted">Belum ada dokumentasi.</p>
             ) : (
-              <ul className="flex flex-col">
-                {program.documentation.map((item) => (
-                  <li key={item.url}>
-                    <TextLink href={item.url} target="_blank" rel="noopener noreferrer">
+              <div className="grid grid-cols-2 gap-2.5">
+                {program.documentation.map((item, idx) => {
+                  const isImage = item.url.match(/\.(jpeg|jpg|png|webp)($|\?)/i) || item.url.includes("/reports/");
+                  if (isImage) {
+                    return (
+                      <a
+                        key={idx}
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group relative flex flex-col overflow-hidden rounded-md border bg-surface transition hover:border-primary"
+                      >
+                        <div className="aspect-video w-full overflow-hidden bg-surface-muted">
+                          <img
+                            src={item.url}
+                            alt={item.caption || "Dokumentasi"}
+                            className="size-full object-cover transition-transform duration-200 group-hover:scale-105"
+                            loading="lazy"
+                          />
+                        </div>
+                        <span className="p-1.5 text-[11px] font-medium text-fg-muted truncate">
+                          {item.caption || "Dokumentasi"}
+                        </span>
+                      </a>
+                    );
+                  }
+                  return (
+                    <TextLink key={idx} href={item.url} target="_blank" rel="noopener noreferrer">
                       <FileText aria-hidden className="size-4" />
                       {item.caption}
                     </TextLink>
-                  </li>
-                ))}
-              </ul>
+                  );
+                })}
+              </div>
             )}
           </AsideCard>
         </Reveal>

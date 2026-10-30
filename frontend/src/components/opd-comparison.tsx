@@ -22,8 +22,8 @@ function ValueLink({ indicator, opd }: { indicator: Indicator; opd: string }) {
   );
 }
 
-function OpdComparison({ columns, rows }: { columns: readonly Indicator[]; rows: readonly Row[] }) {
-  const sorted = [...rows].sort((a, b) => a.opd.name.localeCompare(b.opd.name, "id"));
+function OpdComparison({ columns, rows }: { columns: readonly Indicator[]; rows?: readonly Row[] | undefined }) {
+  const sorted = [...(rows ?? [])].sort((a, b) => a.opd.name.localeCompare(b.opd.name, "id"));
   return (
     <Reveal variant="blur">
       <div

@@ -34,6 +34,10 @@ function RegisterForm() {
       setErrors(found);
       return;
     }
+    if (form.get("konfirmasi") !== parsed.data.password) {
+      setErrors({ konfirmasi: "Konfirmasi kata sandi tidak cocok." });
+      return;
+    }
     setErrors({});
     setPending(true);
     try {
@@ -80,6 +84,16 @@ function RegisterForm() {
         <FieldError message={errors.password} />
       </div>
       <div className="flex flex-col gap-2">
+        <PasswordField
+          id="konfirmasi"
+          name="konfirmasi"
+          label="Ulangi Kata Sandi"
+          autoComplete="new-password"
+          aria-invalid={errors.konfirmasi ? true : undefined}
+        />
+        <FieldError message={errors.konfirmasi} />
+      </div>
+      <div className="flex flex-col gap-2">
         <label className="flex items-start gap-3 text-sm text-fg-muted">
           <input type="checkbox" name="setuju" className="mt-0.5 size-5 shrink-0 accent-primary" />
           <span>
@@ -90,7 +104,7 @@ function RegisterForm() {
       </div>
       <FieldError message={errors.form} />
       <Button type="submit" size="lg" disabled={pending}>
-        {pending ? "Mengirim kode..." : "Daftar"}
+        {pending ? "Mengirim kode OTP..." : "Daftar"}
       </Button>
     </form>
   );

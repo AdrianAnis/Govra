@@ -8,7 +8,7 @@ import { resendCode, verifyCode } from "@/lib/auth-client";
 import { CODE_LENGTH, RESEND_SECONDS } from "@/lib/auth-flow";
 
 interface VerifyFormProps {
-  demoCode: string | null;
+  demoCode?: string | null;
 }
 
 const EMPTY = Array.from({ length: CODE_LENGTH }, () => "");
@@ -18,7 +18,7 @@ function messageOf(failure: unknown): string {
   return failure instanceof Error ? failure.message : "Terjadi kendala. Coba lagi.";
 }
 
-function VerifyForm({ demoCode }: VerifyFormProps) {
+function VerifyForm({}: VerifyFormProps) {
   const router = useRouter();
   const [digits, setDigits] = useState<string[]>(EMPTY);
   const [pending, setPending] = useState(false);
@@ -74,7 +74,7 @@ function VerifyForm({ demoCode }: VerifyFormProps) {
       await resendCode();
       setSeconds(RESEND_SECONDS);
       setDigits(EMPTY);
-      setNotice("Kode baru sudah dikirim ke email Anda.");
+      setNotice("Kode baru sudah dikirim ke email Anda. Silakan periksa inbox atau spam.");
     } catch (failure) {
       setError(messageOf(failure));
     }
@@ -85,7 +85,7 @@ function VerifyForm({ demoCode }: VerifyFormProps) {
       <OtpField digits={digits} invalid={error !== null} disabled={pending} onChange={change} />
       <div className="min-h-5 text-center text-sm" aria-live="polite">
         {error && (
-          <p role="alert" className="font-medium text-fg">
+          <p role="alert" className="font-medium text-red-600">
             {error}
           </p>
         )}
@@ -97,7 +97,6 @@ function VerifyForm({ demoCode }: VerifyFormProps) {
       <Button type="button" variant="ghost" disabled={seconds > 0 || pending} onClick={resend}>
         {seconds > 0 ? `Kirim ulang kode dalam ${seconds} detik` : "Kirim ulang kode"}
       </Button>
-      {demoCode && <p className="text-center text-xs text-fg-muted">Mode demo: gunakan kode {demoCode}.</p>}
     </form>
   );
 }

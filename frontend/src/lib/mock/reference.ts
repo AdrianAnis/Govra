@@ -18,59 +18,94 @@ export const VILLAGE_ID = {
   flamboyan: "0197a000-0000-7000-8000-000000000018",
 } as const;
 
-interface VillageSeed {
+export interface VillageSeed {
   id: string;
   name: string;
   point: Schema<"GeoPoint">;
 }
 
-interface DistrictSeed {
+export interface DistrictSeed {
   id: string;
   name: string;
+  point: Schema<"GeoPoint">;
   villages: readonly VillageSeed[];
 }
 
-const DISTRICT_SEEDS: readonly DistrictSeed[] = [
-  {
-    id: DISTRICT_ID.utara,
-    name: "Kecamatan Utara",
-    villages: [
-      { id: VILLAGE_ID.melati, name: "Kelurahan Melati", point: { lat: -6.865, lng: 107.61 } },
-      { id: VILLAGE_ID.kenanga, name: "Desa Kenanga", point: { lat: -6.875, lng: 107.635} },
-    ],
-  },
-  {
-    id: DISTRICT_ID.selatan,
-    name: "Kecamatan Selatan",
-    villages: [
-      { id: VILLAGE_ID.anggrek, name: "Kelurahan Anggrek", point: { lat: -6.965, lng: 107.62 } },
-      { id: VILLAGE_ID.teratai, name: "Desa Teratai", point: { lat: -6.98, lng: 107.645 } },
-    ],
-  },
-  {
-    id: DISTRICT_ID.timur,
-    name: "Kecamatan Timur",
-    villages: [
-      { id: VILLAGE_ID.mawar, name: "Desa Mawar", point: { lat: -6.91, lng: 107.68 } },
-      { id: VILLAGE_ID.cempaka, name: "Kelurahan Cempaka", point: { lat: -6.93, lng: 107.7 } },
-    ],
-  },
-  {
-    id: DISTRICT_ID.barat,
-    name: "Kecamatan Barat",
-    villages: [
-      { id: VILLAGE_ID.dahlia, name: "Kelurahan Dahlia", point: { lat: -6.91, lng: 107.57 } },
-      { id: VILLAGE_ID.flamboyan, name: "Desa Flamboyan", point: { lat: -6.925, lng: 107.55 } },
-    ],
-  },
+const RAW_BANDUNG: { name: string; lat: number; lng: number; v: string[] }[] = [
+  { name: "Andir", lat: -6.9126, lng: 107.5833, v: ["Campaka", "Ciroyom", "Dunguscariang", "Garuda", "Kebonjeruk", "Maleber"] },
+  { name: "Antapani", lat: -6.9158, lng: 107.6622, v: ["Antapani Kidul", "Antapani Kulon", "Antapani Tengah", "Antapani Wetan"] },
+  { name: "Arcamanik", lat: -6.9213, lng: 107.6834, v: ["Cisaranten Bina Harapan", "Cisaranten Endah", "Cisaranten Kulon", "Sukamiskin"] },
+  { name: "Astanaanyar", lat: -6.9388, lng: 107.5997, v: ["Cibadak", "Karanganyar", "Karasak", "Nyengseret", "Panjunan", "Pelindunghewan"] },
+  { name: "Babakan Ciparay", lat: -6.9455, lng: 107.5758, v: ["Babakan", "Babakanciparay", "Cirangrang", "Margahayu Utara", "Margasuka", "Sukahaji"] },
+  { name: "Bandung Kidul", lat: -6.9582, lng: 107.6331, v: ["Batununggal", "Kujangsari", "Mengger", "Wates"] },
+  { name: "Bandung Kulon", lat: -6.9238, lng: 107.5672, v: ["Caringin", "Cibuntu", "Cigondewah Kaler", "Cigondewah Kidul", "Cigondewah Rahayu", "Cijerah", "Gempolsari", "Warungmuncang"] },
+  { name: "Bandung Wetan", lat: -6.9064, lng: 107.6189, v: ["Cihapit", "Citarum", "Tamansari"] },
+  { name: "Batununggal", lat: -6.9283, lng: 107.6366, v: ["Binong", "Cibangkong", "Gumuruh", "Kacapiring", "Kebongedang", "Kebonwaru", "Maleer", "Samoja"] },
+  { name: "Bojongloa Kaler", lat: -6.9317, lng: 107.5922, v: ["Babakan Asih", "Babakan Tarogong", "Jamika", "Kopo", "Suka Asih"] },
+  { name: "Bojongloa Kidul", lat: -6.9542, lng: 107.5975, v: ["Cibaduyut", "Cibaduyut Kidul", "Cibaduyut Wetan", "Kebon Lega", "Mekarwangi", "Situsaeur"] },
+  { name: "Buahbatu", lat: -6.9531, lng: 107.6644, v: ["Cijawura", "Jatisari", "Margasari", "Sekejati"] },
+  { name: "Cibeunying Kaler", lat: -6.8906, lng: 107.6319, v: ["Cigadung", "Cihaurgeulis", "Neglasari", "Sukaluyu"] },
+  { name: "Cibeunying Kidul", lat: -6.9022, lng: 107.6433, v: ["Cicadas", "Cikutra", "Padasuka", "Pasirlayung", "Sukamaju", "Sukapada"] },
+  { name: "Cibiru", lat: -6.9247, lng: 107.7144, v: ["Cipadung", "Cisurupan", "Palasari", "Pasirbiru"] },
+  { name: "Cicendo", lat: -6.9042, lng: 107.5947, v: ["Arjuna", "Husen Sastranegara", "Pajajaran", "Pamoyanan", "Pasirkaliki", "Sukaraja"] },
+  { name: "Cidadap", lat: -6.8581, lng: 107.6022, v: ["Ciumbuleuit", "Hegarmanah", "Ledeng"] },
+  { name: "Cinambo", lat: -6.9319, lng: 107.6975, v: ["Babakan Penghulu", "Cisaranten Wetan", "Pakemitan", "Sukamulya"] },
+  { name: "Coblong", lat: -6.8833, lng: 107.6167, v: ["Cipaganti", "Dago", "Lebakgede", "Lebaksiliwangi", "Sadangserang", "Sekeloa"] },
+  { name: "Gedebage", lat: -6.9589, lng: 107.6922, v: ["Cimincrang", "Cisaranten Rancabungur", "Rancabolang", "Rancanumpang"] },
+  { name: "Kiaracondong", lat: -6.9228, lng: 107.6492, v: ["Babakansari", "Babakansurabaya", "Cicaheum", "Kebonkangkung", "Kebonjayanti", "Sukapura"] },
+  { name: "Lengkong", lat: -6.9325, lng: 107.6206, v: ["Burangrang", "Cijagra", "Cikawao", "Lingkar Selatan", "Malabar", "Paledang", "Turangga"] },
+  { name: "Mandalajati", lat: -6.9047, lng: 107.6719, v: ["Jatihandap", "Karangpamulang", "Pasir Impun", "Sindangjaya"] },
+  { name: "Panyileukan", lat: -6.9406, lng: 107.7083, v: ["Cipadung Kidul", "Cipadung Kulon", "Cipadung Wetan", "Mekarmulya"] },
+  { name: "Rancasari", lat: -6.9558, lng: 107.6756, v: ["Cipamokolan", "Darwati", "Manjahlega", "Mekar Jaya"] },
+  { name: "Regol", lat: -6.9392, lng: 107.6111, v: ["Ancol", "Balonggede", "Ciateul", "Cigereleng", "Ciseureuh", "Pasirluyu", "Pungkur"] },
+  { name: "Sukajadi", lat: -6.8867, lng: 107.5897, v: ["Cipedes", "Pasteur", "Sukabungah", "Sukagalih", "Sukawarna"] },
+  { name: "Sukasari", lat: -6.8681, lng: 107.5856, v: ["Gegerkalong", "Isola", "Sarijadi", "Sukarasa"] },
+  { name: "Sumur Bandung", lat: -6.9178, lng: 107.6117, v: ["Babakanciamis", "Braga", "Kebonpisang", "Merdeka"] },
+  { name: "Ujungberung", lat: -6.9142, lng: 107.7008, v: ["Cigending", "Pasanggrahan", "Pasirendah", "Pasirjati", "Pasirwangi"] },
 ];
 
+const FALLBACK_DISTRICTS = [DISTRICT_ID.utara, DISTRICT_ID.selatan, DISTRICT_ID.timur, DISTRICT_ID.barat];
+const FALLBACK_VILLAGES = [
+  VILLAGE_ID.melati,
+  VILLAGE_ID.kenanga,
+  VILLAGE_ID.anggrek,
+  VILLAGE_ID.teratai,
+  VILLAGE_ID.mawar,
+  VILLAGE_ID.cempaka,
+  VILLAGE_ID.dahlia,
+  VILLAGE_ID.flamboyan,
+];
+
+let globalVillageCounter = 0;
+
+export const DISTRICT_SEEDS: readonly DistrictSeed[] = RAW_BANDUNG.map((d, dIdx) => {
+  const dHex = String(dIdx + 1).padStart(4, "0");
+  const districtId = FALLBACK_DISTRICTS[dIdx] ?? `0197a000-0000-7000-8000-${dHex}00000000`;
+  return {
+    id: districtId,
+    name: `Kecamatan ${d.name}`,
+    point: { lat: d.lat, lng: d.lng },
+    villages: d.v.map((vName, vIdx) => {
+      const vHex = String(vIdx + 1).padStart(4, "0");
+      const vId = FALLBACK_VILLAGES[globalVillageCounter] ?? `0197b000-0000-7000-8000-${dHex}${vHex}0000`;
+      globalVillageCounter++;
+      const offsetLat = (vIdx - (d.v.length - 1) / 2) * 0.005;
+      const offsetLng = vIdx % 2 === 0 ? 0.004 : -0.004;
+      return {
+        id: vId,
+        name: `Kelurahan ${vName}`,
+        point: { lat: Math.round((d.lat + offsetLat) * 10000) / 10000, lng: Math.round((d.lng + offsetLng) * 10000) / 10000 },
+      };
+    }),
+  };
+});
+
 export const REGION: Schema<"Region"> = {
-  name: "Kota Contoh",
-  head_label: "Wali Kota",
+  name: "Kota Bandung",
+  head_label: "Wali Kota Bandung",
   is_simulation: true,
   period: { start_year: 2025, end_year: 2030 },
-  bounds: [107.52, -7.0, 107.75, -6.84],
+  bounds: [107.54, -6.97, 107.74, -6.84],
 };
 
 export const DISTRICTS: Schema<"District">[] = DISTRICT_SEEDS.map((district) => ({
@@ -93,29 +128,49 @@ interface OpdSeed {
 
 export const OPDS: readonly OpdSeed[] = [
   {
-    ref: { code: "BMSDA", slug: "dinas-bina-marga-sda", name: "Dinas Bina Marga dan Sumber Daya Air" },
+    ref: { code: "DBM-SDA", slug: "bina-marga-sda", name: "Dinas Bina Marga & SDA" },
     categories: [
-      { code: "JALAN_RUSAK", name: "Jalan rusak" },
-      { code: "DRAINASE", name: "Saluran dan drainase" },
+      { code: "JALAN-RUSAK", name: "Jalan Rusak & Berlubang" },
+      { code: "DRAINASE-TERSUMBAT", name: "Saluran Air & Drainase Tersumbat" },
     ],
   },
   {
-    ref: { code: "LHK", slug: "dinas-lingkungan-hidup", name: "Dinas Lingkungan Hidup dan Kebersihan" },
-    categories: [{ code: "SAMPAH", name: "Sampah menumpuk" }],
+    ref: { code: "DLHK", slug: "lingkungan-hidup", name: "Dinas Lingkungan Hidup & Kebersihan" },
+    categories: [{ code: "SAMPAH-LIAR", name: "Tumpukan Sampah Liar" }],
   },
   {
-    ref: { code: "KES", slug: "dinas-kesehatan", name: "Dinas Kesehatan" },
-    categories: [{ code: "PUSKESMAS", name: "Layanan puskesmas" }],
+    ref: { code: "DISHUB", slug: "perhubungan", name: "Dinas Perhubungan" },
+    categories: [
+      { code: "LAMPU-JALAN", name: "Lampu Penerangan Jalan Padam" },
+      { code: "RAMBU-RUSAK", name: "Rambu & Traffic Light Rusak" },
+    ],
   },
   {
-    ref: { code: "PERHUB", slug: "dinas-perhubungan", name: "Dinas Perhubungan" },
-    categories: [{ code: "LAMPU_LALIN", name: "Lampu lalu lintas" }],
+    ref: { code: "DINKES", slug: "kesehatan", name: "Dinas Kesehatan" },
+    categories: [{ code: "FASILITAS-KESEHATAN", name: "Layanan Kesehatan & Faskes" }],
   },
   {
-    ref: { code: "DIKBUD", slug: "dinas-pendidikan-kebudayaan", name: "Dinas Pendidikan dan Kebudayaan" },
-    categories: [{ code: "SEKOLAH_RUSAK", name: "Fasilitas sekolah rusak" }],
+    ref: { code: "PUPR", slug: "pupr", name: "Dinas PUPR" },
+    categories: [{ code: "INFRASTRUKTUR-GEDUNG", name: "Infrastruktur & Gedung" }],
   },
 ];
+
+const OPD_ALIASES: Record<string, string> = {
+  BMSDA: "DBM-SDA",
+  LHK: "DLHK",
+  PERHUB: "DISHUB",
+  KES: "DINKES",
+  DIKBUD: "PUPR",
+};
+
+const CAT_ALIASES: Record<string, string> = {
+  JALAN_RUSAK: "JALAN-RUSAK",
+  DRAINASE: "DRAINASE-TERSUMBAT",
+  SAMPAH: "SAMPAH-LIAR",
+  LAMPU_LALIN: "LAMPU-JALAN",
+  PUSKESMAS: "FASILITAS-KESEHATAN",
+  SEKOLAH_RUSAK: "INFRASTRUKTUR-GEDUNG",
+};
 
 export function must<T>(value: T | undefined, what: string): T {
   if (value === undefined) {
@@ -125,11 +180,16 @@ export function must<T>(value: T | undefined, what: string): T {
 }
 
 export function opdRef(code: string): Schema<"OpdRef"> {
-  return must(OPDS.find((opd) => opd.ref.code === code)?.ref, code);
+  const resolved = OPD_ALIASES[code] ?? code;
+  return must(OPDS.find((opd) => opd.ref.code === resolved || opd.ref.code === code)?.ref, code);
 }
 
 export function categoryRef(code: string): Schema<"CategoryRef"> {
-  return must(OPDS.flatMap((opd) => opd.categories).find((item) => item.code === code), code);
+  const resolved = CAT_ALIASES[code] ?? code;
+  return must(
+    OPDS.flatMap((opd) => opd.categories).find((item) => item.code === resolved || item.code === code),
+    code,
+  );
 }
 
 export function goalRef(code: string): Schema<"Goal"> {
@@ -137,16 +197,13 @@ export function goalRef(code: string): Schema<"Goal"> {
 }
 
 export function districtRef(id: string): Schema<"AreaRef"> {
-  const district = must(DISTRICT_SEEDS.find((item) => item.id === id), id);
+  const district = DISTRICT_SEEDS.find((item) => item.id === id) ?? DISTRICT_SEEDS[0]!;
   return { id: district.id, name: district.name };
 }
 
 export function locationOf(villageId: string): Schema<"PublicLocation"> {
-  const district = must(
-    DISTRICT_SEEDS.find((item) => item.villages.some((village) => village.id === villageId)),
-    villageId,
-  );
-  const village = must(district.villages.find((item) => item.id === villageId), villageId);
+  const district = DISTRICT_SEEDS.find((item) => item.villages.some((v) => v.id === villageId)) ?? DISTRICT_SEEDS[0]!;
+  const village = district.villages.find((v) => v.id === villageId) ?? district.villages[0]!;
   return {
     village: { id: village.id, name: village.name },
     district: { id: district.id, name: district.name },

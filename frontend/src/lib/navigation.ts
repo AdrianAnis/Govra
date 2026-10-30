@@ -1,12 +1,11 @@
 import {
-  ChartColumn,
-  Database,
-  Flag,
+  Bell,
+  Building2,
   Inbox,
   LayoutDashboard,
   ScrollText,
-  Settings,
   ShieldCheck,
+  Target,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -26,7 +25,7 @@ export interface PanelNavItem extends NavLink {
 export const MAIN_NAV: readonly NavLink[] = [
   { href: "/proker", label: "Proker" },
   { href: "/rapor", label: "Rapor" },
-  { href: "/isu", label: "Isu" },
+  { href: "/isu", label: "Isu Terkini" },
 ];
 
 export const MEMBER_NAV: readonly NavLink[] = [
@@ -45,7 +44,7 @@ export const FOOTER_GROUPS: readonly FooterGroup[] = [
     links: [
       { href: "/proker", label: "Program kerja" },
       { href: "/rapor", label: "Rapor OPD" },
-      { href: "/isu", label: "Isu warga" },
+      { href: "/isu", label: "Isu Terkini" },
     ],
   },
   {
@@ -67,23 +66,37 @@ export const FOOTER_GROUPS: readonly FooterGroup[] = [
 ];
 
 export const PANEL_SECTIONS = {
+  pemerintah: {
+    title: "Govra · Admin Pusat",
+    items: [
+      { href: "/pemerintah", label: "Ringkasan", icon: LayoutDashboard, exact: true },
+      { href: "/admin/verifikasi", label: "Verifikasi", icon: ShieldCheck },
+      { href: "/pemerintah/proker", label: "Program Kerja", icon: Target },
+      { href: "/pemerintah/laporan", label: "Semua Laporan", icon: Inbox },
+      { href: "/pemerintah/kinerja-opd", label: "Kinerja OPD", icon: Building2 },
+      { href: "/admin/pengguna", label: "Akun Dinas", icon: Users },
+      { href: "/pemerintah/notifikasi", label: "Notifikasi", icon: Bell },
+    ],
+  },
   dinas: {
     title: "Govra · Dinas",
     items: [
-      { href: "/dinas", label: "Inbox Isu", icon: Inbox, exact: true },
-      { href: "/dinas/statistik", label: "Statistik", icon: ChartColumn },
+      { href: "/dinas", label: "Ringkasan", icon: LayoutDashboard, exact: true },
+      { href: "/dinas/tugas-proker", label: "Tugas Proker", icon: Target },
+      { href: "/dinas/laporan", label: "Semua Laporan", icon: Inbox },
+      { href: "/dinas/notifikasi", label: "Notifikasi", icon: Bell },
     ],
   },
   admin: {
-    title: "Govra · Admin",
+    title: "Govra · Admin Pusat",
     items: [
-      { href: "/admin", label: "Ringkasan", icon: LayoutDashboard, exact: true },
+      { href: "/pemerintah", label: "Ringkasan", icon: LayoutDashboard, exact: true },
       { href: "/admin/verifikasi", label: "Verifikasi", icon: ShieldCheck },
-      { href: "/admin/pengguna", label: "Pengguna", icon: Users },
-      { href: "/admin/master", label: "Master Data", icon: Database },
-      { href: "/admin/moderasi", label: "Moderasi", icon: Flag },
-      { href: "/admin/pengaturan", label: "Pengaturan", icon: Settings },
-      { href: "/admin/audit", label: "Audit", icon: ScrollText },
+      { href: "/pemerintah/proker", label: "Program Kerja", icon: Target },
+      { href: "/pemerintah/laporan", label: "Semua Laporan", icon: Inbox },
+      { href: "/pemerintah/kinerja-opd", label: "Kinerja OPD", icon: Building2 },
+      { href: "/admin/pengguna", label: "Akun Dinas", icon: Users },
+      { href: "/pemerintah/notifikasi", label: "Notifikasi", icon: Bell },
     ],
   },
 } satisfies Record<string, { title: string; items: readonly PanelNavItem[] }>;
