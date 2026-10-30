@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import type { ReportMapPoint } from "@/components/admin/admin-distribution-map";
 
-const BFF_KEY = process.env.BFF_SHARED_KEY || "413016c9d4970e8030a87654f65c11321dd77c97ecf9f4d95d1beca837faddb2";
+const BFF_KEY = process.env.BFF_SHARED_KEY || "";
 
 const OPD_NAMES: Record<string, string> = {
   "e0000000-0000-0000-0000-000000000001": "Dinas Bina Marga & SDA",
@@ -58,16 +58,18 @@ export async function getDistributionPoints(opdId?: string): Promise<ReportMapPo
     }
   } catch {}
 
-  const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
   const supabaseKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0c3NrbXhpcmNlZGhmZ2dxZW5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjY2MzM1MywiZXhwIjoyMTA4MjM5MzUzfQ.ATvm9u6Dm2cSZ_IiUkajOiIGgXA13jJgC8lU-LrXTXY";
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    "";
 
   try {
     let endpoint = `${supabaseUrl}/rest/v1/reports?select=id,code,title,description,status,opd_id,lat,lng,address_detail,created_at&order=created_at.desc&limit=150`;
     if (opdId) {
       endpoint += `&opd_id=eq.${encodeURIComponent(opdId)}`;
     }
+
     const [reportsRes, attachmentsRes] = await Promise.all([
       fetch(endpoint, {
         headers: {

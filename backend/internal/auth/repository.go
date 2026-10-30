@@ -59,7 +59,7 @@ func NewRepository(database *db.Database) Repository {
 			Email:        "walikota@kotacontoh.go.id",
 			PasswordHash: string(pwdHash),
 			DisplayName:  "Bpk. Ir. H. Ahmad Dahlan",
-			Role:         RoleKepalaDaerah,
+			Role:         RoleAdmin,
 			Status:       "ACTIVE",
 		},
 		{

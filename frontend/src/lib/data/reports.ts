@@ -77,7 +77,7 @@ export async function listMyReports(params: PageParams): Promise<Schema<"MyRepor
   const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
   try {
     const headers: Record<string, string> = {
-      "X-BFF-Key": process.env.BFF_SHARED_KEY || "413016c9d4970e8030a87654f65c11321dd77c97ecf9f4d95d1beca837faddb2",
+      "X-BFF-Key": process.env.BFF_SHARED_KEY || "",
     };
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
@@ -109,7 +109,7 @@ export async function getMyReport(code: string): Promise<Detail | null> {
   const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
   try {
     const headers: Record<string, string> = {
-      "X-BFF-Key": process.env.BFF_SHARED_KEY || "413016c9d4970e8030a87654f65c11321dd77c97ecf9f4d95d1beca837faddb2",
+      "X-BFF-Key": process.env.BFF_SHARED_KEY || "",
     };
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;

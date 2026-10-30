@@ -1,13 +1,10 @@
 import { type Role, getSafeRedirect, safeNext, SESSION_COOKIE } from "@/lib/session";
 
 const SEE_OTHER_STATUS = 303;
-const BFF_KEY = process.env.BFF_SHARED_KEY || "413016c9d4970e8030a87654f65c11321dd77c97ecf9f4d95d1beca837faddb2";
+const BFF_KEY = process.env.BFF_SHARED_KEY || "";
 
 function mapRole(role: string): Role {
-  if (role === "kepala_daerah") {
-    return "kepala_daerah";
-  }
-  if (role === "admin") {
+  if (role === "admin" || role === "kepala_daerah") {
     return "admin";
   }
   if (role === "dinas") {

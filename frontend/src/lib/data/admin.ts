@@ -67,7 +67,7 @@ function pending(): Schema<"VerificationItem">[] {
   return [...verify, ...transfer].sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
 }
 
-const BFF_KEY = process.env.BFF_SHARED_KEY || "413016c9d4970e8030a87654f65c11321dd77c97ecf9f4d95d1beca837faddb2";
+const BFF_KEY = process.env.BFF_SHARED_KEY || "";
 
 export async function getAdminOverview(): Promise<Schema<"AdminOverview">> {
   const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
@@ -95,8 +95,7 @@ export async function getAdminOverview(): Promise<Schema<"AdminOverview">> {
 
   const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
   const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0c3NrbXhpcmNlZGhmZ2dxZW5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjY2MzM1MywiZXhwIjoyMTA4MjM5MzUzfQ.ATvm9u6Dm2cSZ_IiUkajOiIGgXA13jJgC8lU-LrXTXY";
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
 
   try {
     const [reportsRes, issuesRes, profilesRes] = await Promise.all([
@@ -300,8 +299,7 @@ export async function routeIssue(id: string, input: RouteInput): Promise<Outcome
 
   const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
   const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0c3NrbXhpcmNlZGhmZ2dxZW5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjY2MzM1MywiZXhwIjoyMTA4MjM5MzUzfQ.ATvm9u6Dm2cSZ_IiUkajOiIGgXA13jJgC8lU-LrXTXY";
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
 
   try {
     const opdRes = await fetch(`${supabaseUrl}/rest/v1/opds?code=eq.${encodeURIComponent(input.opd_code)}&select=id`, {
@@ -376,8 +374,7 @@ export async function rejectIssue(id: string, input: RejectInput): Promise<Outco
 
   const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
   const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0c3NrbXhpcmNlZGhmZ2dxZW5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjY2MzM1MywiZXhwIjoyMTA4MjM5MzUzfQ.ATvm9u6Dm2cSZ_IiUkajOiIGgXA13jJgC8lU-LrXTXY";
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
 
   try {
     const fullReason = `${REJECTION_LABEL[input.reason] || input.reason}: ${input.explanation}`;
@@ -443,7 +440,7 @@ export async function listUsers(
         let role = "DINAS";
         const r = (u.role || "").toLowerCase();
         if (r === "admin") role = "ADMIN";
-        else if (r === "kepala_daerah") role = "KEPALA_DAERAH";
+        else if (r === "kepala_daerah" || r === "admin") role = "ADMIN";
         else if (r === "pelapor" || r === "citizen") role = "CITIZEN";
 
         return {
@@ -518,8 +515,7 @@ export async function updateUser(id: string, input: UpdateUserInput): Promise<Ou
 export async function listOpdsAdmin(): Promise<Schema<"OpdDetailList">> {
   const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
   const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0c3NrbXhpcmNlZGhmZ2dxZW5hIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjY2MzM1MywiZXhwIjoyMTA4MjM5MzUzfQ.ATvm9u6Dm2cSZ_IiUkajOiIGgXA13jJgC8lU-LrXTXY";
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
 
   try {
     const res = await fetch(`${supabaseUrl}/rest/v1/opds?select=id,code,name,slug,is_active&order=code.asc`, {

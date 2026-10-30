@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { rejectCrossOrigin } from "@/lib/origin";
 
-const BFF_KEY = process.env.BFF_SHARED_KEY || "413016c9d4970e8030a87654f65c11321dd77c97ecf9f4d95d1beca837faddb2";
+const BFF_KEY = process.env.BFF_SHARED_KEY || "";
 const API_BASE = process.env.API_BASE_URL || "http://localhost:8080";
 
 export async function POST(request: Request) {

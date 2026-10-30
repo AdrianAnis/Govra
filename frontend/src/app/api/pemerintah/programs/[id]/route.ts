@@ -7,7 +7,7 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   const user = await getSessionUser();
-  if (!user || (user.role !== "kepala_daerah" && user.role !== "admin")) {
+  if (!user || user.role !== "admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
@@ -30,7 +30,7 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   const user = await getSessionUser();
-  if (!user || (user.role !== "kepala_daerah" && user.role !== "admin")) {
+  if (!user || user.role !== "admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 

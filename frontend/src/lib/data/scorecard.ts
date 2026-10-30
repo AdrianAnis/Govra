@@ -7,7 +7,7 @@ export interface IndicatorItemFilters extends PageParams {
   opd?: string | undefined;
 }
 
-const BFF_KEY = process.env.BFF_SHARED_KEY || "413016c9d4970e8030a87654f65c11321dd77c97ecf9f4d95d1beca837faddb2";
+const BFF_KEY = process.env.BFF_SHARED_KEY || "";
 
 export async function getScorecard(): Promise<Schema<"Scorecard">> {
   const apiBase = process.env.API_BASE_URL || "http://localhost:8080";

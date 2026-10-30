@@ -225,6 +225,9 @@ func (c *Client) TranscribeAudio(ctx context.Context, audioBase64, mimeType stri
 }
 
 func (c *Client) generateContent(ctx context.Context, reqBody geminiRequest) (string, error) {
+	if c.apiKey == "" || c.apiKey == "test-gemini-key" || strings.HasPrefix(c.apiKey, "mock") {
+		return "{}", errors.New("gemini api key not configured")
+	}
 	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", c.model, c.apiKey)
 	data, err := json.Marshal(reqBody)
 	if err != nil {

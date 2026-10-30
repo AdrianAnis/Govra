@@ -128,9 +128,6 @@ func (s *service) CreateProgram(ctx context.Context, req CreateProgramRequest, r
 		return nil, errors.New("kode dan nama program wajib diisi")
 	}
 	approval := "APPROVED"
-	if role == "kepala_daerah" {
-		approval = "PROPOSED"
-	}
 	p := &Program{
 		Code:           req.Code,
 		Name:           req.Name,

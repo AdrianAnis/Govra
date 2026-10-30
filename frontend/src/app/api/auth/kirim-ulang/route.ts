@@ -3,7 +3,7 @@ import { errorResponse } from "@/lib/api-response";
 import { parsePending, PENDING_COOKIE } from "@/lib/auth-flow";
 import { invalid } from "@/lib/auth-route";
 
-const BFF_KEY = process.env.BFF_SHARED_KEY || "413016c9d4970e8030a87654f65c11321dd77c97ecf9f4d95d1beca837faddb2";
+const BFF_KEY = process.env.BFF_SHARED_KEY || "";
 
 export async function POST() {
   const jar = await cookies();
