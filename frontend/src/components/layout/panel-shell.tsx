@@ -28,22 +28,27 @@ function sectionLabel(title: string): string {
 
 const ON_DARK_BUTTON = "text-secondary-fg hover:bg-secondary-fg/10";
 
-interface PanelSectionProps {
+interface PanelSidebarProps {
   title: string;
   items: readonly PanelNavItem[];
   user: SessionUser;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 }
 
-function PanelSidebar({ title, items, user }: PanelSectionProps) {
-  const [collapsed, setCollapsed] = useState(false);
-  const { unreadCount } = useNotifications();
+function PanelSidebar({
+  title,
+  items,
+  user,
+  collapsed,
+  onToggleCollapsed,
+}: PanelSidebarProps) {
   const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
-  const notifHref = title.includes("Dinas") ? "/dinas/notifikasi" : "/pemerintah/notifikasi";
 
   return (
     <aside
       className={cn(
-        "sticky top-0 hidden h-dvh shrink-0 flex-col gap-4 bg-secondary p-3 text-secondary-fg transition-all duration-150 ease-ui md:flex",
+        "fixed inset-y-0 left-0 z-30 hidden h-dvh shrink-0 flex-col gap-4 bg-secondary p-3 text-secondary-fg transition-all duration-150 ease-ui md:flex",
         collapsed ? "w-20" : "w-64",
       )}
     >
@@ -55,20 +60,21 @@ function PanelSidebar({ title, items, user }: PanelSectionProps) {
           </span>
         )}
         <div className="flex items-center gap-1">
-
           <Button
             variant="ghost"
             size="icon"
             className={ON_DARK_BUTTON}
             aria-expanded={!collapsed}
-            onClick={() => setCollapsed((value) => !value)}
+            onClick={onToggleCollapsed}
           >
             <ToggleIcon aria-hidden />
             <span className="sr-only">{collapsed ? "Perluas menu" : "Ciutkan menu"}</span>
           </Button>
         </div>
       </div>
-      <PanelNav items={items} tone="dark" collapsed={collapsed} />
+      <div className="flex-1 overflow-y-auto no-scrollbar">
+        <PanelNav items={items} tone="dark" collapsed={collapsed} />
+      </div>
       <div className="mt-auto flex flex-col gap-2 border-t border-secondary-fg/20 pt-3">
         <div className={cn("flex items-center gap-3 px-2", collapsed && "justify-center px-0")}>
           <span className="grid size-9 shrink-0 place-items-center rounded-full bg-secondary-fg/15 text-sm font-semibold">
@@ -93,7 +99,13 @@ function PanelSidebar({ title, items, user }: PanelSectionProps) {
   );
 }
 
-function PanelMobileBar({ title, items, user }: PanelSectionProps) {
+interface PanelMobileProps {
+  title: string;
+  items: readonly PanelNavItem[];
+  user: SessionUser;
+}
+
+function PanelMobileBar({ title, items, user }: PanelMobileProps) {
   const [open, setOpen] = useState(false);
   const { unreadCount } = useNotifications();
   const notifHref = title.includes("Dinas") ? "/dinas/notifikasi" : "/pemerintah/notifikasi";
@@ -144,14 +156,26 @@ function PanelMobileBar({ title, items, user }: PanelSectionProps) {
 }
 
 function PanelShell({ section, user, children }: { section: PanelSection; user: SessionUser; children: ReactNode }) {
+  const [collapsed, setCollapsed] = useState(false);
   const { title, items } = PANEL_SECTIONS[section];
 
   return (
-    <div className="flex min-h-dvh max-w-full overflow-x-clip">
-      <PanelSidebar title={title} items={items} user={user} />
-      <div className="flex min-w-0 flex-1 flex-col max-w-full overflow-x-clip">
+    <div className="flex min-h-dvh max-w-full">
+      <PanelSidebar
+        title={title}
+        items={items}
+        user={user}
+        collapsed={collapsed}
+        onToggleCollapsed={() => setCollapsed((v) => !v)}
+      />
+      <div
+        className={cn(
+          "flex min-w-0 flex-1 flex-col max-w-full transition-all duration-150 ease-ui",
+          collapsed ? "md:pl-20" : "md:pl-64",
+        )}
+      >
         <PanelMobileBar title={title} items={items} user={user} />
-        <main id="konten" tabIndex={-1} className="outline-none flex-1 p-4 md:p-6 min-w-0 max-w-full overflow-x-clip">
+        <main id="konten" tabIndex={-1} className="outline-none flex-1 p-4 md:p-6 min-w-0 max-w-full">
           {children}
         </main>
       </div>
