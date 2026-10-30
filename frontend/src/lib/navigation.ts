@@ -66,12 +66,14 @@ export const FOOTER_GROUPS: readonly FooterGroup[] = [
 
 export const PANEL_SECTIONS = {
   pemerintah: {
-    title: "Govra · Eksekutif",
+    title: "Govra · Admin Pusat",
     items: [
       { href: "/pemerintah", label: "Ringkasan", icon: LayoutDashboard, exact: true },
-      { href: "/pemerintah/kinerja-opd", label: "Kinerja OPD", icon: Building2 },
-      { href: "/pemerintah/laporan", label: "Semua Laporan", icon: Inbox },
       { href: "/pemerintah/proker", label: "Program Kerja", icon: Target },
+      { href: "/pemerintah/laporan", label: "Semua Laporan", icon: Inbox },
+      { href: "/pemerintah/kinerja-opd", label: "Kinerja OPD", icon: Building2 },
+      { href: "/admin/pengguna", label: "Pengguna", icon: Users },
+      { href: "/admin/verifikasi", label: "Verifikasi", icon: ShieldCheck },
     ],
   },
   dinas: {
@@ -83,12 +85,14 @@ export const PANEL_SECTIONS = {
     ],
   },
   admin: {
-    title: "Govra · Admin",
+    title: "Govra · Admin Pusat",
     items: [
-      { href: "/admin", label: "Ringkasan", icon: LayoutDashboard, exact: true },
-      { href: "/admin/verifikasi", label: "Verifikasi", icon: ShieldCheck },
+      { href: "/pemerintah", label: "Ringkasan", icon: LayoutDashboard, exact: true },
+      { href: "/pemerintah/proker", label: "Program Kerja", icon: Target },
+      { href: "/pemerintah/laporan", label: "Semua Laporan", icon: Inbox },
+      { href: "/pemerintah/kinerja-opd", label: "Kinerja OPD", icon: Building2 },
       { href: "/admin/pengguna", label: "Pengguna", icon: Users },
-      { href: "/admin/audit", label: "Audit", icon: ScrollText },
+      { href: "/admin/verifikasi", label: "Verifikasi", icon: ShieldCheck },
     ],
   },
 } satisfies Record<string, { title: string; items: readonly PanelNavItem[] }>;

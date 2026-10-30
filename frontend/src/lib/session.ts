@@ -11,7 +11,7 @@ const HOME = "/";
 export const ROLE_HOME: Record<Role, string> = {
   pelapor: REPORTER_HOME,
   dinas: AGENCY_HOME,
-  admin: ADMIN_HOME,
+  admin: PEMERINTAH_HOME,
   kepala_daerah: PEMERINTAH_HOME,
 };
 
@@ -23,6 +23,23 @@ export function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
+export function canAccessPath(role: Role, pathname: string): boolean {
+  if (role === "admin" || role === "kepala_daerah") {
+    return (
+      pathname.startsWith(PEMERINTAH_HOME) ||
+      pathname.startsWith(ADMIN_HOME) ||
+      !isProtectedPath(pathname)
+    );
+  }
+  if (role === "dinas") {
+    return pathname.startsWith(AGENCY_HOME) || !isProtectedPath(pathname);
+  }
+  if (role === "pelapor") {
+    return pathname.startsWith(REPORTER_HOME) || !isProtectedPath(pathname);
+  }
+  return !isProtectedPath(pathname);
+}
+
 export function loginHref(next: string): string {
   return `/masuk?lanjut=${encodeURIComponent(next)}`;
 }
@@ -32,4 +49,12 @@ export function safeNext(value: string | null | undefined): string {
     return HOME;
   }
   return value;
+}
+
+export function getSafeRedirect(role: Role, next: string | null | undefined): string {
+  const safe = safeNext(next);
+  if (!safe || safe === "/" || safe === "/masuk" || !canAccessPath(role, safe)) {
+    return ROLE_HOME[role];
+  }
+  return safe;
 }

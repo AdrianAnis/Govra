@@ -1,4 +1,4 @@
-import { type Role, ROLE_HOME, safeNext, SESSION_COOKIE } from "@/lib/session";
+import { type Role, getSafeRedirect, safeNext, SESSION_COOKIE } from "@/lib/session";
 
 const SEE_OTHER_STATUS = 303;
 const BFF_KEY = process.env.BFF_SHARED_KEY || "413016c9d4970e8030a87654f65c11321dd77c97ecf9f4d95d1beca837faddb2";
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     if (res.ok) {
       const data = await res.json();
       const role = mapRole(data.profile?.role ?? "pelapor");
-      const targetPath = next === "/" ? ROLE_HOME[role] : next;
+      const targetPath = getSafeRedirect(role, next);
       const target = new URL(targetPath, request.url);
 
       const headers = new Headers({ Location: target.toString() });

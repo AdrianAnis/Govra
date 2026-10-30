@@ -2,13 +2,19 @@ import { forbidden, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { PanelShell } from "@/components/layout/panel-shell";
 import { getSessionUser } from "@/lib/data/session";
-import { PEMERINTAH_HOME } from "@/lib/routes";
+import { AGENCY_HOME, PEMERINTAH_HOME, REPORTER_HOME } from "@/lib/routes";
 import { loginHref } from "@/lib/session";
 
 export default async function PemerintahLayout({ children }: { children: ReactNode }) {
   const user = await getSessionUser();
   if (!user) {
     redirect(loginHref(PEMERINTAH_HOME));
+  }
+  if (user.role === "dinas") {
+    redirect(AGENCY_HOME);
+  }
+  if (user.role === "pelapor") {
+    redirect(REPORTER_HOME);
   }
   if (user.role !== "kepala_daerah" && user.role !== "admin") {
     forbidden();
