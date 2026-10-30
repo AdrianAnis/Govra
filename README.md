@@ -49,8 +49,6 @@ Menggunakan kecerdasan buatan (*Google Gemini 2.5 Flash*), Govra mengotomatiskan
 
 ## 📸 Tangkapan Layar & Antarmuka (Preview)
 
-> *Letakkan gambar tangkapan layar antarmuka di folder `frontend/public/` atau `frontend/public/screenshots/` sesuai tautan berkas di bawah.*
-
 ### 1. Beranda Publik (Landing Page)
 Menampilkan sorotan capaian Rapor Kota, pencarian terpadu, program kerja unggulan, serta peta sebaran isu masyarakat terkini.
 
