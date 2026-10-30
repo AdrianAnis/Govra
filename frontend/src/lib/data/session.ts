@@ -36,12 +36,20 @@ const OPD_NAME_LOOKUP: Record<string, string> = {
 
 export async function getSessionUser(): Promise<SessionUser | null> {
   const jar = await cookies();
+  const sessionToken = jar.get(SESSION_COOKIE)?.value;
+  if (!sessionToken) {
+    return null;
+  }
+  const role = parseRole(sessionToken);
+  if (!role) {
+    return null;
+  }
+
   const profileRaw = jar.get("govra_profile")?.value;
   if (profileRaw) {
     try {
       const p = JSON.parse(decodeURIComponent(profileRaw));
       const name = p.display_name || FALLBACK_NAME;
-      const role = parseRole(p.role) ?? "pelapor";
       const opdId = p.opd_id ?? null;
       const opdName = p.opd_name || (opdId ? OPD_NAME_LOOKUP[opdId] : null);
       return {
@@ -55,11 +63,11 @@ export async function getSessionUser(): Promise<SessionUser | null> {
       };
     } catch {}
   }
-  const role = parseRole(jar.get(SESSION_COOKIE)?.value);
-  if (!role) {
+
+  const profile = DEMO_PROFILES[role];
+  if (!profile) {
     return null;
   }
-  const profile = DEMO_PROFILES[role];
   const name = profile.display_name ?? FALLBACK_NAME;
   return {
     id: profile.id,

@@ -88,7 +88,7 @@ function PanelSidebar({
           )}
         </div>
         <a
-          href="/api/mock/keluar"
+          href="/api/auth/keluar"
           className={cn(buttonVariants({ variant: "ghost" }), ON_DARK_BUTTON, "justify-start", collapsed && "justify-center px-0")}
         >
           <LogOut aria-hidden />
@@ -128,7 +128,7 @@ function PanelMobileBar({ title, items, user }: PanelMobileProps) {
           </div>
           <div className="mt-auto flex flex-col gap-2 border-t p-3">
             <p className="px-2 text-sm font-semibold">{user.name}</p>
-            <a href="/api/mock/keluar" className={cn(buttonVariants({ variant: "ghost" }), "justify-start")}>
+            <a href="/api/auth/keluar" className={cn(buttonVariants({ variant: "ghost" }), "justify-start")}>
               <LogOut aria-hidden />
               Keluar
             </a>

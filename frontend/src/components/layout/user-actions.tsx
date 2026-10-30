@@ -59,7 +59,7 @@ function MobileAccount({ user, onNavigate }: { user: SessionUser; onNavigate: ()
       >
         {user.role === "pelapor" ? "Profil" : "Buka panel"}
       </NavLink>
-      <a href="/api/mock/keluar" className={cn(buttonVariants({ variant: "ghost" }), "justify-start")}>
+      <a href="/api/auth/keluar" className={cn(buttonVariants({ variant: "ghost" }), "justify-start")}>
         Keluar
       </a>
       {user.role === "pelapor" && <ReportLink onNavigate={onNavigate} />}

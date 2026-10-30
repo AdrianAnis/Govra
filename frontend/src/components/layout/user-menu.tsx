@@ -32,7 +32,7 @@ function UserMenu({ user }: { user: SessionUser }) {
           </MenuLinkItem>
         )}
         <MenuSeparator />
-        <MenuLinkItem render={<a href="/api/mock/keluar" />}>Keluar</MenuLinkItem>
+        <MenuLinkItem render={<a href="/api/auth/keluar" />}>Keluar</MenuLinkItem>
       </MenuContent>
     </Menu>
   );
