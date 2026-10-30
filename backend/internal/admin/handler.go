@@ -15,7 +15,7 @@ func NewHandler(s Service) *Handler {
 }
 
 func (h *Handler) RegisterRoutes(app fiber.Router) {
-	admin := app.Group("/admin", auth.RequireRole("admin", "kepala_daerah"))
+	admin := app.Group("/admin", auth.RequireRole("admin"))
 	admin.Get("/overview", h.GetOverview)
 	admin.Get("/users", h.ListUsers)
 	admin.Get("/productivity", h.GetProductivity)

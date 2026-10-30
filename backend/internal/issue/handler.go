@@ -25,7 +25,7 @@ func (h *Handler) RegisterRoutes(app fiber.Router) {
 	agency.Post("/issues/:id/transitions", h.Transition)
 	agency.Post("/issues/:id/evidence", h.UploadEvidence)
 
-	admin := app.Group("/admin", auth.RequireRole("admin", "kepala_daerah"))
+	admin := app.Group("/admin", auth.RequireRole("admin"))
 	admin.Get("/verification", h.ListVerificationQueue)
 	admin.Post("/issues/:id/route", h.RouteIssue)
 	admin.Post("/issues/:id/reject", h.RejectIssue)

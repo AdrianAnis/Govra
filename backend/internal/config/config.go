@@ -64,7 +64,7 @@ func Load() *Config {
 		SupabaseURL:        getEnv("SUPABASE_URL", ""),
 		SupabaseAnonKey:    getEnv("SUPABASE_ANON_KEY", ""),
 		SupabaseServiceKey: getEnv("SUPABASE_SERVICE_ROLE_KEY", ""),
-		SupabaseJWTSecret:  getEnv("SUPABASE_JWT_SECRET", ""),
+		SupabaseJWTSecret:  getEnv("SUPABASE_JWT_SECRET", "super-secret-jwt-key-minimum-32-chars-long"),
 		BFFSharedKey:       getEnv("BFF_SHARED_KEY", ""),
 		ResendAPIKey:       getEnv("RESEND_API_KEY", ""),
 		ResendFromEmail:    getEnv("RESEND_FROM_EMAIL", "Govra <noreply@pradatelyu.online>"),

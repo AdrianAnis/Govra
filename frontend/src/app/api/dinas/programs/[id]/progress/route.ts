@@ -7,7 +7,7 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   const user = await getSessionUser();
-  if (!user || (user.role !== "dinas" && user.role !== "admin")) {
+  if (!user || (user.role !== "dinas" && user.role !== "kepala_daerah" && user.role !== "admin")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 

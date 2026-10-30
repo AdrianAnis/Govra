@@ -16,7 +16,7 @@ export default async function PemerintahLayout({ children }: { children: ReactNo
   if (user.role === "pelapor") {
     redirect(REPORTER_HOME);
   }
-  if (user.role !== "admin") {
+  if (user.role !== "kepala_daerah" && user.role !== "admin") {
     forbidden();
   }
   return (

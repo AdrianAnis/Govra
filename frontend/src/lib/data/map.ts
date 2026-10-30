@@ -59,17 +59,17 @@ export async function getDistributionPoints(opdId?: string): Promise<ReportMapPo
   } catch {}
 
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    "";
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+
+  if (!supabaseUrl || !supabaseKey) {
+    return [];
+  }
 
   try {
     let endpoint = `${supabaseUrl}/rest/v1/reports?select=id,code,title,description,status,opd_id,lat,lng,address_detail,created_at&order=created_at.desc&limit=150`;
     if (opdId) {
       endpoint += `&opd_id=eq.${encodeURIComponent(opdId)}`;
     }
-
     const [reportsRes, attachmentsRes] = await Promise.all([
       fetch(endpoint, {
         headers: {

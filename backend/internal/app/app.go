@@ -33,10 +33,14 @@ func New(cfg *config.Config) (*Application, error) {
 	}
 
 	fiberApp := fiber.New(fiber.Config{
-		ErrorHandler: httpx.ErrorHandler,
+		ErrorHandler:          httpx.ErrorHandler,
+		ServerHeader:          "",
+		DisableStartupMessage: true,
+		BodyLimit:             16 * 1024 * 1024,
 	})
 	fiberApp.Use(recover.New())
 	fiberApp.Use(logger.New())
+	fiberApp.Use(httpx.SecurityHeadersMiddleware())
 	fiberApp.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization, X-BFF-Key, X-Request-Id",

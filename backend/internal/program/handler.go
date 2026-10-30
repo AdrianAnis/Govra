@@ -23,7 +23,7 @@ func (h *Handler) RegisterRoutes(app fiber.Router) {
 
 	app.Get("/programs", h.ListPrograms)
 	app.Get("/programs/:code", h.GetProgramByCode)
-	app.Post("/programs", auth.RequireRole("admin", "kepala_daerah"), h.CreateProgram)
+	app.Post("/programs", auth.RequireRole("admin"), h.CreateProgram)
 	app.Post("/programs/:code/approve", auth.RequireRole("admin"), h.ApproveProgram)
 	app.Post("/programs/:code/updates", auth.RequireRole("dinas", "admin"), h.AddUpdate)
 

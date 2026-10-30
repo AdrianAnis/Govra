@@ -3,7 +3,6 @@ import { errorResponse } from "@/lib/api-response";
 import { createReport } from "@/lib/data/reports";
 import { rejectCrossOrigin } from "@/lib/origin";
 import { checkFile, createReportSchema, MAX_FILES } from "@/lib/report-draft";
-import type { Schema } from "@/lib/schema";
 
 const CREATED_STATUS = 201;
 const INVALID_STATUS = 422;
@@ -14,11 +13,11 @@ function textOf(value: FormDataEntryValue | null): string {
 }
 
 async function uploadToSupabaseStorage(file: File): Promise<string | null> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
-  const serviceKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    "";
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  if (!supabaseUrl || !serviceKey) {
+    return null;
+  }
   const ext = file.name.split(".").pop() || "jpg";
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
   try {
@@ -40,58 +39,54 @@ async function uploadToSupabaseStorage(file: File): Promise<string | null> {
   return null;
 }
 
-export async function POST(request: Request): Promise<Response> {
-  const crossOriginError = rejectCrossOrigin(request);
-  if (crossOriginError) {
-    return crossOriginError;
+export async function POST(request: Request) {
+  const rejected = rejectCrossOrigin(request);
+  if (rejected) {
+    return rejected;
   }
-
   const form = await request.formData();
-  const fileEntries = form.getAll("attachments");
-  const files: File[] = [];
-  for (const entry of fileEntries) {
-    if (entry instanceof File && entry.size > 0) {
-      files.push(entry);
-    }
-  }
-
-  if (files.length > MAX_FILES) {
-    return errorResponse("ATTACHMENTS_COUNT", `Maksimal ${MAX_FILES} foto.`, INVALID_STATUS);
-  }
-
-  for (const file of files) {
-    const errorMsg = checkFile(file);
-    if (errorMsg) {
-      return errorResponse("INVALID_FILE", errorMsg, INVALID_STATUS);
-    }
-  }
-
-  const uploadedUrls: string[] = [];
-  for (const file of files) {
-    const publicUrl = await uploadToSupabaseStorage(file);
-    if (publicUrl) {
-      uploadedUrls.push(publicUrl);
-    }
-  }
-
-  const raw = {
+  const parsed = createReportSchema.safeParse({
     title: textOf(form.get("title")),
-    body: textOf(form.get("body") || form.get("description")),
-    village_id: textOf(form.get("village_id")) || "v-3273010001",
-    district_id: textOf(form.get("district_id")) || undefined,
+    body: textOf(form.get("body")),
+    district_id: textOf(form.get("district_id")),
+    village_id: textOf(form.get("village_id")),
     address_detail: textOf(form.get("address_detail")),
-    lat: form.get("lat") || -6.9175,
-    lng: form.get("lng") || 107.6191,
-    visibility: textOf(form.get("visibility")) || "PUBLIK",
-    turnstile_token: textOf(form.get("turnstile_token")) || "bypass-token",
-  };
-
-  const parsed = createReportSchema.safeParse(raw);
+    lat: textOf(form.get("lat")),
+    lng: textOf(form.get("lng")),
+    visibility: textOf(form.get("visibility")),
+    turnstile_token: textOf(form.get("turnstile_token")),
+  });
   if (!parsed.success) {
-    const issue = parsed.error.issues[0];
-    const msg = issue ? issue.message : "Data laporan tidak valid.";
-    return errorResponse("VALIDATION_ERROR", msg, INVALID_STATUS);
+    return errorResponse("VALIDATION_ERROR", "Isi laporan belum lengkap atau tidak valid.", INVALID_STATUS);
   }
+  const files = form.getAll("attachments").filter((entry): entry is File => entry instanceof File && entry.size > 0);
+  const problem = files.map(checkFile).find((message) => message !== null);
+  if (files.length > MAX_FILES || problem) {
+    return errorResponse("VALIDATION_ERROR", problem ?? `Maksimal ${MAX_FILES} foto.`, INVALID_STATUS);
+  }
+
+  const attachments = await Promise.all(
+    files.map(async (file, idx) => {
+      let url = await uploadToSupabaseStorage(file);
+      if (!url) {
+        const buf = Buffer.from(await file.arrayBuffer());
+        url = `data:${file.type || "image/jpeg"};base64,${buf.toString("base64")}`;
+      }
+      const cleanMime: "image/webp" | "image/jpeg" | "image/png" =
+        file.type === "image/png" ? "image/png" : file.type === "image/webp" ? "image/webp" : "image/jpeg";
+      return {
+        id: crypto.randomUUID(),
+        file_url: url,
+        url,
+        mime_type: cleanMime,
+        mime: cleanMime,
+        file_size: file.size,
+        size_bytes: file.size,
+        is_cover: idx === 0,
+        is_public_ok: true,
+      };
+    }),
+  );
 
   const jar = await cookies();
   const token = jar.get("govra_token")?.value;
@@ -99,62 +94,46 @@ export async function POST(request: Request): Promise<Response> {
 
   if (token) {
     try {
-      const beRes = await fetch(`${apiBase}/reports`, {
+      const latNum = Number(parsed.data.lat) || -6.9175;
+      const lngNum = Number(parsed.data.lng) || 107.6191;
+      const backendRes = await fetch(`${apiBase}/reports`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           "X-BFF-Key": BFF_KEY,
         },
         body: JSON.stringify({
           title: parsed.data.title,
-          body: parsed.data.body,
-          village_id: parsed.data.village_id,
+          description: parsed.data.body,
           district_id: parsed.data.district_id,
-          lat: parsed.data.lat,
-          lng: parsed.data.lng,
+          village_id: parsed.data.village_id,
           address_detail: parsed.data.address_detail,
+          lat: latNum,
+          lng: lngNum,
           visibility: parsed.data.visibility,
-          attachments: uploadedUrls,
+          attachments,
         }),
       });
-
-      if (beRes.ok) {
-        const beData = await beRes.json();
+      if (backendRes.ok) {
+        const data = await backendRes.json();
         return Response.json(
-          {
-            code: beData.code,
-            track_url: `/pelapor/laporan/${beData.code}`,
-          },
-          { status: CREATED_STATUS }
+          { code: data.code, status: data.status || "DIAJUKAN", created_at: data.created_at || new Date().toISOString() },
+          { status: CREATED_STATUS },
         );
       }
     } catch {}
   }
 
-  const attachments: Schema<"Attachment">[] = uploadedUrls.map((url, idx) => ({
-    id: `att-${idx}`,
-    url,
-    mime: "image/jpeg",
-    size_bytes: 1024,
-  }));
   const created = await createReport({
     title: parsed.data.title,
     body: parsed.data.body,
     villageId: parsed.data.village_id,
     visibility: parsed.data.visibility,
-    lat: parsed.data.lat,
-    lng: parsed.data.lng,
     attachments,
   });
   if (!created) {
-    return errorResponse("SERVER_ERROR", "Gagal menyimpan laporan", 500);
+    return errorResponse("VALIDATION_ERROR", "Kelurahan tidak dikenali.", INVALID_STATUS);
   }
-  return Response.json(
-    {
-      code: created.code,
-      track_url: `/pelapor/laporan/${created.code}`,
-    },
-    { status: CREATED_STATUS }
-  );
+  return Response.json(created, { status: CREATED_STATUS });
 }

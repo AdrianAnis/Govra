@@ -174,6 +174,9 @@ func (s *service) Login(ctx context.Context, req LoginRequest) (*AuthResponse, e
 	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(req.Password)); err != nil {
 		return nil, errors.New("email atau kata sandi salah")
 	}
+	if string(u.Role) == "kepala_daerah" {
+		u.Role = RoleAdmin
+	}
 	token, err := s.tokenManager.Generate(u.ID, u.Email, u.DisplayName, string(u.Role), u.OpdID)
 	if err != nil {
 		return nil, err

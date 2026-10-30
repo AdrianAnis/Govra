@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/data/session";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
-const serviceKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-  "";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 export async function POST(request: Request) {
   const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Sesi tidak valid atau telah berakhir" }, { status: 401 });
+  }
+
+  if (!supabaseUrl || !serviceKey) {
+    return NextResponse.json({ error: "Layanan penyimpanan berkas belum dikonfigurasi" }, { status: 500 });
   }
 
   try {

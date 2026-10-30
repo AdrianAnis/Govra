@@ -16,7 +16,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   if (user.role === "pelapor") {
     redirect(REPORTER_HOME);
   }
-  if (user.role !== "admin") {
+  if (user.role !== "admin" && user.role !== "kepala_daerah") {
     forbidden();
   }
   return (

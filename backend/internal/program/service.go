@@ -127,7 +127,6 @@ func (s *service) CreateProgram(ctx context.Context, req CreateProgramRequest, r
 	if req.Code == "" || req.Name == "" {
 		return nil, errors.New("kode dan nama program wajib diisi")
 	}
-	approval := "APPROVED"
 	p := &Program{
 		Code:           req.Code,
 		Name:           req.Name,
@@ -138,7 +137,7 @@ func (s *service) CreateProgram(ctx context.Context, req CreateProgramRequest, r
 		StartDate:      req.StartDate,
 		EndDate:        req.EndDate,
 		Status:         StatusBelumDimulai,
-		ApprovalStatus: approval,
+		ApprovalStatus: "APPROVED",
 		Progress:       0,
 		Budget: ProgramBudget{
 			Pagu:        req.BudgetPagu,

@@ -15,7 +15,7 @@ export default async function ReporterLayout({ children }: { children: ReactNode
   if (user.role === "dinas") {
     redirect(AGENCY_HOME);
   }
-  if (user.role === "admin") {
+  if (user.role === "admin" || user.role === "kepala_daerah") {
     redirect(PEMERINTAH_HOME);
   }
   if (user.role !== "pelapor") {
