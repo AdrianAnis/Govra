@@ -309,7 +309,6 @@ Gunakan kredensial bawaan berikut untuk menguji coba seluruh skenario peran:
 | Peran | Instansi / Jabatan | Email | Kata Sandi | Deskripsi Akses |
 |---|---|---|---|---|
 | **Admin Pusat** | Administrator Utama & Wali Kota | `admin@kotacontoh.go.id` | `password123` | Akses verifikasi, alokasi OPD, manajemen proker, dan ringkasan eksekutif |
-| **Admin Pusat** | Wali Kota | `walikota@kotacontoh.go.id` | `password123` | Akses eksekutif pimpinan daerah dan monitoring capaian kota |
 | **Dinas** | Dinas Bina Marga & Sumber Daya Air | `dbmsda@kotacontoh.go.id` | `password123` | Penanganan isu jalan rusak, jembatan, drainase, dan update proker jalan |
 | **Dinas** | Dinas Lingkungan Hidup & Kebersihan | `dlhk@kotacontoh.go.id` | `password123` | Penanganan sampah liar, kebersihan, taman, dan TPS 3R |
 | **Dinas** | Dinas Perhubungan | `dishub@kotacontoh.go.id` | `password123` | Penanganan rambu, lampu PJU padam, marka, dan manajemen lalu lintas |
