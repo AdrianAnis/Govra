@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 
 	"govra/internal/admin"
+	"govra/internal/assistant"
 	"govra/internal/auth"
 	"govra/internal/config"
 	"govra/internal/feed"
@@ -83,6 +84,12 @@ func New(cfg *config.Config) (*Application, error) {
 	adminSvc := admin.NewService(database)
 	adminHandler := admin.NewHandler(adminSvc)
 	adminHandler.RegisterRoutes(fiberApp)
+
+	asstClient := ai.NewAssistantClient(cfg.GeminiAPIKeyAsst, cfg.GeminiModel)
+	asstRepo := assistant.NewRepository(database, progRepo, repRepo)
+	asstSvc := assistant.NewService(asstRepo, asstClient)
+	asstHandler := assistant.NewHandler(asstSvc)
+	asstHandler.RegisterRoutes(fiberApp)
 
 	return &Application{
 		FiberApp: fiberApp,
