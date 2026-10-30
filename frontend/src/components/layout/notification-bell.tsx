@@ -14,10 +14,17 @@ function NotificationBell({ notifications: initialNotifications }: { notificatio
   const [open, setOpen] = useState(false);
   const context = useNotifications();
   const list = context.notifications.length > 0 ? context.notifications : initialNotifications ?? [];
-  const unread = context.unreadCount > 0 ? context.unreadCount : list.filter((item) => item.unread).length;
+  const unread = context.unreadCount;
+
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (isOpen) {
+      context.markAllAsRead();
+    }
+  };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger
         aria-label={unread > 0 ? `Notifikasi, ${unread} belum dibaca` : "Notifikasi"}
         className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "relative")}

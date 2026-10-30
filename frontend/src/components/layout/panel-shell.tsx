@@ -157,11 +157,11 @@ function PanelShell({ section, user, children }: { section: PanelSection; user: 
   const { title, items } = PANEL_SECTIONS[section];
 
   return (
-    <div className="flex min-h-dvh">
+    <div className="flex min-h-dvh max-w-full overflow-x-clip">
       <PanelSidebar title={title} items={items} user={user} />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col max-w-full overflow-x-clip">
         <PanelMobileBar title={title} items={items} user={user} />
-        <main id="konten" tabIndex={-1} className="outline-none flex-1 p-4 md:p-6">
+        <main id="konten" tabIndex={-1} className="outline-none flex-1 p-4 md:p-6 min-w-0 max-w-full overflow-x-clip">
           {children}
         </main>
       </div>

@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="id" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col max-w-full overflow-x-clip">
         <SkipLink />
         <NotificationsProvider>{children}</NotificationsProvider>
       </body>

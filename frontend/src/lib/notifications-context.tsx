@@ -18,6 +18,8 @@ interface NotificationsContextValue {
   markTabVisited: (tabHref: string) => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
+  deleteNotification: (id: string) => void;
+  clearAllNotifications: () => void;
   refresh: () => Promise<void>;
   loading: boolean;
 }
@@ -26,6 +28,7 @@ const NotificationsContext = createContext<NotificationsContextValue | null>(nul
 
 const STORAGE_VISITED_KEY = "govra_tab_visited_v1";
 const STORAGE_READ_KEY = "govra_read_notifications_v1";
+const STORAGE_DELETED_KEY = "govra_deleted_notifications_v1";
 
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -36,6 +39,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   });
   const [visitedTabs, setVisitedTabs] = useState<Record<string, number>>({});
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,6 +51,10 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       const storedRead = localStorage.getItem(STORAGE_READ_KEY);
       if (storedRead) {
         setReadIds(new Set(JSON.parse(storedRead)));
+      }
+      const storedDeleted = localStorage.getItem(STORAGE_DELETED_KEY);
+      if (storedDeleted) {
+        setDeletedIds(new Set(JSON.parse(storedDeleted)));
       }
     } catch {}
   }, []);
@@ -79,7 +87,20 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       } catch {}
       return updated;
     });
-  }, []);
+
+    setReadIds((prev) => {
+      const updated = new Set(prev);
+      for (const item of feed.items) {
+        if (item.tabKey === tabHref) {
+          updated.add(item.id);
+        }
+      }
+      try {
+        localStorage.setItem(STORAGE_READ_KEY, JSON.stringify(Array.from(updated)));
+      } catch {}
+      return updated;
+    });
+  }, [feed.items]);
 
   useEffect(() => {
     if (pathname) {
@@ -110,6 +131,11 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     for (const key of Object.keys(feed.tabActivity)) {
       newVisited[key] = now;
     }
+    for (const item of feed.items) {
+      if (item.tabKey) {
+        newVisited[item.tabKey] = now;
+      }
+    }
     setVisitedTabs((prev) => {
       const updated = { ...prev, ...newVisited };
       try {
@@ -119,35 +145,52 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     });
   }, [feed]);
 
-  const hasTabUnread = useCallback(
-    (tabHref: string): boolean => {
-      const lastVisited = visitedTabs[tabHref] ?? 0;
-      const activityTime = feed.tabActivity[tabHref];
-      if (activityTime) {
-        const actMs = new Date(activityTime).getTime();
-        if (actMs > lastVisited) {
-          return true;
-        }
+  const deleteNotification = useCallback((id: string) => {
+    setDeletedIds((prev) => {
+      const updated = new Set(prev);
+      updated.add(id);
+      try {
+        localStorage.setItem(STORAGE_DELETED_KEY, JSON.stringify(Array.from(updated)));
+      } catch {}
+      return updated;
+    });
+  }, []);
+
+  const clearAllNotifications = useCallback(() => {
+    setDeletedIds((prev) => {
+      const updated = new Set(prev);
+      for (const item of feed.items) {
+        updated.add(item.id);
       }
+      try {
+        localStorage.setItem(STORAGE_DELETED_KEY, JSON.stringify(Array.from(updated)));
+      } catch {}
+      return updated;
+    });
+  }, [feed.items]);
 
-      const hasUnreadItem = feed.items.some((item) => {
-        if (item.tabKey !== tabHref) return false;
-        if (readIds.has(item.id)) return false;
-        const itemMs = new Date(item.timestamp).getTime();
-        return itemMs > lastVisited;
-      });
+  const activeItems = feed.items.filter((item) => !deletedIds.has(item.id));
 
-      return hasUnreadItem;
-    },
-    [feed, visitedTabs, readIds],
-  );
-
-  const notificationsWithReadState = feed.items.map((item) => ({
-    ...item,
-    unread: (item.unread || !visitedTabs[item.tabKey]) && !readIds.has(item.id),
-  }));
+  const notificationsWithReadState = activeItems.map((item) => {
+    if (readIds.has(item.id)) {
+      return { ...item, unread: false };
+    }
+    const lastVisited = visitedTabs[item.tabKey] ?? 0;
+    const itemTime = new Date(item.timestamp).getTime();
+    if (lastVisited >= itemTime) {
+      return { ...item, unread: false };
+    }
+    return { ...item, unread: true };
+  });
 
   const dynamicUnreadCount = notificationsWithReadState.filter((i) => i.unread).length;
+
+  const hasTabUnread = useCallback(
+    (tabHref: string): boolean => {
+      return notificationsWithReadState.some((item) => item.tabKey === tabHref && item.unread);
+    },
+    [notificationsWithReadState],
+  );
 
   return (
     <NotificationsContext.Provider
@@ -158,6 +201,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         markTabVisited,
         markAsRead,
         markAllAsRead,
+        deleteNotification,
+        clearAllNotifications,
         refresh: fetchNotifications,
         loading,
       }}
@@ -177,6 +222,8 @@ export function useNotifications() {
       markTabVisited: () => {},
       markAsRead: () => {},
       markAllAsRead: () => {},
+      deleteNotification: () => {},
+      clearAllNotifications: () => {},
       refresh: async () => {},
       loading: false,
     };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Bell,
@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Sparkles,
   Target,
+  Trash2,
 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -26,9 +27,21 @@ interface Props {
 }
 
 export function NotificationCenter({ role = "pemerintah" }: Props) {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, loading } =
-    useNotifications();
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    clearAllNotifications,
+    loading,
+  } = useNotifications();
+
   const [selectedFilter, setSelectedFilter] = useState<string>("ALL");
+
+  useEffect(() => {
+    markAllAsRead();
+  }, [markAllAsRead]);
 
   const filteredNotifications = useMemo(() => {
     return notifications.filter((item) => {
@@ -62,17 +75,30 @@ export function NotificationCenter({ role = "pemerintah" }: Props) {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title={headerTitle} description={headerDesc}>
-        {unreadCount > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={markAllAsRead}
-            className="flex items-center gap-1.5 text-xs font-semibold"
-          >
-            <CheckCheck className="size-4 text-primary" />
-            Tandai Semua Sudah Dibaca
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {unreadCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={markAllAsRead}
+              className="flex items-center gap-1.5 text-xs font-semibold"
+            >
+              <CheckCheck className="size-4 text-primary" />
+              Tandai Semua Sudah Dibaca
+            </Button>
+          )}
+          {notifications.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearAllNotifications}
+              className="flex items-center gap-1.5 text-xs font-semibold text-fg-muted hover:text-destructive"
+            >
+              <Trash2 className="size-4" />
+              Hapus Semua
+            </Button>
+          )}
+        </div>
       </PageHeader>
 
       <div className="flex flex-wrap items-center gap-2 border-b pb-3">
@@ -258,6 +284,15 @@ export function NotificationCenter({ role = "pemerintah" }: Props) {
                     Buka Halaman
                     <ExternalLink className="size-3.5" />
                   </Link>
+                  <button
+                    type="button"
+                    onClick={() => deleteNotification(item.id)}
+                    title="Hapus notifikasi ini"
+                    aria-label="Hapus notifikasi"
+                    className="inline-flex size-8 items-center justify-center rounded-md border border-border bg-surface text-fg-muted hover:border-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
                 </div>
               </div>
             );

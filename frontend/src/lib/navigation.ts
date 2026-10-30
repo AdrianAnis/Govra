@@ -31,7 +31,6 @@ export const MAIN_NAV: readonly NavLink[] = [
 export const MEMBER_NAV: readonly NavLink[] = [
   { href: REPORTER_HOME, label: "Laporan saya", exact: true, alsoActive: [REPORT_DETAIL_PREFIX] },
   ...MAIN_NAV,
-  { href: "/pelapor/notifikasi", label: "Notifikasi" },
 ];
 
 export interface FooterGroup {
