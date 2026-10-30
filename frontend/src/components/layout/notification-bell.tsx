@@ -6,12 +6,15 @@ import { useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { Notification } from "@/lib/data/notifications";
+import { useNotifications } from "@/lib/notifications-context";
 import { cn } from "@/lib/utils";
-import { reportHref, REPORTER_HOME } from "@/lib/routes";
+import { reportHref } from "@/lib/routes";
 
-function NotificationBell({ notifications }: { notifications: readonly Notification[] }) {
+function NotificationBell({ notifications: initialNotifications }: { notifications?: readonly Notification[] }) {
   const [open, setOpen] = useState(false);
-  const unread = notifications.filter((item) => item.unread).length;
+  const context = useNotifications();
+  const list = context.notifications.length > 0 ? context.notifications : initialNotifications ?? [];
+  const unread = context.unreadCount > 0 ? context.unreadCount : list.filter((item) => item.unread).length;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -21,32 +24,40 @@ function NotificationBell({ notifications }: { notifications: readonly Notificat
       >
         <Bell aria-hidden />
         {unread > 0 && (
-          <span aria-hidden className="absolute top-2 right-2 size-2.5 rounded-full bg-primary ring-2 ring-surface" />
+          <span aria-hidden className="absolute top-2 right-2 size-2.5 rounded-full bg-amber-500 ring-2 ring-surface animate-pulse" />
         )}
       </PopoverTrigger>
       <PopoverContent>
         <div className="flex items-center justify-between border-b px-5 py-4">
-          <p className="font-semibold">Notifikasi</p>
-          {unread > 0 && <p className="text-sm text-fg-muted">{unread} baru</p>}
+          <p className="font-semibold text-sm">Notifikasi</p>
+          {unread > 0 && <p className="text-xs font-semibold text-amber-600 dark:text-amber-400">{unread} baru</p>}
         </div>
-        {notifications.length === 0 ? (
+        {list.length === 0 ? (
           <p className="px-5 py-8 text-center text-sm text-fg-muted">Belum ada notifikasi.</p>
         ) : (
           <ul className="flex max-h-96 flex-col divide-y overflow-y-auto">
-            {notifications.map((item) => (
+            {list.slice(0, 5).map((item) => (
               <li key={item.id}>
                 <Link
-                  href={reportHref(item.code)}
-                  onClick={() => setOpen(false)}
-                  className="flex items-start gap-3 px-5 py-4 transition-colors duration-150 hover:bg-surface-muted"
+                  href={item.href || reportHref(item.code)}
+                  onClick={() => {
+                    context.markAsRead(item.id);
+                    setOpen(false);
+                  }}
+                  className="flex items-start gap-3 px-5 py-3.5 transition-colors duration-150 hover:bg-surface-muted"
                 >
                   <span
                     aria-hidden
-                    className={cn("mt-1.5 size-2 shrink-0 rounded-full", item.unread ? "bg-primary" : "bg-transparent")}
+                    className={cn(
+                      "mt-1.5 size-2 shrink-0 rounded-full",
+                      item.unread ? "bg-amber-500" : "bg-transparent",
+                    )}
                   />
                   <span className="flex flex-col gap-0.5">
-                    <span className={cn("text-sm", item.unread && "font-semibold")}>{item.text}</span>
-                    <span className="text-xs text-fg-muted">{item.when}</span>
+                    <span className={cn("text-xs leading-snug", item.unread ? "font-semibold text-fg" : "text-fg-muted")}>
+                      {item.title || item.text}
+                    </span>
+                    <span className="text-[11px] text-fg-subtle">{item.when}</span>
                   </span>
                 </Link>
               </li>
@@ -54,11 +65,11 @@ function NotificationBell({ notifications }: { notifications: readonly Notificat
           </ul>
         )}
         <Link
-          href={REPORTER_HOME}
+          href="/pelapor/notifikasi"
           onClick={() => setOpen(false)}
-          className="block border-t px-5 py-3.5 text-center text-sm font-semibold text-primary transition-colors hover:bg-surface-muted"
+          className="block border-t px-5 py-3 text-center text-xs font-semibold text-primary transition-colors hover:bg-surface-muted"
         >
-          Lihat semua laporan
+          Buka pusat notifikasi
         </Link>
       </PopoverContent>
     </Popover>

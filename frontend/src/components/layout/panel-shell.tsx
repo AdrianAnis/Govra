@@ -1,6 +1,7 @@
 "use client";
 
-import { LogOut, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Bell, LogOut, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { Logo } from "@/components/brand/logo";
 import { PanelNav } from "@/components/layout/panel-nav";
@@ -18,6 +19,7 @@ import {
   type PanelNavItem,
   type PanelSection,
 } from "@/lib/navigation";
+import { useNotifications } from "@/lib/notifications-context";
 import { cn } from "@/lib/utils";
 
 function sectionLabel(title: string): string {
@@ -34,7 +36,9 @@ interface PanelSectionProps {
 
 function PanelSidebar({ title, items, user }: PanelSectionProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const { unreadCount } = useNotifications();
   const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
+  const notifHref = title.includes("Dinas") ? "/dinas/notifikasi" : "/pemerintah/notifikasi";
 
   return (
     <aside
@@ -50,16 +54,29 @@ function PanelSidebar({ title, items, user }: PanelSectionProps) {
             <span className="text-xs font-semibold text-secondary-fg/70">{sectionLabel(title)}</span>
           </span>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className={ON_DARK_BUTTON}
-          aria-expanded={!collapsed}
-          onClick={() => setCollapsed((value) => !value)}
-        >
-          <ToggleIcon aria-hidden />
-          <span className="sr-only">{collapsed ? "Perluas menu" : "Ciutkan menu"}</span>
-        </Button>
+        <div className="flex items-center gap-1">
+          <Link
+            href={notifHref}
+            className={cn(buttonVariants({ variant: "ghost", size: "icon" }), ON_DARK_BUTTON, "relative")}
+            aria-label={unreadCount > 0 ? `Pusat Notifikasi, ${unreadCount} belum dibaca` : "Pusat Notifikasi"}
+            title="Pusat Notifikasi"
+          >
+            <Bell className="size-4" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-amber-500 ring-2 ring-secondary animate-pulse" />
+            )}
+          </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={ON_DARK_BUTTON}
+            aria-expanded={!collapsed}
+            onClick={() => setCollapsed((value) => !value)}
+          >
+            <ToggleIcon aria-hidden />
+            <span className="sr-only">{collapsed ? "Perluas menu" : "Ciutkan menu"}</span>
+          </Button>
+        </div>
       </div>
       <PanelNav items={items} tone="dark" collapsed={collapsed} />
       <div className="mt-auto flex flex-col gap-2 border-t border-secondary-fg/20 pt-3">
@@ -88,6 +105,8 @@ function PanelSidebar({ title, items, user }: PanelSectionProps) {
 
 function PanelMobileBar({ title, items, user }: PanelSectionProps) {
   const [open, setOpen] = useState(false);
+  const { unreadCount } = useNotifications();
+  const notifHref = title.includes("Dinas") ? "/dinas/notifikasi" : "/pemerintah/notifikasi";
 
   return (
     <header className="flex h-14 items-center gap-2 bg-secondary px-3 text-secondary-fg md:hidden">
@@ -118,6 +137,18 @@ function PanelMobileBar({ title, items, user }: PanelSectionProps) {
         <Logo className="h-6" />
         <span className="text-sm font-semibold text-fg-muted">{sectionLabel(title)}</span>
       </span>
+      <div className="ml-auto flex items-center gap-1">
+        <Link
+          href={notifHref}
+          className={cn(buttonVariants({ variant: "ghost", size: "icon" }), ON_DARK_BUTTON, "relative")}
+          aria-label={unreadCount > 0 ? `Pusat Notifikasi, ${unreadCount} belum dibaca` : "Pusat Notifikasi"}
+        >
+          <Bell className="size-5" />
+          {unreadCount > 0 && (
+            <span className="absolute top-2 right-2 size-2 rounded-full bg-amber-500 ring-2 ring-secondary animate-pulse" />
+          )}
+        </Link>
+      </div>
     </header>
   );
 }

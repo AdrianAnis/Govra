@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { SkipLink } from "@/components/layout/skip-link";
+import { NotificationsProvider } from "@/lib/notifications-context";
 import "./globals.css";
 
 const inter = Inter({
@@ -21,7 +22,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="id" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <SkipLink />
-        {children}
+        <NotificationsProvider>{children}</NotificationsProvider>
       </body>
     </html>
   );

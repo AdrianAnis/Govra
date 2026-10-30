@@ -1,4 +1,5 @@
 import {
+  Bell,
   Building2,
   Inbox,
   LayoutDashboard,
@@ -30,6 +31,7 @@ export const MAIN_NAV: readonly NavLink[] = [
 export const MEMBER_NAV: readonly NavLink[] = [
   { href: REPORTER_HOME, label: "Laporan saya", exact: true, alsoActive: [REPORT_DETAIL_PREFIX] },
   ...MAIN_NAV,
+  { href: "/pelapor/notifikasi", label: "Notifikasi" },
 ];
 
 export interface FooterGroup {
@@ -74,6 +76,7 @@ export const PANEL_SECTIONS = {
       { href: "/pemerintah/laporan", label: "Semua Laporan", icon: Inbox },
       { href: "/pemerintah/kinerja-opd", label: "Kinerja OPD", icon: Building2 },
       { href: "/admin/pengguna", label: "Akun Dinas", icon: Users },
+      { href: "/pemerintah/notifikasi", label: "Notifikasi", icon: Bell },
     ],
   },
   dinas: {
@@ -82,6 +85,7 @@ export const PANEL_SECTIONS = {
       { href: "/dinas", label: "Ringkasan", icon: LayoutDashboard, exact: true },
       { href: "/dinas/tugas-proker", label: "Tugas Proker", icon: Target },
       { href: "/dinas/laporan", label: "Semua Laporan", icon: Inbox },
+      { href: "/dinas/notifikasi", label: "Notifikasi", icon: Bell },
     ],
   },
   admin: {
@@ -93,6 +97,7 @@ export const PANEL_SECTIONS = {
       { href: "/pemerintah/laporan", label: "Semua Laporan", icon: Inbox },
       { href: "/pemerintah/kinerja-opd", label: "Kinerja OPD", icon: Building2 },
       { href: "/admin/pengguna", label: "Akun Dinas", icon: Users },
+      { href: "/pemerintah/notifikasi", label: "Notifikasi", icon: Bell },
     ],
   },
 } satisfies Record<string, { title: string; items: readonly PanelNavItem[] }>;

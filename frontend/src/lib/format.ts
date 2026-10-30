@@ -36,10 +36,21 @@ function partValue(parts: Intl.DateTimeFormatPart[], type: Intl.DateTimeFormatPa
 }
 
 export function formatDateTime(iso: string): string {
-  const parts = dateTimeFormat.formatToParts(new Date(iso));
-  const date = `${partValue(parts, "day")} ${partValue(parts, "month")} ${partValue(parts, "year")}`;
-  const time = `${partValue(parts, "hour")}.${partValue(parts, "minute")}`;
-  return `${date}, ${time} ${TIME_ZONE_LABEL}`;
+  if (!iso) return "-";
+  try {
+    const raw = String(iso).trim();
+    let d = new Date(raw);
+    if (isNaN(d.getTime()) && !raw.includes("T")) {
+      d = new Date(`${raw}T00:00:00+07:00`);
+    }
+    if (isNaN(d.getTime())) return iso;
+    const parts = dateTimeFormat.formatToParts(d);
+    const date = `${partValue(parts, "day")} ${partValue(parts, "month")} ${partValue(parts, "year")}`;
+    const time = `${partValue(parts, "hour")}.${partValue(parts, "minute")}`;
+    return `${date}, ${time} ${TIME_ZONE_LABEL}`;
+  } catch {
+    return iso || "-";
+  }
 }
 
 const dateFormat = new Intl.DateTimeFormat(LOCALE, {
@@ -55,7 +66,27 @@ const rupiahFormat = new Intl.NumberFormat(LOCALE, {
 });
 
 export function formatDate(isoDate: string): string {
-  return dateFormat.format(new Date(`${isoDate}T00:00:00+07:00`));
+  if (!isoDate) return "-";
+  try {
+    const raw = String(isoDate).trim();
+    if (raw.includes("T") || raw.includes(" ") || raw.includes("Z")) {
+      const parsed = new Date(raw);
+      if (!isNaN(parsed.getTime())) {
+        return dateFormat.format(parsed);
+      }
+    }
+    const parsedDateOnly = new Date(`${raw}T00:00:00+07:00`);
+    if (!isNaN(parsedDateOnly.getTime())) {
+      return dateFormat.format(parsedDateOnly);
+    }
+    const fallback = new Date(raw);
+    if (!isNaN(fallback.getTime())) {
+      return dateFormat.format(fallback);
+    }
+    return raw;
+  } catch {
+    return isoDate || "-";
+  }
 }
 
 export function formatRupiah(value: number): string {
@@ -63,12 +94,22 @@ export function formatRupiah(value: number): string {
 }
 
 export function formatRelativeTime(iso: string, now: Date = new Date()): string {
-  const diff = new Date(iso).getTime() - now.getTime();
-  const match = RELATIVE_UNITS.find(({ ms }) => Math.abs(diff) >= ms);
-  if (!match) {
-    return relativeFormat.format(Math.trunc(diff / MS_PER_SECOND), "second");
+  if (!iso) return "-";
+  try {
+    let d = new Date(iso);
+    if (isNaN(d.getTime()) && !String(iso).includes("T")) {
+      d = new Date(`${iso}T00:00:00+07:00`);
+    }
+    if (isNaN(d.getTime())) return iso;
+    const diff = d.getTime() - now.getTime();
+    const match = RELATIVE_UNITS.find(({ ms }) => Math.abs(diff) >= ms);
+    if (!match) {
+      return relativeFormat.format(Math.trunc(diff / MS_PER_SECOND), "second");
+    }
+    return relativeFormat.format(Math.trunc(diff / match.ms), match.unit);
+  } catch {
+    return iso || "-";
   }
-  return relativeFormat.format(Math.trunc(diff / match.ms), match.unit);
 }
 
 export function formatNumber(value: number): string {
