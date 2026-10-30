@@ -55,17 +55,7 @@ function PanelSidebar({ title, items, user }: PanelSectionProps) {
           </span>
         )}
         <div className="flex items-center gap-1">
-          <Link
-            href={notifHref}
-            className={cn(buttonVariants({ variant: "ghost", size: "icon" }), ON_DARK_BUTTON, "relative")}
-            aria-label={unreadCount > 0 ? `Pusat Notifikasi, ${unreadCount} belum dibaca` : "Pusat Notifikasi"}
-            title="Pusat Notifikasi"
-          >
-            <Bell className="size-4" />
-            {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-amber-500 ring-2 ring-secondary animate-pulse" />
-            )}
-          </Link>
+
           <Button
             variant="ghost"
             size="icon"

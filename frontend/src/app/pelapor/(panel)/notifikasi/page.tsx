@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Container } from "@/components/layout/container";
 import { NotificationCenter } from "@/components/notifications/notification-center";
 
 export const metadata: Metadata = {
@@ -6,5 +7,9 @@ export const metadata: Metadata = {
 };
 
 export default function PelaporNotifikasiPage() {
-  return <NotificationCenter role="pelapor" />;
+  return (
+    <Container className="py-8 sm:py-10">
+      <NotificationCenter role="pelapor" />
+    </Container>
+  );
 }

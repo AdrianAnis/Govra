@@ -3,6 +3,7 @@ import { DEMO_PROFILES } from "@/lib/mock/profile";
 import { parseRole, SESSION_COOKIE, type Role } from "@/lib/session";
 
 export interface SessionUser {
+  id?: string;
   name: string;
   email: string;
   initials: string;
@@ -44,6 +45,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
       const opdId = p.opd_id ?? null;
       const opdName = p.opd_name || (opdId ? OPD_NAME_LOOKUP[opdId] : null);
       return {
+        id: p.id || undefined,
         name,
         email: p.email,
         initials: initialsOf(name),
@@ -59,5 +61,12 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   }
   const profile = DEMO_PROFILES[role];
   const name = profile.display_name ?? FALLBACK_NAME;
-  return { name, email: profile.email, initials: initialsOf(name), role, opdName: profile.opd?.name ?? null };
+  return {
+    id: profile.id,
+    name,
+    email: profile.email,
+    initials: initialsOf(name),
+    role,
+    opdName: profile.opd?.name ?? null,
+  };
 }

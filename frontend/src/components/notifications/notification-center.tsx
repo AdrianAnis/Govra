@@ -8,8 +8,9 @@ import {
   CheckCircle2,
   Clock,
   ExternalLink,
-  Filter,
+  Heart,
   Inbox,
+  MessageSquare,
   ShieldCheck,
   Sparkles,
   Target,
@@ -49,6 +50,8 @@ export function NotificationCenter({ role = "pemerintah" }: Props) {
       if (selectedFilter === "VERIFIKASI") return item.category === "VERIFIKASI";
       if (selectedFilter === "PROKER") return item.category === "PROKER";
       if (selectedFilter === "LAPORAN") return item.category === "LAPORAN";
+      if (selectedFilter === "DUKUNGAN") return item.category === "DUKUNGAN";
+      if (selectedFilter === "KOMENTAR") return item.category === "KOMENTAR";
       return true;
     });
   }, [notifications, selectedFilter]);
@@ -57,6 +60,8 @@ export function NotificationCenter({ role = "pemerintah" }: Props) {
   const countVerifikasi = notifications.filter((i) => i.category === "VERIFIKASI").length;
   const countProker = notifications.filter((i) => i.category === "PROKER").length;
   const countLaporan = notifications.filter((i) => i.category === "LAPORAN").length;
+  const countDukungan = notifications.filter((i) => i.category === "DUKUNGAN").length;
+  const countKomentar = notifications.filter((i) => i.category === "KOMENTAR").length;
 
   const headerTitle =
     role === "dinas"
@@ -69,11 +74,11 @@ export function NotificationCenter({ role = "pemerintah" }: Props) {
     role === "dinas"
       ? "Pantau disposisi laporan masuk, amanah program kerja, dan tindak lanjut lapangan."
       : role === "pelapor"
-      ? "Pembaruan langsung status laporan Anda serta transparansi realisasi program kerja kota."
+      ? "Pembaruan langsung status laporan Anda, dukungan & apresiasi warga, komentar, serta proyek baru daerah."
       : "Pemberitahuan verifikasi laporan publik, capaian & dokumentasi program kerja, dan disposisi dinas.";
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto">
       <PageHeader title={headerTitle} description={headerDesc}>
         <div className="flex items-center gap-2">
           {unreadCount > 0 && (
@@ -137,58 +142,151 @@ export function NotificationCenter({ role = "pemerintah" }: Props) {
           )}
         </button>
 
-        {countVerifikasi > 0 && (
-          <button
-            type="button"
-            onClick={() => setSelectedFilter("VERIFIKASI")}
-            className={cn(
-              "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
-              selectedFilter === "VERIFIKASI"
-                ? "bg-secondary text-secondary-fg"
-                : "bg-surface text-fg-muted hover:bg-surface-muted",
+        {role === "pelapor" ? (
+          <>
+            <button
+              type="button"
+              onClick={() => setSelectedFilter("PROKER")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+                selectedFilter === "PROKER"
+                  ? "bg-secondary text-secondary-fg"
+                  : "bg-surface text-fg-muted hover:bg-surface-muted",
+              )}
+            >
+              <Target className="size-3.5" />
+              Proyek Baru
+              <span className="rounded-full bg-secondary-fg/15 px-1.5 py-0.2 text-[10px] tabular-nums">
+                {countProker}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedFilter("LAPORAN")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+                selectedFilter === "LAPORAN"
+                  ? "bg-secondary text-secondary-fg"
+                  : "bg-surface text-fg-muted hover:bg-surface-muted",
+              )}
+            >
+              <Inbox className="size-3.5" />
+              Status Laporan
+              <span className="rounded-full bg-secondary-fg/15 px-1.5 py-0.2 text-[10px] tabular-nums">
+                {countLaporan}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedFilter("DUKUNGAN")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+                selectedFilter === "DUKUNGAN"
+                  ? "bg-secondary text-secondary-fg"
+                  : "bg-surface text-fg-muted hover:bg-surface-muted",
+              )}
+            >
+              <Heart className="size-3.5 text-rose-500" />
+              Dukungan & Suka
+              <span className="rounded-full bg-secondary-fg/15 px-1.5 py-0.2 text-[10px] tabular-nums">
+                {countDukungan}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedFilter("KOMENTAR")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+                selectedFilter === "KOMENTAR"
+                  ? "bg-secondary text-secondary-fg"
+                  : "bg-surface text-fg-muted hover:bg-surface-muted",
+              )}
+            >
+              <MessageSquare className="size-3.5 text-sky-500" />
+              Komentar
+              <span className="rounded-full bg-secondary-fg/15 px-1.5 py-0.2 text-[10px] tabular-nums">
+                {countKomentar}
+              </span>
+            </button>
+          </>
+        ) : role === "dinas" ? (
+          <>
+            <button
+              type="button"
+              onClick={() => setSelectedFilter("LAPORAN")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+                selectedFilter === "LAPORAN"
+                  ? "bg-secondary text-secondary-fg"
+                  : "bg-surface text-fg-muted hover:bg-surface-muted",
+              )}
+            >
+              <Inbox className="size-3.5" />
+              Disposisi Laporan
+              <span className="rounded-full bg-secondary-fg/15 px-1.5 py-0.2 text-[10px] tabular-nums">
+                {countLaporan}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedFilter("PROKER")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+                selectedFilter === "PROKER"
+                  ? "bg-secondary text-secondary-fg"
+                  : "bg-surface text-fg-muted hover:bg-surface-muted",
+              )}
+            >
+              <Target className="size-3.5" />
+              Tugas Proker
+              <span className="rounded-full bg-secondary-fg/15 px-1.5 py-0.2 text-[10px] tabular-nums">
+                {countProker}
+              </span>
+            </button>
+          </>
+        ) : (
+          <>
+            {countVerifikasi > 0 && (
+              <button
+                type="button"
+                onClick={() => setSelectedFilter("VERIFIKASI")}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+                  selectedFilter === "VERIFIKASI"
+                    ? "bg-secondary text-secondary-fg"
+                    : "bg-surface text-fg-muted hover:bg-surface-muted",
+                )}
+              >
+                <ShieldCheck className="size-3.5" />
+                Verifikasi Laporan
+                <span className="rounded-full bg-secondary-fg/15 px-1.5 py-0.2 text-[10px] tabular-nums">
+                  {countVerifikasi}
+                </span>
+              </button>
             )}
-          >
-            <ShieldCheck className="size-3.5" />
-            Verifikasi
-            <span className="rounded-full bg-secondary-fg/15 px-1.5 py-0.2 text-[10px] tabular-nums">
-              {countVerifikasi}
-            </span>
-          </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedFilter("PROKER")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+                selectedFilter === "PROKER"
+                  ? "bg-secondary text-secondary-fg"
+                  : "bg-surface text-fg-muted hover:bg-surface-muted",
+              )}
+            >
+              <Target className="size-3.5" />
+              Dokumentasi Proker
+              <span className="rounded-full bg-secondary-fg/15 px-1.5 py-0.2 text-[10px] tabular-nums">
+                {countProker}
+              </span>
+            </button>
+          </>
         )}
-
-        <button
-          type="button"
-          onClick={() => setSelectedFilter("PROKER")}
-          className={cn(
-            "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
-            selectedFilter === "PROKER"
-              ? "bg-secondary text-secondary-fg"
-              : "bg-surface text-fg-muted hover:bg-surface-muted",
-          )}
-        >
-          <Target className="size-3.5" />
-          Program Kerja
-          <span className="rounded-full bg-secondary-fg/15 px-1.5 py-0.2 text-[10px] tabular-nums">
-            {countProker}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setSelectedFilter("LAPORAN")}
-          className={cn(
-            "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
-            selectedFilter === "LAPORAN"
-              ? "bg-secondary text-secondary-fg"
-              : "bg-surface text-fg-muted hover:bg-surface-muted",
-          )}
-        >
-          <Inbox className="size-3.5" />
-          Laporan & Isu
-          <span className="rounded-full bg-secondary-fg/15 px-1.5 py-0.2 text-[10px] tabular-nums">
-            {countLaporan}
-          </span>
-        </button>
       </div>
 
       {loading && notifications.length === 0 ? (
@@ -214,24 +312,32 @@ export function NotificationCenter({ role = "pemerintah" }: Props) {
               <div
                 key={item.id}
                 className={cn(
-                  "flex flex-col gap-2 p-4 sm:flex-row sm:items-start sm:justify-between transition-colors",
+                  "flex flex-col gap-3 p-4 sm:p-5 sm:flex-row sm:items-start sm:justify-between transition-colors",
                   isUnread
                     ? "bg-primary-soft/40 dark:bg-primary-soft/10 border-l-4 border-l-amber-500"
                     : "hover:bg-surface-muted/40",
                 )}
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3.5">
                   <div className="mt-0.5 relative shrink-0">
                     {item.category === "VERIFIKASI" ? (
-                      <div className="grid size-8 place-items-center rounded-md bg-secondary text-secondary-fg">
+                      <div className="grid size-9 place-items-center rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
                         <ShieldCheck className="size-4" />
                       </div>
                     ) : item.category === "PROKER" ? (
-                      <div className="grid size-8 place-items-center rounded-md bg-primary text-primary-fg">
+                      <div className="grid size-9 place-items-center rounded-md bg-primary/10 text-primary">
                         <Target className="size-4" />
                       </div>
+                    ) : item.category === "DUKUNGAN" ? (
+                      <div className="grid size-9 place-items-center rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                        <Heart className="size-4" />
+                      </div>
+                    ) : item.category === "KOMENTAR" ? (
+                      <div className="grid size-9 place-items-center rounded-md bg-sky-500/10 text-sky-600 dark:text-sky-400">
+                        <MessageSquare className="size-4" />
+                      </div>
                     ) : (
-                      <div className="grid size-8 place-items-center rounded-md bg-surface-muted text-fg">
+                      <div className="grid size-9 place-items-center rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                         <Inbox className="size-4" />
                       </div>
                     )}
@@ -240,7 +346,7 @@ export function NotificationCenter({ role = "pemerintah" }: Props) {
                     )}
                   </div>
 
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1.5">
                     <div className="flex flex-wrap items-center gap-2">
                       <span
                         className={cn(
