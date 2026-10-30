@@ -49,6 +49,8 @@ Menggunakan kecerdasan buatan (*Google Gemini 2.5 Flash*), Govra mengotomatiskan
 
 ## 📸 Tangkapan Layar & Antarmuka (Preview)
 
+> *Letakkan gambar tangkapan layar antarmuka di folder `frontend/public/` atau `frontend/public/screenshots/` sesuai tautan berkas di bawah.*
+
 ### 1. Beranda Publik (Landing Page)
 Menampilkan sorotan capaian Rapor Kota, pencarian terpadu, program kerja unggulan, serta peta sebaran isu masyarakat terkini.
 
@@ -160,7 +162,7 @@ Sistem Govra memiliki 3 (*tiga*) peran kanonikal dengan hak akses terisolasi ket
 
 ## 🛡️ Arsitektur Sistem & Keamanan
 
-Sistem Govra dibangun dengan mengedepankan kepatuhan penuh terhadap standar **OWASP Top 10** dan **LLM Security Top 10**:
+Sistem Govra dibangun dengan mengedepankan keamanan komprehensif, arsitektur *Backend-for-Frontend* (BFF), serta kepatuhan standar keamanan data:
 
 ```
                        ┌─────────────────────────┐
@@ -251,25 +253,30 @@ Jalankan berkas migrasi SQL yang tersedia di folder `backend/supabase/migrations
 Salin atau buat berkas `backend/.env`:
 ```env
 PORT=8080
-APP_ENV=development
-DATABASE_URL=postgres://postgres:[PASSWORD]@[HOST]:[PORT]/postgres?sslmode=require
-JWT_SECRET=rahasia-kunci-jwt-govra-minimum-32-karakter
-GEMINI_API_KEY=AIzaSy...
-SUPABASE_URL=https://[YOUR_PROJECT_REF].supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJh...
-CORS_ORIGIN=http://localhost:3000
+
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+
+BFF_SHARED_KEY=
+RESEND_API_KEY=
+
+GEMINI_API_KEY_TRIAGE=
+GEMINI_API_KEY_ASSISTANT=
+
+GEMINI_MODEL=gemini-2.5-flash
+API_BASE_URL=http://localhost:8080
 ```
 
 #### 2. Frontend (`frontend/.env.local`)
 Salin atau buat berkas `frontend/.env.local`:
 ```env
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-BACKEND_API_URL=http://localhost:8080
-INTERNAL_BFF_API_KEY=kunci-komunikasi-internal-bff
-NEXT_PUBLIC_SUPABASE_URL=https://[YOUR_PROJECT_REF].supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJh...
-SUPABASE_SERVICE_ROLE_KEY=eyJh...
-GEMINI_API_KEY=AIzaSy...
+API_BASE_URL=http://localhost:8080
+BFF_SHARED_KEY=
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 ```
 
 ---
@@ -297,14 +304,20 @@ npm run dev
 
 ## 🔑 Akun Demo & Uji Coba
 
-Gunakan kredensial bawaan berikut untuk menguji coba berbagai skenario peran:
+Gunakan kredensial bawaan berikut untuk menguji coba seluruh skenario peran:
 
-| Peran | Email | Kata Sandi | Deskripsi Akses |
-|---|---|---|---|
-| **Admin Pusat / Wali Kota** | `admin@kotacontoh.go.id` | `Admin123!` | Akses verifikasi, alokasi OPD, manajemen proker, dan ringkasan eksekutif |
-| **Dinas PU / Bina Marga** | `dinas.pu@kotacontoh.go.id` | `Dinas123!` | Menangani aduan infrastruktur dan memperbarui bukti kerja jalan |
-| **Dinas Lingkungan Hidup** | `dinas.lh@kotacontoh.go.id` | `Dinas123!` | Menangani aduan sampah, kebersihan, dan drainase |
-| **Warga / Pelapor** | `budi@warga.id` | `Warga123!` | Membuat aduan masyarakat, mendukung isu, dan konfirmasi perbaikan |
+| Peran | Instansi / Jabatan | Email | Kata Sandi | Deskripsi Akses |
+|---|---|---|---|---|
+| **Admin Pusat** | Administrator Utama & Wali Kota | `admin@kotacontoh.go.id` | `password123` | Akses verifikasi, alokasi OPD, manajemen proker, dan ringkasan eksekutif |
+| **Admin Pusat** | Wali Kota | `walikota@kotacontoh.go.id` | `password123` | Akses eksekutif pimpinan daerah dan monitoring capaian kota |
+| **Dinas** | Dinas Bina Marga & Sumber Daya Air | `dbmsda@kotacontoh.go.id` | `password123` | Penanganan isu jalan rusak, jembatan, drainase, dan update proker jalan |
+| **Dinas** | Dinas Lingkungan Hidup & Kebersihan | `dlhk@kotacontoh.go.id` | `password123` | Penanganan sampah liar, kebersihan, taman, dan TPS 3R |
+| **Dinas** | Dinas Perhubungan | `dishub@kotacontoh.go.id` | `password123` | Penanganan rambu, lampu PJU padam, marka, dan manajemen lalu lintas |
+| **Dinas** | Dinas Kesehatan | `dinkes@kotacontoh.go.id` | `password123` | Penanganan faskes, posyandu, dan isu kesehatan lingkungan |
+| **Dinas** | Satuan Polisi Pamong Praja | `satpolpp@kotacontoh.go.id` | `password123` | Penertiban fasilitas publik, ketenteraman, dan ketertiban umum |
+| **Dinas** | Badan Penanggulangan Bencana Daerah | `bpbd@kotacontoh.go.id` | `password123` | Mitigasi darurat bencana, banjir, dan tanggap darurat |
+| **Dinas** | Dinas PUPR | `pupr@kotacontoh.go.id` | `password123` | Pekerjaan umum, tata ruang kota, dan infrastruktur strategis |
+| **Warga / Pelapor** | Masyarakat Umum | `warga@kotacontoh.go.id` | `password123` | Membuat laporan aduan, input suara (STT), mendukung isu, dan konfirmasi perbaikan |
 
 ---
 
@@ -339,10 +352,6 @@ Govra/
 │       ├── components/            # Komponen antarmuka modular
 │       └── lib/                   # Utilitas format, validasi, & helper klien
 │
-├── docs/                          # Dokumentasi spesifikasi sistem
-│   ├── design.md                  # Panduan token desain & antarmuka
-│   ├── prd.md                     # Product Requirements Document
-│   └── security.md                # Panduan tata kelola keamanan & kepatuhan
 └── README.md                      # Dokumentasi komprehensif proyek
 ```
 
