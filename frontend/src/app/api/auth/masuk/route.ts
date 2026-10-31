@@ -5,7 +5,7 @@ const SEE_OTHER_STATUS = 303;
 const BFF_KEY = process.env.BFF_SHARED_KEY || "";
 
 function mapRole(role: string): Role {
-  if (role === "admin" || role === "kepala_daerah") {
+  if (role === "admin") {
     return "admin";
   }
   if (role === "dinas") {

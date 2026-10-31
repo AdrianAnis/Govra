@@ -504,7 +504,6 @@ export async function listUsers(
         let role: Schema<"AdminUser">["role"] = "DINAS";
         const r = (u.role || "").toLowerCase();
         if (r === "admin") role = "ADMIN";
-        else if (r === "kepala_daerah" || r === "admin") role = "ADMIN";
         else if (r === "pelapor" || r === "citizen") role = "PELAPOR";
 
         return {

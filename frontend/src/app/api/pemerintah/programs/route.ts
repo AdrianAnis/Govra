@@ -5,7 +5,7 @@ import { getErrorMessage } from "@/lib/error-message";
 
 export async function POST(request: Request) {
   const user = await getSessionUser();
-  if (!user || (user.role !== "kepala_daerah" && user.role !== "admin")) {
+  if (!user || (user.role !== "admin")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 

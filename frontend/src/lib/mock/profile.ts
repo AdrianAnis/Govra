@@ -27,14 +27,6 @@ export const DEMO_PROFILES: Record<Role, Schema<"Profile">> = {
     opd: null,
     status: "ACTIVE",
   },
-  kepala_daerah: {
-    id: "00000000-0000-0000-0000-000000000002",
-    email: "walikota@kotacontoh.go.id",
-    display_name: "Bpk. Ir. H. Ahmad Dahlan",
-    role: "ADMIN",
-    opd: null,
-    status: "ACTIVE",
-  },
 };
 
 export const DEMO_PROFILE = DEMO_PROFILES.pelapor;
