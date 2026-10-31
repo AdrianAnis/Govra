@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 import { DEMO_PROFILES } from "@/lib/mock/profile";
-import { parseRole, SESSION_COOKIE, type Role } from "@/lib/session";
+import { z } from "zod";
+import { readRole, SESSION_COOKIE, type Role } from "@/lib/session";
+import { verifyProfile } from "@/lib/session-sign";
 
 export interface SessionUser {
   id?: string;
@@ -11,6 +13,14 @@ export interface SessionUser {
   opdName: string | null;
   opdId?: string | null;
 }
+
+const profileSchema = z.object({
+  id: z.string().optional(),
+  email: z.string().default(""),
+  display_name: z.string().nullish(),
+  opd_id: z.string().nullish(),
+  opd_name: z.string().nullish(),
+});
 
 const MAX_INITIALS = 2;
 const FALLBACK_NAME = "Pengguna";
@@ -36,32 +46,26 @@ const OPD_NAME_LOOKUP: Record<string, string> = {
 
 export async function getSessionUser(): Promise<SessionUser | null> {
   const jar = await cookies();
-  const sessionToken = jar.get(SESSION_COOKIE)?.value;
-  if (!sessionToken) {
-    return null;
-  }
-  const role = parseRole(sessionToken);
+  const role = await readRole(jar.get(SESSION_COOKIE)?.value);
   if (!role) {
     return null;
   }
 
-  const profileRaw = jar.get("govra_profile")?.value;
-  if (profileRaw) {
-    try {
-      const p = JSON.parse(decodeURIComponent(profileRaw));
-      const name = p.display_name || FALLBACK_NAME;
-      const opdId = p.opd_id ?? null;
-      const opdName = p.opd_name || (opdId ? OPD_NAME_LOOKUP[opdId] : null);
-      return {
-        id: p.id || undefined,
-        name,
-        email: p.email,
-        initials: initialsOf(name),
-        role,
-        opdName,
-        opdId,
-      };
-    } catch {}
+  const parsedProfile = profileSchema.safeParse(await verifyProfile(jar.get("govra_profile")?.value));
+  if (parsedProfile.success) {
+    const p = parsedProfile.data;
+    const name = p.display_name || FALLBACK_NAME;
+    const opdId = p.opd_id ?? null;
+    const opdName = p.opd_name || (opdId ? (OPD_NAME_LOOKUP[opdId] ?? null) : null);
+    return {
+      ...(p.id ? { id: p.id } : {}),
+      name,
+      email: p.email,
+      initials: initialsOf(name),
+      role,
+      opdName,
+      opdId,
+    };
   }
 
   const profile = DEMO_PROFILES[role];

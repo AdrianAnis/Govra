@@ -1,10 +1,11 @@
 import { type Role, getSafeRedirect, safeNext, SESSION_COOKIE } from "@/lib/session";
+import { signProfile, signValue } from "@/lib/session-sign";
 
 const SEE_OTHER_STATUS = 303;
 const BFF_KEY = process.env.BFF_SHARED_KEY || "";
 
 function mapRole(role: string): Role {
-  if (role === "admin" || role === "kepala_daerah") {
+  if (role === "admin") {
     return "admin";
   }
   if (role === "dinas") {
@@ -56,12 +57,9 @@ export async function POST(request: Request) {
       const target = new URL(targetPath, request.url);
 
       const headers = new Headers({ Location: target.toString() });
-      headers.append("Set-Cookie", `${SESSION_COOKIE}=${role}; Path=/; HttpOnly; SameSite=Lax`);
+      headers.append("Set-Cookie", `${SESSION_COOKIE}=${await signValue(role)}; Path=/; HttpOnly; SameSite=Lax`);
       headers.append("Set-Cookie", `govra_token=${data.token}; Path=/; HttpOnly; SameSite=Lax`);
-      headers.append(
-        "Set-Cookie",
-        `govra_profile=${encodeURIComponent(JSON.stringify(data.profile))}; Path=/; HttpOnly; SameSite=Lax`
-      );
+      headers.append("Set-Cookie", `govra_profile=${await signProfile(data.profile)}; Path=/; HttpOnly; SameSite=Lax`);
 
       return new Response(null, { status: SEE_OTHER_STATUS, headers });
     }

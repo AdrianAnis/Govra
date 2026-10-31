@@ -26,4 +26,4 @@ function IssueStatusBadge({ status }: { status: IssueStatus }) {
   return <StatusBadge {...meta} />;
 }
 
-export { IssueStatusBadge, ProgramStatusBadge, StatusBadge };
+export { IssueStatusBadge, ProgramStatusBadge };

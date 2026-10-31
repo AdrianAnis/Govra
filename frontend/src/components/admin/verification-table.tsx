@@ -1,25 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import {
-  AlertTriangle,
-  ArrowRight,
-  Building2,
-  Calendar,
-  CheckCircle2,
-  ChevronRight,
-  Eye,
-  FileEdit,
-  ImageIcon,
-  Info,
-  RefreshCw,
-  Send,
-  Users,
-  X,
-  XCircle,
-} from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { SelectField } from "@/components/select-field";
 import { IssueStatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
@@ -41,40 +25,8 @@ import { REJECTION_OPTIONS, type RejectionReason } from "@/lib/agency";
 import { formatNumber, formatRelativeTime } from "@/lib/format";
 import type { Schema } from "@/lib/schema";
 import type { IssueStatus } from "@/lib/status";
-import { cn } from "@/lib/utils";
-
-export interface VerificationTableItem {
-  issue_id: string;
-  code?: string;
-  status?: string;
-  kind: Schema<"VerificationKind">;
-  title: string;
-  summary?: string | null;
-  reporter_count: number;
-  created_at: string;
-  photo_urls?: string[];
-  ai_suggestion?: {
-    opd: {
-      code: string;
-      name: string;
-      slug: string;
-    };
-    category: {
-      code: string;
-      name: string;
-    };
-    confidence: number;
-    is_unregistered_opd?: boolean;
-    recommended_action?: string;
-  } | null;
-  current_opd?: {
-    code: string;
-    name: string;
-    slug: string;
-  } | null;
-  transfer_reason?: string | null;
-  transfer_note?: string | null;
-}
+import type { VerificationTableItem } from "@/lib/data/admin";
+import { getErrorMessage } from "@/lib/error-message";
 
 interface VerificationTableProps {
   items: readonly VerificationTableItem[];
@@ -85,10 +37,11 @@ interface VerificationTableProps {
 export function VerificationTable({ items: initialItems, opds, now }: VerificationTableProps) {
   const router = useRouter();
   const [items, setItems] = useState<VerificationTableItem[]>([...initialItems]);
-
-  useEffect(() => {
+  const [syncedItems, setSyncedItems] = useState(initialItems);
+  if (syncedItems !== initialItems) {
+    setSyncedItems(initialItems);
     setItems([...initialItems]);
-  }, [initialItems]);
+  }
   const [activeItem, setActiveItem] = useState<VerificationTableItem | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
@@ -166,8 +119,8 @@ export function VerificationTable({ items: initialItems, opds, now }: Verificati
       setShowReassignForm(false);
       setIsDrawerOpen(false);
       router.refresh();
-    } catch (err: any) {
-      setErrorMsg(err.message || "Gagal meneruskan laporan.");
+    } catch (err) {
+      setErrorMsg(getErrorMessage(err, "Gagal meneruskan laporan."));
     } finally {
       setIsSubmitting(false);
     }
@@ -217,8 +170,8 @@ export function VerificationTable({ items: initialItems, opds, now }: Verificati
       });
       setIsDrawerOpen(false);
       router.refresh();
-    } catch (err: any) {
-      setErrorMsg(err.message || "Gagal menolak laporan.");
+    } catch (err) {
+      setErrorMsg(getErrorMessage(err, "Gagal menolak laporan."));
     } finally {
       setIsSubmitting(false);
     }
@@ -267,12 +220,12 @@ export function VerificationTable({ items: initialItems, opds, now }: Verificati
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-border bg-surface-muted text-xs font-semibold text-fg-muted uppercase tracking-wider">
-                <th className="px-5 py-3.5">Kode</th>
-                <th className="px-5 py-3.5">Waktu</th>
-                <th className="px-5 py-3.5 min-w-[280px]">Judul Laporan</th>
-                <th className="px-5 py-3.5 min-w-[220px]">Dinas / AI</th>
-                <th className="px-5 py-3.5">Status</th>
-                <th className="px-5 py-3.5 text-right">Aksi</th>
+                <th className="px-4 py-3.5">Kode</th>
+                <th className="px-4 py-3.5">Waktu</th>
+                <th className="px-4 py-3.5 min-w-48">Judul Laporan</th>
+                <th className="px-4 py-3.5 min-w-40">Dinas / AI</th>
+                <th className="px-4 py-3.5">Status</th>
+                <th className="px-4 py-3.5 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -291,15 +244,15 @@ export function VerificationTable({ items: initialItems, opds, now }: Verificati
                     onClick={() => openDetail(item)}
                     className="hover:bg-primary-soft/40 cursor-pointer transition-colors group"
                   >
-                    <td className="px-5 py-4 font-mono text-sm font-medium text-fg whitespace-nowrap tabular-nums">
+                    <td className="px-4 py-4 font-mono text-sm font-medium text-fg whitespace-nowrap tabular-nums">
                       {item.code || "GVR-2610-0000"}
                     </td>
 
-                    <td className="px-5 py-4 text-sm text-fg-muted whitespace-nowrap tabular-nums">
+                    <td className="px-4 py-4 text-sm text-fg-muted whitespace-nowrap tabular-nums">
                       {formatRelativeTime(item.created_at, new Date(now))}
                     </td>
 
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-4">
                       <div className="flex flex-col gap-1">
                         <span className="text-sm font-medium text-fg group-hover:text-primary transition-colors line-clamp-1">
                           {item.title}
@@ -312,7 +265,7 @@ export function VerificationTable({ items: initialItems, opds, now }: Verificati
                       </div>
                     </td>
 
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-4">
                       {isUnreg ? (
                         <span className="text-sm text-fg font-medium">
                           Tidak Masuk Dinas
@@ -331,12 +284,12 @@ export function VerificationTable({ items: initialItems, opds, now }: Verificati
                       )}
                     </td>
 
-                    <td className="px-5 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <IssueStatusBadge status={issueStatus} />
                     </td>
 
                     <td
-                      className="px-5 py-4 text-right whitespace-nowrap"
+                      className="px-4 py-4 text-right whitespace-nowrap"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Button

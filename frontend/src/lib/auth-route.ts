@@ -3,7 +3,7 @@ import { errorResponse } from "@/lib/api-response";
 import { PENDING_MAX_AGE_SECONDS } from "@/lib/auth-flow";
 import { mockOnly } from "@/lib/mock-guard";
 import { rejectCrossOrigin } from "@/lib/origin";
-import { parseRole, SESSION_COOKIE, type Role } from "@/lib/session";
+import { readRole, SESSION_COOKIE, type Role } from "@/lib/session";
 
 const INVALID_STATUS = 422;
 const FORBIDDEN_STATUS = 403;
@@ -32,6 +32,6 @@ export async function staffGuard(request: Request, role: Role): Promise<Response
   if (blocked) {
     return blocked;
   }
-  const current = parseRole((await cookies()).get(SESSION_COOKIE)?.value);
+  const current = await readRole((await cookies()).get(SESSION_COOKIE)?.value);
   return current === role ? null : errorResponse("FORBIDDEN", "Akun Anda tidak boleh melakukan aksi ini.", FORBIDDEN_STATUS);
 }

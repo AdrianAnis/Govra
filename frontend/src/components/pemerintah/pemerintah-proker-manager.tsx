@@ -2,20 +2,15 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Edit, History, Loader2, Plus, Search, Trash2, X } from "lucide-react";
+import { Check, Edit, History, Loader2, Plus, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ProgramStatusBadge } from "@/components/status-badge";
 import { RupiahInput } from "@/components/ui/rupiah-input";
-import { formatDate, formatNumber, formatRupiah } from "@/lib/format";
+import { formatDate, formatRupiah } from "@/lib/format";
 import type { PemerintahProgramItem, ProgramUpdateItem } from "@/lib/data/pemerintah";
+import { toProgramStatus } from "@/lib/status";
+import { getErrorMessage } from "@/lib/error-message";
 
 interface OpdOption {
   id: string;
@@ -30,7 +25,7 @@ interface Props {
 
 export function PemerintahProkerManager({ initialPrograms, opdList }: Props) {
   const router = useRouter();
-  const [programs, setPrograms] = useState<PemerintahProgramItem[]>(initialPrograms);
+  const [programs] = useState<PemerintahProgramItem[]>(initialPrograms);
   const [search, setSearch] = useState("");
   const [selectedOpd, setSelectedOpd] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -212,8 +207,8 @@ export function PemerintahProkerManager({ initialPrograms, opdList }: Props) {
       setFormOpen(false);
       router.refresh();
       window.location.reload();
-    } catch (err: any) {
-      setErrorMessage(err.message || "Terjadi kesalahan saat menyimpan");
+    } catch (err) {
+      setErrorMessage(getErrorMessage(err, "Terjadi kesalahan saat menyimpan"));
     } finally {
       setLoading(false);
     }
@@ -234,8 +229,8 @@ export function PemerintahProkerManager({ initialPrograms, opdList }: Props) {
       setDeletingProgram(null);
       router.refresh();
       window.location.reload();
-    } catch (err: any) {
-      alert(err.message || "Gagal menghapus program");
+    } catch (err) {
+      alert(getErrorMessage(err, "Gagal menghapus program"));
     } finally {
       setLoading(false);
     }
@@ -377,7 +372,7 @@ export function PemerintahProkerManager({ initialPrograms, opdList }: Props) {
                       </div>
                     </td>
                     <td className="py-2 px-4 text-center whitespace-nowrap">
-                      <ProgramStatusBadge status={program.status as any} />
+                      <ProgramStatusBadge status={toProgramStatus(program.status)} />
                     </td>
                     <td className="py-2 px-4 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1.5">

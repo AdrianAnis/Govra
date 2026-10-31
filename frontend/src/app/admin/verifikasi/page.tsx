@@ -53,7 +53,7 @@ export default async function AdminVerificationPage({ searchParams }: { searchPa
       {queue.items.length > 0 ? (
         <VerificationTable
           key={`${kind || "ALL"}-${topicCode || "ALL"}-${queue.page}`}
-          items={queue.items as any}
+          items={queue.items}
           opds={opds.items}
           now={now.toISOString()}
         />

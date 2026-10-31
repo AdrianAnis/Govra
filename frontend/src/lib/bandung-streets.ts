@@ -1,4 +1,4 @@
-export interface BandungStreet {
+interface BandungStreet {
   readonly name: string;
   readonly deltaLat: number;
   readonly deltaLng: number;
@@ -824,8 +824,9 @@ function normalizeKey(value: string): string {
 
 export function getStreetsForVillage(villageName: string, districtName?: string): readonly BandungStreet[] {
   const vKey = normalizeKey(villageName);
-  if (vKey && STREET_DATA[vKey]) {
-    return STREET_DATA[vKey]!;
+  const direct = vKey ? STREET_DATA[vKey] : undefined;
+  if (direct) {
+    return direct;
   }
   const matchEntry = Object.entries(STREET_DATA).find(([key]) => key === vKey || vKey.includes(key) || key.includes(vKey));
   if (matchEntry) {

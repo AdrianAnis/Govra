@@ -1,10 +1,11 @@
 import { matchesQuery, paginate, type PageParams } from "@/lib/data/paging";
 import { PUBLIC_ISSUES, toSummary } from "@/lib/mock/issues";
+import { toIssueStatus, toUrgency } from "@/lib/status";
 import type { Schema } from "@/lib/schema";
 
 const BFF_KEY = process.env.BFF_SHARED_KEY || "";
 
-export interface IssueFilters extends PageParams {
+interface IssueFilters extends PageParams {
   q?: string | undefined;
   opd?: string | undefined;
   district_id?: string | undefined;
@@ -96,8 +97,8 @@ function mapApiToIssue(item: ApiIssue): Issue {
         lng: item.point?.lng ?? 106.8456,
       },
     },
-    status: (item.status || "MENUNGGU_VERIFIKASI") as Schema<"IssueStatus">,
-    urgency: (item.urgency || "NORMAL") as Schema<"Urgency">,
+    status: toIssueStatus(item.status || "MENUNGGU_VERIFIKASI", "MENUNGGU_VERIFIKASI"),
+    urgency: toUrgency(item.urgency || "NORMAL"),
     reporter_count: item.unique_reporters_count ?? 1,
     cover_photo: null,
     response_overdue: false,

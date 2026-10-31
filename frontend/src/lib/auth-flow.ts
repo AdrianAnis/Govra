@@ -6,10 +6,9 @@ export const CODE_MINUTES = 10;
 export const RESEND_SECONDS = 60;
 export const PASSWORD_MIN = 12;
 export const PENDING_COOKIE = "govra_pending";
-export const RESET_COOKIE = "govra_reset";
 export const PENDING_MAX_AGE_SECONDS = CODE_MINUTES * 60;
 
-export type Purpose = "daftar" | "reset";
+type Purpose = "daftar" | "reset";
 
 const PURPOSES: readonly string[] = ["daftar", "reset"];
 
@@ -29,11 +28,6 @@ export function parsePending(value: string | undefined): { purpose: Purpose; ema
   const purpose = value.slice(0, separator);
   const email = decodeURIComponent(value.slice(separator + 1));
   return separator > 0 && isPurpose(purpose) && email ? { purpose, email } : null;
-}
-
-export function maskEmail(email: string): string {
-  const [name = "", domain = ""] = email.split("@");
-  return `${name.charAt(0)}***@${domain}`;
 }
 
 const emailField = z.email("Alamat email tidak valid.");

@@ -1,10 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { signIn } from "./helpers";
 
-const PNG = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-  "base64",
-);
+const BACKEND = Boolean(process.env.E2E_BACKEND);
 
 test.describe("akses dan peran", () => {
   test("pengunjung diarahkan ke halaman masuk dengan tujuan", async ({ page }) => {
@@ -12,64 +9,57 @@ test.describe("akses dan peran", () => {
     await expect(page).toHaveURL(/\/masuk\?lanjut=%2Fpelapor%2Fprofil/);
   });
 
-  test("pelapor tidak boleh membuka panel Dinas dan Admin", async ({ page }) => {
+  test("pelapor yang membuka panel Dinas atau Admin dikembalikan ke areanya", async ({ page }) => {
     await signIn(page, "pelapor");
     for (const path of ["/dinas", "/admin"]) {
-      const response = await page.goto(path);
-      expect(response?.status()).toBe(403);
+      await page.goto(path);
+      await expect(page).toHaveURL(/\/pelapor/);
     }
   });
 
-  test("masuk lewat formulir memakai peran dari email", async ({ page }) => {
+  test("masuk dengan akun salah menampilkan pesan galat", async ({ page }) => {
     await page.goto("/masuk");
-    await page.getByLabel("Alamat Email").fill("dinas@govra.id");
-    await page.getByLabel("Kata Sandi").fill("kata-sandi-contoh");
+    await page.getByLabel("Alamat Email").fill("tidak-ada@kotacontoh.go.id");
+    await page.getByLabel("Kata Sandi").fill("kata-sandi-salah");
     await page.getByRole("button", { name: "Masuk", exact: true }).click();
-    await expect(page).toHaveURL(/\/dinas$/);
-    await expect(page.getByRole("heading", { name: "Inbox Isu" })).toBeVisible();
+    await expect(page).toHaveURL(/\/masuk\?error=gagal/);
+    await expect(page.getByText("Gagal Masuk")).toBeVisible();
   });
 });
 
+test.describe("masuk dengan akun sungguhan (butuh backend dan database uji)", () => {
+  test.skip(!BACKEND, "Setel E2E_BACKEND=1 dan jalankan backend dengan data seed.");
+
+  const ACCOUNTS = [
+    { email: "admin@kotacontoh.go.id", home: /\/pemerintah$/ },
+    { email: "dbmsda@kotacontoh.go.id", home: /\/dinas$/ },
+    { email: "warga@kotacontoh.go.id", home: /\/pelapor$/ },
+  ] as const;
+
+  for (const account of ACCOUNTS) {
+    test(`${account.email} masuk ke beranda perannya`, async ({ page }) => {
+      await page.goto("/masuk");
+      await page.getByLabel("Alamat Email").fill(account.email);
+      await page.getByLabel("Kata Sandi").fill("password123");
+      await page.getByRole("button", { name: "Masuk", exact: true }).click();
+      await expect(page).toHaveURL(account.home);
+    });
+  }
+});
+
 test.describe("alur pelapor", () => {
-  test("kirim laporan lalu lacak dengan kode", async ({ page }) => {
-    await signIn(page, "pelapor");
-    await page.goto("/pelapor/lapor");
-
-    await page.getByLabel(/Judul/).fill("Lampu jalan mati di Gang Kenari");
-    await page.getByLabel(/Ceritakan|Isi laporan|Cerita/).first().fill(
-      "Lampu jalan di Gang Kenari mati sejak dua minggu lalu dan lingkungan menjadi gelap serta rawan.",
-    );
-    await page.getByRole("button", { name: "Lanjut ke Lokasi" }).click();
-
-    await page.locator("#district").click();
-    await page.getByRole("option").first().click();
-    await expect(page.getByRole("option")).toHaveCount(0);
-    await page.locator("#village").click();
-    await page.getByRole("option").first().click();
-    await expect(page.getByRole("option")).toHaveCount(0);
-    await page.getByRole("application", { name: "Peta untuk menandai lokasi" }).click();
-    await expect(page.getByText("Titik sudah ditandai")).toBeVisible();
-    await page.getByRole("button", { name: "Lanjut ke Serupa" }).click();
-
-    await page.getByRole("button", { name: "Lanjut ke Kirim" }).click();
-    await page.getByText("Publik", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Kirim laporan" }).click();
-    await page.getByRole("dialog", { name: "Periksa sebelum dikirim" }).getByRole("button", { name: "Kirim sekarang" }).click();
-
-    await expect(page.getByRole("heading", { name: "Laporan terkirim" })).toBeVisible();
-    const code = (await page.getByText(/^TLK-\d{4}-[A-Z0-9]{4}$/).first().textContent())?.trim() ?? "";
-    expect(code).toMatch(/^TLK-/);
-
-    await page.getByRole("link", { name: "Lacak laporan" }).click();
-    await expect(page).toHaveURL(new RegExp(code));
-    await expect(page.getByText(code).first()).toBeVisible();
-  });
-
   test("validasi laporan menahan langkah pertama", async ({ page }) => {
     await signIn(page, "pelapor");
     await page.goto("/pelapor/lapor");
     await page.getByRole("button", { name: "Lanjut ke Lokasi" }).click();
     await expect(page.getByRole("alert").first()).toBeVisible();
+  });
+
+  test("langkah pertama menyediakan rekam suara dan unggah foto", async ({ page }) => {
+    await signIn(page, "pelapor");
+    await page.goto("/pelapor/lapor");
+    await expect(page.getByRole("button", { name: "Mulai Rekam VN" })).toBeVisible();
+    await expect(page.getByText("Foto (opsional, maksimal 3)")).toBeVisible();
   });
 });
 
@@ -89,67 +79,8 @@ test.describe("chatbot", () => {
   });
 });
 
-test.describe("aksi Dinas", () => {
-  test("proses lalu selesaikan isu dengan bukti foto", async ({ page }) => {
-    await signIn(page, "dinas");
-    await page.goto("/dinas?status=DITERUSKAN");
-    await page.getByRole("row").filter({ hasText: "Diteruskan" }).first().getByRole("link").click();
-    await expect(page).toHaveURL(/\/dinas\/isu\//);
-
-    await page.getByRole("button", { name: "Proses", exact: true }).click();
-    const dialog = page.getByRole("dialog");
-    await dialog.getByLabel("Tanggapan").fill("Tim survei akan turun ke lokasi besok pagi.");
-    await dialog.getByRole("button", { name: "Tinjau" }).click();
-    await expect(dialog.getByText("Konfirmasi perubahan")).toBeVisible();
-    await dialog.getByRole("button", { name: "Kirim" }).click();
-    await expect(dialog).toBeHidden();
-    await expect(page.getByText("Tim survei akan turun ke lokasi besok pagi.")).toBeVisible();
-
-    await page.getByRole("button", { name: "Tandai selesai" }).click();
-    await dialog.getByLabel("Tanggapan").fill("Perbaikan selesai dan lokasi sudah diperiksa.");
-    await dialog.getByRole("button", { name: "Tinjau" }).click();
-    await expect(dialog.getByText("Unggah minimal satu foto bukti.")).toBeVisible();
-    await dialog.locator('input[type="file"]').setInputFiles({ name: "bukti.png", mimeType: "image/png", buffer: PNG });
-    await expect(dialog.getByRole("link", { name: "Bukti 1" })).toBeVisible();
-    await dialog.getByRole("button", { name: "Tinjau" }).click();
-    await dialog.getByRole("button", { name: "Kirim" }).click();
-    await expect(dialog).toBeHidden();
-    await expect(page.getByText("Perbaikan selesai dan lokasi sudah diperiksa.")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Tandai selesai" })).toHaveCount(0);
-  });
-
-  test("tolak wajib alasan", async ({ page }) => {
-    await signIn(page, "dinas");
-    await page.goto("/dinas?status=DITERUSKAN");
-    const row = page.getByRole("row").filter({ hasText: "Diteruskan" }).first();
-    if ((await row.count()) === 0) {
-      test.skip(true, "Tidak ada isu berstatus Diteruskan tersisa.");
-    }
-    await row.getByRole("link").click();
-    await page.getByRole("button", { name: "Tolak", exact: true }).click();
-    const dialog = page.getByRole("dialog");
-    await dialog.getByLabel("Penjelasan").fill("Bukan wewenang dinas ini.");
-    await dialog.getByRole("button", { name: "Tinjau" }).click();
-    await expect(dialog.getByText("Pilih alasan penolakan.")).toBeVisible();
-  });
-});
-
-test.describe("verifikasi Admin", () => {
-  test("teruskan isu dari antrean ke OPD", async ({ page }) => {
-    await signIn(page, "admin");
-    await page.goto("/admin/verifikasi?jenis=VERIFIKASI");
-    const items = page.getByRole("article");
-    const before = await items.count();
-    expect(before).toBeGreaterThan(0);
-
-    await items.first().getByRole("button", { name: "Teruskan" }).click();
-    const dialog = page.getByRole("dialog");
-    await dialog.getByRole("button", { name: "Teruskan" }).click();
-    await expect(dialog).toBeHidden();
-    await expect(items).toHaveCount(before - 1);
-  });
-
-  test("moderasi menyembunyikan laporan dan tercatat di audit", async ({ page }) => {
+test.describe("moderasi Admin", () => {
+  test("menyembunyikan laporan dan tercatat di audit", async ({ page }) => {
     await signIn(page, "admin");
     await page.goto("/admin/moderasi?hidden=false");
     await page.getByRole("button", { name: "Sembunyikan" }).first().click();

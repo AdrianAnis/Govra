@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { AlertCircle, Heart, MessageSquare, Share2, Users } from "lucide-react";
+import { Heart, MessageSquare, Share2, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -77,7 +77,6 @@ export function FeedCard({ item, now }: FeedCardProps) {
   const [supported, setSupported] = useState(item.is_supported);
   const [supportCount, setSupportCount] = useState(item.support_count);
   const [commentsCount, setCommentsCount] = useState(item.comments_count);
-  const [sharesCount, setSharesCount] = useState(item.shares_count);
   const [showComments, setShowComments] = useState(false);
   const [showSupporters, setShowSupporters] = useState(false);
   const [supporting, setSupporting] = useState(false);
@@ -133,8 +132,7 @@ export function FeedCard({ item, now }: FeedCardProps) {
 
   const handleShare = async () => {
     try {
-      const res = await shareFeed(item.id);
-      setSharesCount(res.shares_count);
+      await shareFeed(item.id);
     } catch { }
 
     const shareUrl =

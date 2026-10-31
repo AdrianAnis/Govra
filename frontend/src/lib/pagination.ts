@@ -1,4 +1,4 @@
-export type PageItem = number | "gap";
+type PageItem = number | "gap";
 
 const WINDOW = 1;
 

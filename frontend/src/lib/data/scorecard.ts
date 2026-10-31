@@ -3,7 +3,7 @@ import { OPDS } from "@/lib/mock/reference";
 import { drillItems, METHODOLOGY, SCORECARD } from "@/lib/mock/scorecard";
 import type { Schema } from "@/lib/schema";
 
-export interface IndicatorItemFilters extends PageParams {
+interface IndicatorItemFilters extends PageParams {
   opd?: string | undefined;
 }
 

@@ -166,7 +166,7 @@ function LocationPicker({ bounds, point, districts, selectedDistrictId, selected
 
     const applyTrackedArea = () => {
       if (!map) return;
-      const src = map.getSource("tracked-area") as GeoJSONSource | undefined;
+      const src = map.getSource<GeoJSONSource>("tracked-area");
       if (src) {
         src.setData(geo as unknown as GeoJSON.GeoJSON);
       } else {

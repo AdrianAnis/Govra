@@ -11,9 +11,11 @@ import { PUBLIC_ISSUES, toSummary } from "@/lib/mock/issues";
 import { agencyStore, type Publication } from "@/lib/mock/agency";
 import { DEMO_PROFILES } from "@/lib/mock/profile";
 import { checkFile } from "@/lib/report-draft";
+import { toIssueStatus, toUrgency } from "@/lib/status";
 import type { Schema } from "@/lib/schema";
-import { categoryRef, locationOf, opdRef } from "@/lib/mock/reference";
+import { categoryRef, opdRef } from "@/lib/mock/reference";
 import { getSessionUser } from "@/lib/data/session";
+import { directSupabase } from "@/lib/supabase-direct";
 
 const OPD_LOOKUP: Record<string, { code: string; name: string }> = {
   "e0000000-0000-0000-0000-000000000001": { code: "DBM-SDA", name: "Dinas Bina Marga & SDA" },
@@ -32,7 +34,51 @@ type Urgency = Schema<"Urgency">;
 type AgencyAttachment = Schema<"AgencyAttachment">;
 type AgencyReport = Schema<"AgencyReport">;
 
-export interface AgencyFilters extends PageParams {
+interface ReportRow {
+  id: string;
+  code?: string | undefined;
+  title: string;
+  description?: string | null | undefined;
+  status?: string | null | undefined;
+  urgency?: string | null | undefined;
+  support_count?: number | string | null | undefined;
+  opd_id?: string | null | undefined;
+  village_id?: string | null | undefined;
+  district_id?: string | null | undefined;
+  address_detail?: string | null | undefined;
+  lat?: number | string | null | undefined;
+  lng?: number | string | null | undefined;
+  issue_id?: string | null | undefined;
+  created_at: string;
+  updated_at?: string | null | undefined;
+}
+
+interface IssueRow {
+  id: string;
+  title: string;
+  summary?: string | null | undefined;
+  status?: string | null | undefined;
+  urgency?: string | null | undefined;
+  opd_id?: string | null | undefined;
+  village_id?: string | null | undefined;
+  district_id?: string | null | undefined;
+  address_detail?: string | null | undefined;
+  center_lat?: number | string | null | undefined;
+  center_lng?: number | string | null | undefined;
+  created_at: string;
+  updated_at?: string | null | undefined;
+}
+
+interface EventRow {
+  id: string;
+  created_at: string;
+  from_status?: string | null | undefined;
+  to_status?: string | null | undefined;
+  author_name?: string | null | undefined;
+  note?: string | null | undefined;
+}
+
+interface AgencyFilters extends PageParams {
   status?: Status | undefined;
   urgency?: Urgency | undefined;
 }
@@ -43,7 +89,6 @@ const MAX_REPORTS = 3;
 const SLA_HOURS: Record<Urgency, number> = { URGENT: 24, TINGGI: 72, NORMAL: 120 };
 const URGENCY_RANK: Record<Urgency, number> = { URGENT: 3, TINGGI: 2, NORMAL: 1 };
 const AWAITING: readonly Status[] = ["DITERUSKAN", "DIBUKA_ULANG"];
-const OPEN: readonly Status[] = ["DITERUSKAN", "DIPROSES", "DIBUKA_ULANG"];
 const PHOTOS = ["/issues/banjir-hd.jpg", "/issues/jembatan-hd.jpg", "/issues/pagar-hd.jpg", "/issues/atap-hd.jpg"];
 const SAFETY: Record<Urgency, Schema<"SafetyRisk">> = { URGENT: "LIFE", TINGGI: "PROPERTY", NORMAL: "NONE" };
 const REPORT_BODIES: ReadonlyArray<(title: string) => string> = [
@@ -54,6 +99,24 @@ const REPORT_BODIES: ReadonlyArray<(title: string) => string> = [
 const AI_CONFIDENCE = 0.92;
 const EVIDENCE_PATH = "/api/agency/evidence";
 const REPORT_SPACING_HOURS = 5;
+
+function reportFromIssue(issue: IssueRow): ReportRow {
+  return {
+    id: issue.id,
+    title: issue.title,
+    description: issue.summary || issue.title,
+    status: issue.status,
+    urgency: issue.urgency,
+    opd_id: issue.opd_id,
+    created_at: issue.created_at,
+    updated_at: issue.updated_at,
+    lat: issue.center_lat,
+    lng: issue.center_lng,
+    village_id: issue.village_id,
+    district_id: issue.district_id,
+    address_detail: issue.address_detail,
+  };
+}
 
 function agencyIssues(): Issue[] {
   const code = DEMO_PROFILES.dinas.opd?.code;
@@ -94,7 +157,7 @@ function byPriority(a: Schema<"AgencyIssueSummary">, b: Schema<"AgencyIssueSumma
   return URGENCY_RANK[b.urgency] - URGENCY_RANK[a.urgency] || dueMs(a) - dueMs(b) || b.reporter_count - a.reporter_count;
 }
 
-export function allowedTransitions(status: Status): AgencyTransition[] {
+function allowedTransitions(status: Status): AgencyTransition[] {
   switch (status) {
     case "DITERUSKAN":
       return ["DIPROSES", "DITOLAK", "DIALIHKAN"];
@@ -145,9 +208,7 @@ function reportsOf(issue: Issue): AgencyReport[] {
 export async function listAgencyIssues(filters: AgencyFilters = {}, opdIdOverride?: string): Promise<Schema<"AgencyIssueList">> {
   const user = await getSessionUser();
   const targetOpdId = opdIdOverride || user?.opdId;
-  const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
+  const { url: supabaseUrl, key: supabaseKey } = directSupabase();
 
   try {
     let endpoint = `${supabaseUrl}/rest/v1/reports?order=created_at.desc&limit=100`;
@@ -191,13 +252,6 @@ export async function listAgencyIssues(filters: AgencyFilters = {}, opdIdOverrid
           }
         }
         const opdCode = (targetOpdId && OPD_LOOKUP[targetOpdId]?.code) || "DBM-SDA";
-        let refOpd: Schema<"OpdRef">;
-        try {
-          refOpd = opdRef(opdCode);
-        } catch {
-          refOpd = { code: opdCode, slug: opdCode.toLowerCase(), name: (targetOpdId && OPD_LOOKUP[targetOpdId]?.name) || "Dinas" };
-        }
-
         let defaultCat: Schema<"CategoryRef">;
         try {
           defaultCat = categoryRef("JALAN-RUSAK");
@@ -205,7 +259,7 @@ export async function listAgencyIssues(filters: AgencyFilters = {}, opdIdOverrid
           defaultCat = { code: "UMUM", name: "Umum" };
         }
 
-        const items: Schema<"AgencyIssueSummary">[] = rows.map((r: any) => {
+        const items: Schema<"AgencyIssueSummary">[] = rows.map((r: ReportRow) => {
           const itemOpdId = r.opd_id || targetOpdId;
           const itemOpdCode = (itemOpdId && OPD_LOOKUP[itemOpdId]?.code) || opdCode;
           let rowOpd: Schema<"OpdRef">;
@@ -219,8 +273,8 @@ export async function listAgencyIssues(filters: AgencyFilters = {}, opdIdOverrid
             title: r.title,
             opd: rowOpd,
             category: defaultCat,
-            status: (r.status || "DITERUSKAN") as Status,
-            urgency: (r.urgency || "NORMAL") as Urgency,
+            status: toIssueStatus(r.status || "DITERUSKAN", "DITERUSKAN"),
+            urgency: toUrgency(r.urgency || "NORMAL"),
             reporter_count: r.support_count ? Number(r.support_count) + 1 : 1,
             location: {
               village: { id: r.village_id || "0197b000-0000-7000-8000-002800030000", name: "Kelurahan Setempat" },
@@ -247,9 +301,7 @@ export async function listAgencyIssues(filters: AgencyFilters = {}, opdIdOverrid
 }
 
 export async function getAgencyIssue(id: string): Promise<Schema<"AgencyIssueDetail"> | null> {
-  const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
+  const { url: supabaseUrl, key: supabaseKey } = directSupabase();
 
   try {
     const [reportRes, attRes, issRes] = await Promise.all([
@@ -279,8 +331,8 @@ export async function getAgencyIssue(id: string): Promise<Schema<"AgencyIssueDet
       }).catch(() => null),
     ]);
 
-    let targetReport: any = null;
-    let targetIssue: any = null;
+    let targetReport: ReportRow | null = null;
+    let targetIssue: IssueRow | null = null;
 
     if (reportRes.ok) {
       const rows = await reportRes.json();
@@ -313,22 +365,8 @@ export async function getAgencyIssue(id: string): Promise<Schema<"AgencyIssueDet
       }
     }
 
-    if (targetReport || targetIssue) {
-      const r = targetReport || {
-        id: targetIssue.id,
-        title: targetIssue.title,
-        description: targetIssue.summary || targetIssue.title,
-        status: targetIssue.status,
-        urgency: targetIssue.urgency,
-        opd_id: targetIssue.opd_id,
-        created_at: targetIssue.created_at,
-        updated_at: targetIssue.updated_at,
-        lat: targetIssue.center_lat,
-        lng: targetIssue.center_lng,
-        village_id: targetIssue.village_id,
-        district_id: targetIssue.district_id,
-        address_detail: targetIssue.address_detail,
-      };
+    const r: ReportRow | null = targetReport ?? (targetIssue ? reportFromIssue(targetIssue) : null);
+    if (r) {
 
       const opdId = r.opd_id || (targetIssue ? targetIssue.opd_id : "") || "";
       const opdCode = OPD_LOOKUP[opdId]?.code || "DBM-SDA";
@@ -368,11 +406,11 @@ export async function getAgencyIssue(id: string): Promise<Schema<"AgencyIssueDet
         if (eventsRes.ok) {
           const evRows = await eventsRes.json();
           if (Array.isArray(evRows) && evRows.length > 0) {
-            timelineEvents = evRows.map((ev: any) => ({
+            timelineEvents = evRows.map((ev: EventRow) => ({
               id: ev.id,
               at: ev.created_at,
-              from_status: (ev.from_status || null) as Status | null,
-              to_status: (ev.to_status || "DITERUSKAN") as Status,
+              from_status: ev.from_status ? toIssueStatus(ev.from_status, "DITERUSKAN") : null,
+              to_status: toIssueStatus(ev.to_status || "DITERUSKAN", "DITERUSKAN"),
               actor_label: ev.author_name || (ev.to_status === "DITERUSKAN" ? "Admin Pusat" : refOpd.name),
               note: ev.note || null,
               evidence: [],
@@ -387,7 +425,7 @@ export async function getAgencyIssue(id: string): Promise<Schema<"AgencyIssueDet
             id: "ev-init",
             at: r.created_at,
             from_status: "DIAJUKAN",
-            to_status: (r.status || "DITERUSKAN") as Status,
+            to_status: toIssueStatus(r.status || "DITERUSKAN", "DITERUSKAN"),
             actor_label: "Admin Pusat",
             note: "Diteruskan ke dinas terkait",
             evidence: [],
@@ -400,8 +438,8 @@ export async function getAgencyIssue(id: string): Promise<Schema<"AgencyIssueDet
         title: r.title,
         opd: refOpd,
         category: defaultCat,
-        status: (r.status || "DITERUSKAN") as Status,
-        urgency: (r.urgency || "NORMAL") as Urgency,
+        status: toIssueStatus(r.status || "DITERUSKAN", "DITERUSKAN"),
+        urgency: toUrgency(r.urgency || "NORMAL"),
         reporter_count: r.support_count ? Number(r.support_count) + 1 : 1,
         location: {
           village: { id: r.village_id || "0197b000-0000-7000-8000-002800030000", name: "Kelurahan Setempat" },
@@ -450,9 +488,7 @@ export async function getAgencyIssue(id: string): Promise<Schema<"AgencyIssueDet
 }
 
 export async function transitionIssue(id: string, input: TransitionInput): Promise<Outcome<Schema<"TransitionResult">>> {
-  const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
+  const { url: supabaseUrl, key: supabaseKey } = directSupabase();
 
   let currentStatus: Status = "DITERUSKAN";
   let opdName = "Dinas Terkait";
@@ -475,7 +511,7 @@ export async function transitionIssue(id: string, input: TransitionInput): Promi
       if (Array.isArray(repRows) && repRows.length > 0) {
         const rep = repRows[0];
         found = true;
-        currentStatus = (rep.status || "DITERUSKAN") as Status;
+        currentStatus = toIssueStatus(rep.status || "DITERUSKAN", "DITERUSKAN");
         targetReportId = rep.id;
         targetIssueId = rep.issue_id || rep.id;
         const lookup = rep.opd_id ? OPD_LOOKUP[rep.opd_id] : undefined;
@@ -490,7 +526,7 @@ export async function transitionIssue(id: string, input: TransitionInput): Promi
       if (Array.isArray(issRows) && issRows.length > 0) {
         const iss = issRows[0];
         found = true;
-        currentStatus = (iss.status || "DITERUSKAN") as Status;
+        currentStatus = toIssueStatus(iss.status || "DITERUSKAN", "DITERUSKAN");
         targetIssueId = iss.id;
         const lookup = iss.opd_id ? OPD_LOOKUP[iss.opd_id] : undefined;
         if (lookup) {
@@ -547,13 +583,13 @@ export async function transitionIssue(id: string, input: TransitionInput): Promi
 
   try {
     const nowIso = new Date().toISOString();
-    const patchReport: Record<string, any> = {
+    const patchReport: Record<string, unknown> = {
       status: input.to,
       updated_at: nowIso,
       hide_reason: note,
     };
 
-    const patchIssue: Record<string, any> = {
+    const patchIssue: Record<string, unknown> = {
       status: input.to,
       updated_at: nowIso,
     };
@@ -648,14 +684,15 @@ export async function setPublication(
   attachmentId: string,
   input: Publication,
 ): Promise<Outcome<AgencyAttachment>> {
-  const issue = (await getAgencyIssue(issueId)) || agencyIssues().find((item) => item.id === issueId);
-  if (!issue) {
+  const detail = await getAgencyIssue(issueId);
+  const fallback = detail ? undefined : agencyIssues().find((item) => item.id === issueId);
+  if (!detail && !fallback) {
     return { ok: false, status: 404, message: "Isu tidak ditemukan." };
   }
-  const reports = (issue as any).reports || reportsOf(issue as any);
-  const target = (reports as any[])
-    .flatMap((report: any) => (report.attachments || []).map((attachment: any) => ({ attachment, visibility: report.visibility })))
-    .find((entry: any) => entry.attachment.id === attachmentId);
+  const reports: AgencyReport[] = detail ? detail.reports : fallback ? reportsOf(fallback) : [];
+  const target = reports
+    .flatMap((report) => report.attachments.map((attachment) => ({ attachment, visibility: report.visibility })))
+    .find((entry) => entry.attachment.id === attachmentId);
   if (!target) {
     return { ok: false, status: 404, message: "Foto tidak ditemukan." };
   }
@@ -707,49 +744,4 @@ export async function saveEvidence(file: File): Promise<Outcome<Schema<"Attachme
 
 export function readEvidence(id: string) {
   return agencyStore().evidence.get(id) ?? null;
-}
-
-function medianOf(values: readonly number[]): number | null {
-  if (values.length === 0) {
-    return null;
-  }
-  const sorted = [...values].sort((a, b) => a - b);
-  const middle = Math.floor(sorted.length / 2);
-  const low = sorted[middle - 1] ?? 0;
-  const high = sorted[middle] ?? 0;
-  return sorted.length % 2 === 0 ? (low + high) / 2 : high;
-}
-
-function responseHours(issue: Issue): number | null {
-  const index = issue.timeline.findIndex((event) => event.to_status === "DITERUSKAN");
-  const forwarded = issue.timeline[index];
-  const next = issue.timeline[index + 1];
-  if (!forwarded || !next || next.actor_label === "Sistem") {
-    return null;
-  }
-  return (Date.parse(next.at) - Date.parse(forwarded.at)) / MS_PER_HOUR;
-}
-
-export async function getAgencyStats(): Promise<Schema<"AgencyStats">> {
-  const issues = agencyIssues();
-  const counts = new Map<Status, number>();
-  for (const issue of issues) {
-    counts.set(issue.status, (counts.get(issue.status) ?? 0) + 1);
-  }
-  const hours = issues.flatMap((issue) => responseHours(issue) ?? []);
-  const withinSla = issues.filter((issue) => {
-    const taken = responseHours(issue);
-    return taken !== null && taken <= SLA_HOURS[issue.urgency];
-  }).length;
-  const overdue = issues.filter((issue) => {
-    const due = slaDueAt(issue);
-    return due !== null && Date.parse(due) < currentTime().getTime();
-  }).length;
-  const considered = hours.length + overdue;
-  return {
-    total_open: issues.filter((issue) => OPEN.includes(issue.status)).length,
-    by_status: [...counts.entries()].map(([status, count]) => ({ status, count })),
-    sla_compliance_percent: considered === 0 ? 100 : Math.round((withinSla / considered) * 100),
-    median_response_hours: medianOf(hours),
-  };
 }

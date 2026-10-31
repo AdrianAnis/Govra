@@ -1,17 +1,6 @@
 "use client";
 
-import {
-  ArrowRight,
-  Calendar,
-  ChevronRight,
-  ExternalLink,
-  Eye,
-  Filter,
-  Info,
-  MapPin,
-  Navigation,
-  X,
-} from "lucide-react";
+import { ArrowRight, ChevronRight, Filter, MapPin, Navigation, X } from "lucide-react";
 import type { Map as MapInstance } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import Link from "next/link";
@@ -105,7 +94,7 @@ export function AdminDistributionMap({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedPoint, setSelectedPoint] = useState<ReportMapPoint | null>(null);
-  const [hoveredPoint, setHoveredPoint] = useState<{ point: ReportMapPoint; x: number; y: number } | null>(null);
+  const [hoveredPoint, setHoveredPoint] = useState<{ point: ReportMapPoint; x: number; y: number; width: number } | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const mapRef = useRef<MapInstance | null>(null);
 
@@ -212,7 +201,7 @@ export function AdminDistributionMap({
           const id = e.features?.[0]?.properties?.id;
           const found = filteredPoints.find((p) => p.id === id);
           if (found) {
-            setHoveredPoint({ point: found, x: e.point.x, y: e.point.y });
+            setHoveredPoint({ point: found, x: e.point.x, y: e.point.y, width: container.clientWidth || 500 });
           }
         });
 
@@ -289,7 +278,7 @@ export function AdminDistributionMap({
           <div
             className="pointer-events-none absolute z-20 w-72 max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-full pb-3"
             style={{
-              left: `${Math.max(150, Math.min(hoveredPoint.x, (containerRef.current?.clientWidth || 500) - 150))}px`,
+              left: `${Math.max(150, Math.min(hoveredPoint.x, hoveredPoint.width - 150))}px`,
               top: `${Math.max(10, hoveredPoint.y - 12)}px`,
             }}
           >

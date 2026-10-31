@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/data/session";
 import { deletePemerintahProgram, updatePemerintahProgram } from "@/lib/data/pemerintah";
+import { getErrorMessage } from "@/lib/error-message";
 
 export async function PUT(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   const user = await getSessionUser();
-  if (!user || (user.role !== "kepala_daerah" && user.role !== "admin")) {
+  if (!user || (user.role !== "admin")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
@@ -20,8 +21,8 @@ export async function PUT(
     }
 
     return NextResponse.json(result.program, { status: 200 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Terjadi kesalahan server" }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err, "Terjadi kesalahan server") }, { status: 500 });
   }
 }
 
@@ -30,7 +31,7 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   const user = await getSessionUser();
-  if (!user || (user.role !== "kepala_daerah" && user.role !== "admin")) {
+  if (!user || (user.role !== "admin")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
@@ -42,7 +43,7 @@ export async function DELETE(
     }
 
     return NextResponse.json({ success: true }, { status: 200 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Terjadi kesalahan server" }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err, "Terjadi kesalahan server") }, { status: 500 });
   }
 }

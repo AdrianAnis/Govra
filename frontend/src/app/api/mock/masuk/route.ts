@@ -1,6 +1,7 @@
 import { rejectCrossOrigin } from "@/lib/origin";
 import { mockOnly } from "@/lib/mock-guard";
 import { type Role, getSafeRedirect, safeNext, SESSION_COOKIE } from "@/lib/session";
+import { signValue } from "@/lib/session-sign";
 
 const SEE_OTHER_STATUS = 303;
 
@@ -24,6 +25,6 @@ export async function POST(request: Request) {
   const next = safeNext(typeof raw === "string" ? raw : null);
   const target = new URL(getSafeRedirect(role, next), request.url);
   const headers = new Headers({ Location: target.toString() });
-  headers.append("Set-Cookie", `${SESSION_COOKIE}=${role}; Path=/; HttpOnly; SameSite=Lax`);
+  headers.append("Set-Cookie", `${SESSION_COOKIE}=${await signValue(role)}; Path=/; HttpOnly; SameSite=Lax`);
   return new Response(null, { status: SEE_OTHER_STATUS, headers });
 }

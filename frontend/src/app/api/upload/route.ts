@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/data/session";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+import { getErrorMessage } from "@/lib/error-message";
+import { directSupabase } from "@/lib/supabase-direct";
 
 export async function POST(request: Request) {
+  const { url: supabaseUrl, serviceKey } = directSupabase();
   const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Sesi tidak valid atau telah berakhir" }, { status: 401 });
@@ -64,9 +64,9 @@ export async function POST(request: Request) {
 
     const publicUrl = `${supabaseUrl}/storage/v1/object/public/reports/${filename}`;
     return NextResponse.json({ url: publicUrl, filename }, { status: 200 });
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.json(
-      { error: err.message || "Terjadi kesalahan internal saat mengunggah berkas" },
+      { error: getErrorMessage(err, "Terjadi kesalahan internal saat mengunggah berkas") },
       { status: 500 }
     );
   }

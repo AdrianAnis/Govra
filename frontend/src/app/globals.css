@@ -186,13 +186,6 @@ body {
   line-height: 1.6;
 }
 
-:root [data-sonner-toaster][data-sonner-theme="light"] {
-  --normal-bg: var(--surface);
-  --normal-text: var(--fg);
-  --normal-border: var(--border);
-  --border-radius: 10px;
-}
-
 :focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;

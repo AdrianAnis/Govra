@@ -13,7 +13,7 @@ export default async function DinasLayout({ children }: { children: ReactNode })
   if (user.role === "pelapor") {
     redirect(REPORTER_HOME);
   }
-  if (user.role === "admin" || user.role === "kepala_daerah") {
+  if (user.role === "admin") {
     redirect(PEMERINTAH_HOME);
   }
   if (user.role !== "dinas") {

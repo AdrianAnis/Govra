@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminDistributionMap } from "@/components/admin/admin-distribution-map";
+import { StatCard, StatGrid } from "@/components/stat-card";
 import { PageHeader } from "@/components/page-header";
 import {
   getPemerintahOverview,
@@ -16,7 +17,6 @@ interface StatTile {
   value: string | number;
   sublabel?: string;
   href?: string;
-  highlight?: boolean;
 }
 
 export default async function PemerintahOverviewPage() {
@@ -38,7 +38,6 @@ export default async function PemerintahOverviewPage() {
       value: formatNumber(overview.urgentIssuesCount),
       sublabel: "Memerlukan perhatian kepala daerah",
       href: "/pemerintah/laporan",
-      highlight: overview.urgentIssuesCount > 0,
     },
     {
       label: "Tingkat Penyelesaian",
@@ -61,43 +60,17 @@ export default async function PemerintahOverviewPage() {
         description="Pantauan komprehensif aduan warga, efektivitas penanganan OPD, dan capaian program kerja daerah."
       />
 
-      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {tiles.map((tile) => {
-          const body = (
-            <>
-              <span className="text-sm font-semibold text-fg-muted">{tile.label}</span>
-              <span className="text-4xl leading-none font-bold tracking-tight tabular-nums">
-                {tile.value}
-              </span>
-              {tile.sublabel && (
-                <span className="text-xs text-fg-muted truncate">{tile.sublabel}</span>
-              )}
-            </>
-          );
-          return (
-            <li key={tile.label}>
-              {tile.href ? (
-                <Link
-                  href={tile.href}
-                  className={`flex h-full flex-col justify-between gap-3 rounded-lg border p-6 transition-colors duration-200 ease-ui hover:bg-surface-muted ${
-                    tile.highlight ? "border-amber-300 bg-amber-50/50" : "bg-surface"
-                  }`}
-                >
-                  {body}
-                </Link>
-              ) : (
-                <div
-                  className={`flex h-full flex-col justify-between gap-3 rounded-lg border p-6 ${
-                    tile.highlight ? "border-amber-300 bg-amber-50/50" : "bg-surface"
-                  }`}
-                >
-                  {body}
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+      <StatGrid>
+        {tiles.map((tile) => (
+          <StatCard
+            key={tile.label}
+            label={tile.label}
+            value={tile.value}
+            {...(tile.sublabel ? { hint: tile.sublabel } : {})}
+            {...(tile.href ? { href: tile.href } : {})}
+          />
+        ))}
+      </StatGrid>
 
       <AdminDistributionMap
         points={mapPoints}

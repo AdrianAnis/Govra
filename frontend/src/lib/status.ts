@@ -49,6 +49,26 @@ export const ISSUE_STATUS: Record<IssueStatus, StatusMeta> = {
   SELESAI: { label: "Selesai", weight: "selesai", icon: BadgeCheck },
 };
 
-export function isIssueStatus(value: string): value is IssueStatus {
+function isProgramStatus(value: string): value is ProgramStatus {
+  return value in PROGRAM_STATUS;
+}
+
+function isIssueStatus(value: string): value is IssueStatus {
   return value in ISSUE_STATUS;
+}
+
+function isUrgency(value: string): value is Urgency {
+  return value === "NORMAL" || value === "TINGGI" || value === "URGENT";
+}
+
+export function toProgramStatus(value: string): ProgramStatus {
+  return isProgramStatus(value) ? value : "SESUAI_JADWAL";
+}
+
+export function toIssueStatus(value: string, fallback: IssueStatus = "DIAJUKAN"): IssueStatus {
+  return isIssueStatus(value) ? value : fallback;
+}
+
+export function toUrgency(value: string, fallback: Urgency = "NORMAL"): Urgency {
+  return isUrgency(value) ? value : fallback;
 }

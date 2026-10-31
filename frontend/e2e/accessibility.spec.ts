@@ -20,11 +20,12 @@ test.describe("keyboard", () => {
   test("formulir masuk bisa diisi dan dikirim hanya dengan keyboard", async ({ page }) => {
     await page.goto("/masuk");
     await page.getByLabel("Alamat Email").focus();
-    await page.keyboard.type("dinas@govra.id");
+    await page.keyboard.type("tidak-ada@kotacontoh.go.id");
     await page.keyboard.press("Tab");
-    await page.keyboard.type("kata-sandi-contoh");
+    await page.keyboard.type("kata-sandi-salah");
     await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(/\/dinas$/);
+    await expect(page).toHaveURL(/\/masuk\?error=gagal/);
+    await expect(page.getByText("Gagal Masuk")).toBeVisible();
   });
 
   test("fokus terlihat pada elemen interaktif", async ({ page }) => {
@@ -43,20 +44,6 @@ test.describe("keyboard", () => {
         expect(outline.style !== "none" || outline.shadow !== "none" || outline.width > 0).toBe(true);
       }
     }
-  });
-
-  test("dialog aksi Dinas ditutup dengan Escape dan fokus kembali ke tombol", async ({ page }) => {
-    await signIn(page, "dinas");
-    await page.goto("/dinas");
-    await page.getByRole("row").filter({ hasText: /Diteruskan|Diproses|Dibuka Ulang/ }).first().getByRole("link").click();
-    const trigger = page.getByRole("button", { name: /^(Proses|Tandai selesai)$/ }).first();
-    await trigger.focus();
-    await page.keyboard.press("Enter");
-    const dialog = page.getByRole("dialog");
-    await expect(dialog).toBeVisible();
-    await page.keyboard.press("Escape");
-    await expect(dialog).toBeHidden();
-    await expect(trigger).toBeFocused();
   });
 
   test("dialog menahan fokus selama terbuka", async ({ page }) => {

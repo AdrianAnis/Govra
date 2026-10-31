@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { IssueStatusBadge } from "@/components/status-badge";
+import { toIssueStatus } from "@/lib/status";
 import { formatRelativeTime } from "@/lib/format";
 import type { PemerintahReportItem } from "@/lib/data/pemerintah";
 
@@ -151,7 +152,7 @@ export function PemerintahReportsTable({ initialReports, opdList }: Props) {
                       </span>
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap">
-                      <IssueStatusBadge status={report.status as any} />
+                      <IssueStatusBadge status={toIssueStatus(report.status)} />
                     </td>
                     <td className="px-4 py-2 text-center font-medium tabular-nums whitespace-nowrap">
                       {report.supportCount}
@@ -194,7 +195,7 @@ export function PemerintahReportsTable({ initialReports, opdList }: Props) {
             <div className="flex flex-col gap-4 py-2">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-fg-muted">Status:</span>
-                <IssueStatusBadge status={activeReport.status as any} />
+                <IssueStatusBadge status={toIssueStatus(activeReport.status)} />
               </div>
 
               {activeReport.addressDetail && (

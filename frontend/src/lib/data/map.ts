@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import type { ReportMapPoint } from "@/components/admin/admin-distribution-map";
+import { directSupabase } from "@/lib/supabase-direct";
 
 const BFF_KEY = process.env.BFF_SHARED_KEY || "";
 
@@ -12,6 +13,24 @@ const OPD_NAMES: Record<string, string> = {
   "e0000000-0000-0000-0000-000000000006": "Badan Penanggulangan Bencana Daerah",
   "e0000000-0000-0000-0000-000000000007": "Dinas PUPR",
 };
+
+interface MapRow {
+  id: string;
+  code?: string;
+  title: string;
+  description?: string;
+  summary?: string;
+  status?: string;
+  urgency?: string;
+  opd_id?: string | null;
+  opd_name?: string;
+  address_detail?: string;
+  cover_photo_url?: string;
+  point?: { lat?: number | string; lng?: number | string };
+  lat?: number | string;
+  lng?: number | string;
+  created_at: string;
+}
 
 export async function getDistributionPoints(opdId?: string): Promise<ReportMapPoint[]> {
   const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
@@ -39,7 +58,7 @@ export async function getDistributionPoints(opdId?: string): Promise<ReportMapPo
         ? data.items
         : [];
       if (raw.length > 0) {
-        return raw.map((item: Record<string, any>) => ({
+        return raw.map((item: MapRow) => ({
           id: item.id,
           code: item.code || "GVR",
           title: item.title,
@@ -58,8 +77,7 @@ export async function getDistributionPoints(opdId?: string): Promise<ReportMapPo
     }
   } catch {}
 
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  const { url: supabaseUrl, serviceKey: supabaseKey } = directSupabase();
 
   if (!supabaseUrl || !supabaseKey) {
     return [];
@@ -103,7 +121,7 @@ export async function getDistributionPoints(opdId?: string): Promise<ReportMapPo
 
     if (reportsRes.ok) {
       const data = await reportsRes.json();
-      return (data || []).map((item: Record<string, any>) => ({
+      return (data || []).map((item: MapRow) => ({
         id: item.id,
         code: item.code || "GVR",
         title: item.title,

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/data/session";
 import { createPemerintahProgram } from "@/lib/data/pemerintah";
+import { getErrorMessage } from "@/lib/error-message";
 
 export async function POST(request: Request) {
   const user = await getSessionUser();
-  if (!user || (user.role !== "kepala_daerah" && user.role !== "admin")) {
+  if (!user || (user.role !== "admin")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(result.program, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Terjadi kesalahan server" }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err, "Terjadi kesalahan server") }, { status: 500 });
   }
 }

@@ -4,7 +4,7 @@ import {
   createNonce,
   SECURITY_HEADERS,
 } from "@/lib/security-headers";
-import { isProtectedPath, loginHref, SESSION_COOKIE } from "@/lib/session";
+import { isProtectedPath, loginHref, readRole, SESSION_COOKIE } from "@/lib/session";
 
 const CSP_HEADER = "Content-Security-Policy";
 
@@ -18,8 +18,8 @@ function redirectToLogin(request: NextRequest) {
   return response;
 }
 
-export function proxy(request: NextRequest) {
-  if (isProtectedPath(request.nextUrl.pathname) && !request.cookies.has(SESSION_COOKIE)) {
+export async function proxy(request: NextRequest) {
+  if (isProtectedPath(request.nextUrl.pathname) && !(await readRole(request.cookies.get(SESSION_COOKIE)?.value))) {
     return redirectToLogin(request);
   }
   const policy = buildContentSecurityPolicy(

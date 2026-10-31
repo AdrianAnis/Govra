@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export const MAX_MESSAGES = 20;
 export const MAX_QUESTION_LENGTH = 500;
-export const MAX_CONTENT_LENGTH = 2000;
+const MAX_CONTENT_LENGTH = 2000;
 
 const roleSchema = z.enum(["USER", "ASSISTANT"]);
 
@@ -21,6 +21,10 @@ export const chatRequestSchema = z.object({
     .min(1)
     .max(MAX_MESSAGES),
 });
+
+export const persistedTurnsSchema = z.array(
+  z.object({ id: z.string(), role: roleSchema, content: z.string(), sources: z.array(sourceSchema) }),
+);
 
 export type ChatSource = z.infer<typeof sourceSchema>;
 export type ChatRole = z.infer<typeof roleSchema>;

@@ -7,7 +7,7 @@ import { MarkdownLite } from "@/components/chat/markdown-lite";
 import { SourceLink } from "@/components/chat/source-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MAX_MESSAGES, MAX_QUESTION_LENGTH, type ChatTurn } from "@/lib/chat";
+import { MAX_MESSAGES, MAX_QUESTION_LENGTH, persistedTurnsSchema, type ChatTurn } from "@/lib/chat";
 import { askAssistant, isRateLimited } from "@/lib/chat-client";
 import { FIELD_CLASS, FIELD_HEIGHT } from "@/lib/field-style";
 import { REPORTER_HOME } from "@/lib/routes";
@@ -32,7 +32,10 @@ function loadPersistedTurns(): ChatTurn[] {
   if (typeof window === "undefined") return [];
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return JSON.parse(saved) as ChatTurn[];
+    if (saved) {
+      const parsed = persistedTurnsSchema.safeParse(JSON.parse(saved));
+      if (parsed.success) return parsed.data;
+    }
   } catch {}
   return [];
 }
