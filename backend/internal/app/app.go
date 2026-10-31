@@ -44,7 +44,7 @@ func New(cfg *config.Config) (*Application, error) {
 	fiberApp.Use(logger.New())
 	fiberApp.Use(httpx.SecurityHeadersMiddleware())
 	fiberApp.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
+		AllowOrigins: cfg.CORSOrigins,
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization, X-BFF-Key, X-Request-Id",
 		AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",
 	}))

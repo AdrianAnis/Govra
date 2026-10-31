@@ -1,0 +1,6 @@
+.env
+.env.*
+*.md
+supabase
+tmp
+bin
