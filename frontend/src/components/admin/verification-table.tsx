@@ -1,25 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import {
-  AlertTriangle,
-  ArrowRight,
-  Building2,
-  Calendar,
-  CheckCircle2,
-  ChevronRight,
-  Eye,
-  FileEdit,
-  ImageIcon,
-  Info,
-  RefreshCw,
-  Send,
-  Users,
-  X,
-  XCircle,
-} from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { SelectField } from "@/components/select-field";
 import { IssueStatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
@@ -41,40 +25,8 @@ import { REJECTION_OPTIONS, type RejectionReason } from "@/lib/agency";
 import { formatNumber, formatRelativeTime } from "@/lib/format";
 import type { Schema } from "@/lib/schema";
 import type { IssueStatus } from "@/lib/status";
-import { cn } from "@/lib/utils";
-
-export interface VerificationTableItem {
-  issue_id: string;
-  code?: string;
-  status?: string;
-  kind: Schema<"VerificationKind">;
-  title: string;
-  summary?: string | null;
-  reporter_count: number;
-  created_at: string;
-  photo_urls?: string[];
-  ai_suggestion?: {
-    opd: {
-      code: string;
-      name: string;
-      slug: string;
-    };
-    category: {
-      code: string;
-      name: string;
-    };
-    confidence: number;
-    is_unregistered_opd?: boolean;
-    recommended_action?: string;
-  } | null;
-  current_opd?: {
-    code: string;
-    name: string;
-    slug: string;
-  } | null;
-  transfer_reason?: string | null;
-  transfer_note?: string | null;
-}
+import type { VerificationTableItem } from "@/lib/data/admin";
+import { getErrorMessage } from "@/lib/error-message";
 
 interface VerificationTableProps {
   items: readonly VerificationTableItem[];
@@ -85,10 +37,11 @@ interface VerificationTableProps {
 export function VerificationTable({ items: initialItems, opds, now }: VerificationTableProps) {
   const router = useRouter();
   const [items, setItems] = useState<VerificationTableItem[]>([...initialItems]);
-
-  useEffect(() => {
+  const [syncedItems, setSyncedItems] = useState(initialItems);
+  if (syncedItems !== initialItems) {
+    setSyncedItems(initialItems);
     setItems([...initialItems]);
-  }, [initialItems]);
+  }
   const [activeItem, setActiveItem] = useState<VerificationTableItem | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
@@ -166,8 +119,8 @@ export function VerificationTable({ items: initialItems, opds, now }: Verificati
       setShowReassignForm(false);
       setIsDrawerOpen(false);
       router.refresh();
-    } catch (err: any) {
-      setErrorMsg(err.message || "Gagal meneruskan laporan.");
+    } catch (err) {
+      setErrorMsg(getErrorMessage(err, "Gagal meneruskan laporan."));
     } finally {
       setIsSubmitting(false);
     }
@@ -217,8 +170,8 @@ export function VerificationTable({ items: initialItems, opds, now }: Verificati
       });
       setIsDrawerOpen(false);
       router.refresh();
-    } catch (err: any) {
-      setErrorMsg(err.message || "Gagal menolak laporan.");
+    } catch (err) {
+      setErrorMsg(getErrorMessage(err, "Gagal menolak laporan."));
     } finally {
       setIsSubmitting(false);
     }

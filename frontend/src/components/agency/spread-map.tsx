@@ -4,7 +4,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef } from "react";
 import { cssColor, loadMapLibre, MAP_STYLE_URL } from "@/lib/map";
 
-export interface SpreadPoint {
+interface SpreadPoint {
   lat: number;
   lng: number;
 }

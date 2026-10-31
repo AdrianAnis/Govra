@@ -5,7 +5,7 @@ export interface Publication {
   is_cover: boolean;
 }
 
-export interface StoredEvidence {
+interface StoredEvidence {
   attachment: Schema<"Attachment">;
   mime: string;
   bytes: ArrayBuffer;

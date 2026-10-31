@@ -5,7 +5,7 @@ import { DinasTugasProkerManager } from "@/components/agency/dinas-tugas-proker-
 import { getDinasAssignedPrograms } from "@/lib/data/pemerintah";
 import { getSessionUser } from "@/lib/data/session";
 import { AGENCY_HOME } from "@/lib/routes";
-import { formatNumber, formatRupiah } from "@/lib/format";
+import { formatRupiah } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Tugas Program Kerja Dinas" };
 
@@ -21,18 +21,15 @@ export default async function DinasTugasProkerPage() {
 
   let onSchedule = 0;
   let delayed = 0;
-  let completed = 0;
   let totalPagu = 0;
   let totalRealization = 0;
 
   for (const p of programs) {
     totalPagu += p.budgetPagu;
     totalRealization += p.budgetRealization;
-    if (p.status === "SELESAI") {
-      completed++;
-    } else if (p.status === "TERLAMBAT" || p.status === "MELEWATI_TENGGAT") {
+    if (p.status === "TERLAMBAT" || p.status === "MELEWATI_TENGGAT") {
       delayed++;
-    } else {
+    } else if (p.status !== "SELESAI") {
       onSchedule++;
     }
   }

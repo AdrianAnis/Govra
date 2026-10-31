@@ -204,7 +204,7 @@ Sistem Govra dibangun dengan mengedepankan keamanan komprehensif, arsitektur *Ba
 - **State & UI Library**: [React 19](https://react.dev/)
 - **Desain & Gaya**: [Tailwind CSS v4](https://tailwindcss.com/) dengan palet warna institusional modern
 - **Ikonografi**: [Lucide React](https://lucide.dev/)
-- **Visualisasi Peta**: [Leaflet](https://leafletjs.com/) & React-Leaflet
+- **Visualisasi Peta**: [MapLibre GL JS](https://maplibre.org/) dengan gaya peta OpenFreeMap
 
 ### Layanan Backend (API Server)
 - **Bahasa**: [Go (Golang) 1.22+](https://golang.org/)
@@ -269,13 +269,14 @@ API_BASE_URL=http://localhost:8080
 #### 2. Frontend (`frontend/.env.local`)
 Salin atau buat berkas `frontend/.env.local`:
 ```env
-NEXT_PUBLIC_APP_URL=http://localhost:3000
 API_BASE_URL=http://localhost:8080
 BFF_SHARED_KEY=
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 ```
+
+> `BFF_SHARED_KEY` harus sama persis dengan nilai di `backend/.env`. `SUPABASE_SERVICE_ROLE_KEY` saat ini masih dipakai jalur cadangan di `frontend/src/lib/data/*` dan sebaiknya dihapus dari frontend setelah semua data diambil lewat API Go.
 
 ---
 

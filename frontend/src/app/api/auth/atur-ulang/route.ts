@@ -5,15 +5,16 @@ import { invalid, readJson } from "@/lib/auth-route";
 const BFF_KEY = process.env.BFF_SHARED_KEY || "";
 
 export async function POST(request: Request) {
-  const json = (await readJson(request)) as Record<string, unknown> | null;
+  const json: unknown = await readJson(request);
+  const body = typeof json === "object" && json !== null ? Object.fromEntries(Object.entries(json)) : {};
   const parsed = resetSchema.safeParse(json);
   if (!parsed.success) {
     return invalid(parsed.error.issues[0]?.message);
   }
 
-  const email = String(json?.email || "");
-  const token = String(json?.token || "");
-  const code = String(json?.code || "");
+  const email = String(body.email || "");
+  const token = String(body.token || "");
+  const code = String(body.code || "");
 
   const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
   try {

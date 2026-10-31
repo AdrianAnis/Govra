@@ -1,14 +1,4 @@
-import {
-  Bell,
-  Building2,
-  Inbox,
-  LayoutDashboard,
-  ScrollText,
-  ShieldCheck,
-  Target,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { Bell, Building2, Inbox, LayoutDashboard, ShieldCheck, Target, Users, type LucideIcon } from "lucide-react";
 import { REPORT_DETAIL_PREFIX, REPORTER_HOME, REPORT_NEW } from "@/lib/routes";
 
 export interface NavLink {
@@ -33,7 +23,7 @@ export const MEMBER_NAV: readonly NavLink[] = [
   ...MAIN_NAV,
 ];
 
-export interface FooterGroup {
+interface FooterGroup {
   title: string;
   links: readonly NavLink[];
 }

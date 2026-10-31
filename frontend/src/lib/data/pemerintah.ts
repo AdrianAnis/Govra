@@ -1,8 +1,9 @@
-const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+import { getErrorMessage } from "@/lib/error-message";
 const supabaseKey =
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
 
-export interface PemerintahOverview {
+interface PemerintahOverview {
   totalReports: number;
   resolvedReports: number;
   inProgressReports: number;
@@ -21,7 +22,7 @@ export interface PemerintahOverview {
   opdCount: number;
 }
 
-export interface UrgentIssueItem {
+interface UrgentIssueItem {
   id: string;
   code: string;
   title: string;
@@ -33,7 +34,7 @@ export interface UrgentIssueItem {
   createdAt: string;
 }
 
-export interface OpdPerformanceItem {
+interface OpdPerformanceItem {
   id: string;
   code: string;
   name: string;
@@ -43,6 +44,59 @@ export interface OpdPerformanceItem {
   pendingReports: number;
   completionRate: number;
   statusGrade: "Sangat Baik" | "Baik" | "Perlu Perhatian";
+}
+
+interface IssueRow {
+  id: string;
+  code?: string | undefined;
+  title?: string | undefined;
+  summary?: string | undefined;
+  status?: string | undefined;
+  urgency?: string | undefined;
+  unique_reporters_count?: number | undefined;
+  opd_id?: string | undefined;
+  created_at?: string | undefined;
+}
+
+interface ReportRow {
+  id: string;
+  code?: string | undefined;
+  title?: string | undefined;
+  description?: string | undefined;
+  status?: string | undefined;
+  opd_id?: string | null | undefined;
+  address_detail?: string | null | undefined;
+  lat?: number | null | undefined;
+  lng?: number | null | undefined;
+  created_at?: string | undefined;
+  support_count?: number | undefined;
+}
+
+interface ProgramRow {
+  id: string;
+  code?: string | undefined;
+  name?: string | undefined;
+  description?: string | undefined;
+  opd_id?: string | null | undefined;
+  budget_pagu?: number | string | undefined;
+  budget_realization?: number | string | undefined;
+  target_output?: number | string | undefined;
+  realization_output?: number | string | undefined;
+  target_unit?: string | undefined;
+  start_date?: string | undefined;
+  end_date?: string | undefined;
+  status?: string | undefined;
+}
+
+interface UpdateRow {
+  id: string;
+  program_id: string;
+  opd_id?: string | null | undefined;
+  title?: string | undefined;
+  content?: string | undefined;
+  progress_percentage?: number | string | undefined;
+  documentation_photos?: unknown;
+  created_at?: string | undefined;
 }
 
 export interface PemerintahReportItem {
@@ -86,7 +140,7 @@ export interface PemerintahProgramItem {
   status: string;
 }
 
-export interface CreateProgramInput {
+interface CreateProgramInput {
   name: string;
   code?: string;
   description?: string;
@@ -101,7 +155,7 @@ export interface CreateProgramInput {
   status?: string;
 }
 
-export interface UpdateProgramInput {
+interface UpdateProgramInput {
   name?: string;
   code?: string;
   description?: string;
@@ -245,7 +299,7 @@ export async function getPemerintahUrgentIssues(): Promise<UrgentIssueItem[]> {
     const opdsData: Array<{ id: string; name: string }> = opdsRes.ok ? await opdsRes.json() : [];
     const opdMap = new Map(opdsData.map((o) => [o.id, o.name]));
 
-    return issuesData.map((item: any) => ({
+    return issuesData.map((item: IssueRow) => ({
       id: item.id,
       code: item.code || "-",
       title: item.title || "Isu Publik",
@@ -352,7 +406,7 @@ export async function getPemerintahReports(): Promise<PemerintahReportItem[]> {
     const opds: Array<{ id: string; name: string }> = opdsRes.ok ? await opdsRes.json() : [];
     const opdMap = new Map(opds.map((o) => [o.id, o.name]));
 
-    return reports.map((r: any) => ({
+    return reports.map((r: ReportRow) => ({
       id: r.id,
       code: r.code || "-",
       title: r.title || "Laporan Warga",
@@ -401,13 +455,12 @@ export async function getPemerintahPrograms(): Promise<PemerintahProgramItem[]> 
 
     for (const u of updates) {
       if (!u.program_id || !u.opd_id) continue;
-      if (!assignedMap.has(u.program_id)) {
-        assignedMap.set(u.program_id, new Set());
-      }
-      assignedMap.get(u.program_id)!.add(u.opd_id);
+      const assigned = assignedMap.get(u.program_id) ?? new Set<string>();
+      assigned.add(u.opd_id);
+      assignedMap.set(u.program_id, assigned);
     }
 
-    return programs.map((p: any) => {
+    return programs.map((p: ProgramRow) => {
       const pagu = Number(p.budget_pagu) || 0;
       const realisasi = Number(p.budget_realization) || 0;
       const budgetPercent = pagu > 0 ? Math.min(100, Math.round((realisasi / pagu) * 100)) : 0;
@@ -548,14 +601,14 @@ export async function createPemerintahProgram(input: CreateProgramInput) {
     }
 
     return { success: true, program: created };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Gagal membuat program kerja" };
+  } catch (err) {
+    return { success: false, error: getErrorMessage(err, "Gagal membuat program kerja") };
   }
 }
 
 export async function updatePemerintahProgram(id: string, input: UpdateProgramInput) {
   try {
-    const payload: Record<string, any> = {};
+    const payload: Record<string, unknown> = {};
     if (input.name !== undefined) payload.name = input.name.trim();
     if (input.code !== undefined) payload.code = input.code.trim().toUpperCase();
     if (input.description !== undefined) payload.description = input.description.trim();
@@ -627,8 +680,8 @@ export async function updatePemerintahProgram(id: string, input: UpdateProgramIn
 
     const updated = await res.json();
     return { success: true, program: Array.isArray(updated) ? updated[0] : updated };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Gagal memperbarui program kerja" };
+  } catch (err) {
+    return { success: false, error: getErrorMessage(err, "Gagal memperbarui program kerja") };
   }
 }
 
@@ -650,8 +703,8 @@ export async function deletePemerintahProgram(id: string) {
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Gagal menghapus program kerja" };
+  } catch (err) {
+    return { success: false, error: getErrorMessage(err, "Gagal menghapus program kerja") };
   }
 }
 
@@ -709,7 +762,7 @@ export async function addDinasProgramProgress(
       body: JSON.stringify(updatePayload),
     });
 
-    const progPatch: Record<string, any> = {};
+    const progPatch: Record<string, unknown> = {};
     if (input.realizationOutput !== undefined) {
       progPatch.realization_output = Number(input.realizationOutput) || 0;
     }
@@ -735,8 +788,8 @@ export async function addDinasProgramProgress(
     }
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message || "Gagal mencatat perkembangan program" };
+  } catch (err) {
+    return { success: false, error: getErrorMessage(err, "Gagal mencatat perkembangan program") };
   }
 }
 
@@ -761,11 +814,11 @@ export async function getProgramUpdateHistory(programId: string): Promise<Progra
     const opds: Array<{ id: string; code: string; name: string }> = opdsRes.ok ? await opdsRes.json() : [];
     const opdMap = new Map(opds.map((o) => [o.id, o]));
 
-    return updates.map((u: any) => {
+    return updates.map((u: UpdateRow) => {
       const opd = u.opd_id ? opdMap.get(u.opd_id) : null;
       let photos: string[] = [];
       if (Array.isArray(u.documentation_photos)) {
-        photos = u.documentation_photos.filter((p: any) => typeof p === "string" && p.trim().length > 0);
+        photos = u.documentation_photos.filter((p: unknown): p is string => typeof p === "string" && p.trim().length > 0);
       }
       return {
         id: u.id,

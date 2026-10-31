@@ -1,7 +1,6 @@
 import { ArrowRight, Building2, MapPin } from "lucide-react";
 import Link from "next/link";
 import { RingDecor } from "@/components/bits/ring-decor";
-import { Skeleton } from "@/components/ui/skeleton";
 import { formatPercent } from "@/lib/format";
 import type { Schema } from "@/lib/schema";
 import { PROGRAM_STATUS, type ProgramStatus } from "@/lib/status";
@@ -55,20 +54,4 @@ function StatusIcon({ status }: { status: ProgramStatus }) {
   return <Icon aria-hidden className="size-4" />;
 }
 
-function ProgramCardSkeleton() {
-  return (
-    <div className="flex flex-col gap-6 rounded-lg border bg-surface p-6">
-      <div className="flex items-center justify-between gap-3">
-        <Skeleton className="h-4 w-16" />
-        <Skeleton className="h-4 w-24" />
-      </div>
-      <div className="flex flex-col gap-2">
-        <Skeleton className="h-6 w-4/5" />
-        <Skeleton className="h-4 w-3/5" />
-      </div>
-      <Skeleton className="h-9 w-24" />
-    </div>
-  );
-}
-
-export { ProgramCard, ProgramCardSkeleton };
+export { ProgramCard };

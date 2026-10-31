@@ -6,12 +6,12 @@ import { locationOf } from "@/lib/mock/reference";
 import { allReports, reportStore } from "@/lib/mock/reports";
 import type { Schema } from "@/lib/schema";
 
-export type Detail = Schema<"MyReportDetail"> & {
+type Detail = Schema<"MyReportDetail"> & {
   address_detail?: string | null;
   rejection_reason?: string | null;
 };
 
-export interface CreateReportInput {
+interface CreateReportInput {
   title: string;
   body: string;
   villageId: string;
@@ -21,7 +21,7 @@ export interface CreateReportInput {
   attachments?: Schema<"Attachment">[];
 }
 
-export interface DuplicateInput {
+interface DuplicateInput {
   body: string;
   lat: number;
   lng: number;
@@ -240,7 +240,7 @@ export async function supportIssue(id: string): Promise<Schema<"SupportResult"> 
   return { issue_id: issue.id, report_code: code, reporter_count: issue.reporter_count };
 }
 
-export async function submitResolutionFeedback(
+async function submitResolutionFeedback(
   code: string,
   outcome: Schema<"FeedbackOutcome">,
   note?: string,

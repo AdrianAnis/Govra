@@ -27,18 +27,4 @@ function Logo({ tone = "color", className }: LogoProps) {
   );
 }
 
-function LogoMark({ tone = "color", className }: LogoProps) {
-  return (
-    <svg
-      viewBox={`0 0 ${LOGO_SIZE.markWidth} ${LOGO_SIZE.height}`}
-      role="img"
-      aria-label="Govra"
-      className={cn("h-8 w-auto", className)}
-    >
-      <path fillRule="evenodd" d={MARK_PATH} className={MARK_FILL[tone]} />
-      <path d={DOT_PATH} className={DOT_FILL[tone]} />
-    </svg>
-  );
-}
-
-export { Logo, LogoMark };
+export { Logo };

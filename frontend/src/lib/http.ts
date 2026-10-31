@@ -3,7 +3,7 @@ import { z } from "zod";
 
 const errorSchema = z.object({ code: z.string().optional(), message: z.string() });
 
-export const FALLBACK_MESSAGE = "Terjadi kendala. Coba lagi sebentar lagi.";
+const FALLBACK_MESSAGE = "Terjadi kendala. Coba lagi sebentar lagi.";
 
 export class ApiError extends Error {
   readonly status: number;

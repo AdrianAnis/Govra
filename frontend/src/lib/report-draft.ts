@@ -7,8 +7,8 @@ export const BODY_MIN = 20;
 export const BODY_MAX = 2000;
 export const MAX_FILES = 3;
 export const MAX_FILE_MB = 5;
-export const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
-export const ALLOWED_MIME: readonly string[] = ["image/jpeg", "image/png", "image/webp"];
+const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
+const ALLOWED_MIME: readonly string[] = ["image/jpeg", "image/png", "image/webp"];
 
 export interface DraftPoint {
   lat: number;
@@ -76,7 +76,7 @@ export function validateDescription(draft: ReportDraft): FieldErrors {
   return errors;
 }
 
-export function isInsideBounds(point: DraftPoint, bounds: readonly number[]): boolean {
+function isInsideBounds(point: DraftPoint, bounds: readonly number[]): boolean {
   const [west = 0, south = 0, east = 0, north = 0] = bounds;
   return point.lng >= west && point.lng <= east && point.lat >= south && point.lat <= north;
 }

@@ -30,8 +30,4 @@ function EmptyState(props: StateMessageProps) {
   return <StateMessage {...props} />;
 }
 
-function ErrorState(props: StateMessageProps) {
-  return <StateMessage role="alert" {...props} />;
-}
-
-export { EmptyState, ErrorState };
+export { EmptyState };

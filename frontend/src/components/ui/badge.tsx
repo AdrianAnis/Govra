@@ -34,4 +34,4 @@ function Badge({
   );
 }
 
-export { Badge, type BadgeWeight };
+export { Badge };

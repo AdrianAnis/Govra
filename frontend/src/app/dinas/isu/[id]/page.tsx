@@ -13,7 +13,6 @@ import { slaInfo } from "@/lib/agency-format";
 import { currentTime } from "@/lib/clock";
 import { getAgencyIssue } from "@/lib/data/agency";
 import { formatDateTime, formatNumber } from "@/lib/format";
-import { AGENCY_HOME } from "@/lib/routes";
 import type { Schema } from "@/lib/schema";
 
 const SAFETY_LABEL: Record<Schema<"SafetyRisk">, string> = {

@@ -7,7 +7,7 @@ export const DISTRICT_ID = {
   barat: "0197a000-0000-7000-8000-000000000004",
 } as const;
 
-export const VILLAGE_ID = {
+const VILLAGE_ID = {
   melati: "0197a000-0000-7000-8000-000000000011",
   kenanga: "0197a000-0000-7000-8000-000000000012",
   anggrek: "0197a000-0000-7000-8000-000000000013",
@@ -18,13 +18,13 @@ export const VILLAGE_ID = {
   flamboyan: "0197a000-0000-7000-8000-000000000018",
 } as const;
 
-export interface VillageSeed {
+interface VillageSeed {
   id: string;
   name: string;
   point: Schema<"GeoPoint">;
 }
 
-export interface DistrictSeed {
+interface DistrictSeed {
   id: string;
   name: string;
   point: Schema<"GeoPoint">;
@@ -172,7 +172,7 @@ const CAT_ALIASES: Record<string, string> = {
   SEKOLAH_RUSAK: "INFRASTRUKTUR-GEDUNG",
 };
 
-export function must<T>(value: T | undefined, what: string): T {
+function must<T>(value: T | undefined, what: string): T {
   if (value === undefined) {
     throw new Error(`Data contoh tidak ditemukan: ${what}`);
   }

@@ -5,7 +5,7 @@ import { getMyReport, listMyReports } from "@/lib/data/reports";
 import { formatPercent } from "@/lib/format";
 import { ISSUE_STATUS, PROGRAM_STATUS } from "@/lib/status";
 
-export interface Answer {
+interface Answer {
   reply: string;
   sources: ChatSource[];
 }

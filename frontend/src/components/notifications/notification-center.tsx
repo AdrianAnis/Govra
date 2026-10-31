@@ -2,26 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  Bell,
-  CheckCheck,
-  CheckCircle2,
-  Clock,
-  ExternalLink,
-  Heart,
-  Inbox,
-  MessageSquare,
-  ShieldCheck,
-  Sparkles,
-  Target,
-  Trash2,
-} from "lucide-react";
+import { CheckCheck, CheckCircle2, Clock, ExternalLink, Heart, Inbox, MessageSquare, ShieldCheck, Target, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { formatDateTime } from "@/lib/format";
 import { useNotifications } from "@/lib/notifications-context";
 import { cn } from "@/lib/utils";
-import type { NotificationCategory } from "@/lib/data/notifications";
 
 interface Props {
   role?: string;

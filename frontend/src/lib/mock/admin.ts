@@ -1,11 +1,11 @@
 import { DISTRICTS, OPDS } from "@/lib/mock/reference";
 import type { Schema } from "@/lib/schema";
 
-export interface Decision {
+interface Decision {
   status: Schema<"IssueStatus">;
 }
 
-export interface SettingState {
+interface SettingState {
   key: Schema<"SettingKey">;
   label: string;
   value: number;

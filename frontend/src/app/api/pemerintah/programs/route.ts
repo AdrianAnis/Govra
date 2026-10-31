@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/data/session";
 import { createPemerintahProgram } from "@/lib/data/pemerintah";
+import { getErrorMessage } from "@/lib/error-message";
 
 export async function POST(request: Request) {
   const user = await getSessionUser();
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(result.program, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Terjadi kesalahan server" }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json({ error: getErrorMessage(err, "Terjadi kesalahan server") }, { status: 500 });
   }
 }

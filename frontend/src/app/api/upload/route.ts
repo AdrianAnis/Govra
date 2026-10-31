@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/data/session";
+import { getErrorMessage } from "@/lib/error-message";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -64,9 +65,9 @@ export async function POST(request: Request) {
 
     const publicUrl = `${supabaseUrl}/storage/v1/object/public/reports/${filename}`;
     return NextResponse.json({ url: publicUrl, filename }, { status: 200 });
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.json(
-      { error: err.message || "Terjadi kesalahan internal saat mengunggah berkas" },
+      { error: getErrorMessage(err, "Terjadi kesalahan internal saat mengunggah berkas") },
       { status: 500 }
     );
   }

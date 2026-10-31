@@ -23,7 +23,7 @@ export function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
-export function canAccessPath(role: Role, pathname: string): boolean {
+function canAccessPath(role: Role, pathname: string): boolean {
   if (role === "admin" || role === "kepala_daerah") {
     return (
       pathname.startsWith(PEMERINTAH_HOME) ||

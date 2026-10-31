@@ -42,14 +42,6 @@ export interface SupporterItem {
   created_at: string;
 }
 
-export interface CreateFeedPayload {
-  report_id?: string | undefined;
-  issue_id?: string | undefined;
-  content: string;
-  media_type?: ("IMAGE" | "VIDEO" | "REEL") | undefined;
-  media_url: string;
-}
-
 export async function fetchFeeds(tab: "trending" | "latest" = "trending"): Promise<FeedItem[]> {
   try {
     const res = await fetch(`/api/feeds?tab=${encodeURIComponent(tab)}`, {
@@ -70,7 +62,7 @@ export async function toggleLikeFeed(id: string): Promise<{ liked: boolean; like
   });
   if (res.status === 401) {
     if (typeof window !== "undefined") {
-      window.location.href = `/masuk?kembali=${encodeURIComponent(window.location.pathname)}`;
+      window.location.href = new URL(`/masuk?kembali=${encodeURIComponent(window.location.pathname)}`, window.location.origin).href;
     }
     throw new Error("Wajib masuk terlebih dahulu");
   }
@@ -87,7 +79,7 @@ export async function toggleSupportFeed(id: string): Promise<{ supported: boolea
   });
   if (res.status === 401) {
     if (typeof window !== "undefined") {
-      window.location.href = `/masuk?kembali=${encodeURIComponent(window.location.pathname)}`;
+      window.location.href = new URL(`/masuk?kembali=${encodeURIComponent(window.location.pathname)}`, window.location.origin).href;
     }
     throw new Error("Wajib masuk terlebih dahulu");
   }
@@ -145,19 +137,6 @@ export async function shareFeed(id: string): Promise<{ shares_count: number }> {
   });
   if (!res.ok) {
     return { shares_count: 0 };
-  }
-  return res.json();
-}
-
-export async function createFeed(payload: CreateFeedPayload): Promise<FeedItem> {
-  const res = await fetch("/api/feeds", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Gagal membuat postingan");
   }
   return res.json();
 }

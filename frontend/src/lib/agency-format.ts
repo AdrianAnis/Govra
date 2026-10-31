@@ -1,6 +1,6 @@
 import { formatRelativeTime } from "@/lib/format";
 
-export interface SlaInfo {
+interface SlaInfo {
   text: string;
   overdue: boolean;
 }

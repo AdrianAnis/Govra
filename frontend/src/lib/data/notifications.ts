@@ -1,7 +1,7 @@
 import { formatRelativeTime, formatRupiah } from "@/lib/format";
 import { getSessionUser } from "@/lib/data/session";
 
-const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseKey =
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
 
@@ -12,6 +12,45 @@ export type NotificationCategory =
   | "KOMENTAR"
   | "VERIFIKASI"
   | "PENUGASAN";
+
+interface ReportRow {
+  id: string;
+  code: string;
+  title: string;
+  status?: string;
+  opd_id?: string;
+  reporter_id?: string;
+  created_at?: string;
+  updated_at?: string;
+  likes_count?: number | string;
+  support_count?: number | string;
+}
+
+interface FeedActionRow {
+  id: string;
+  feed_id: string;
+  user_id?: string;
+  created_at?: string;
+  author_name?: string;
+  supporter_name?: string;
+  content?: string;
+}
+
+interface ProgramRow {
+  id: string;
+  code?: string;
+  name: string;
+  budget_pagu?: number;
+  created_at?: string;
+}
+
+interface ProgramUpdateRow {
+  id: string;
+  opd_id?: string;
+  title?: string;
+  content?: string;
+  created_at?: string;
+}
 
 export interface NotificationItem {
   id: string;
@@ -26,12 +65,12 @@ export interface NotificationItem {
   tabKey: string;
   unread: boolean;
   meta?: {
-    code?: string;
-    opdName?: string;
-    status?: string;
-    supportCount?: number;
-    likesCount?: number;
-    authorName?: string;
+    code?: string | undefined;
+    opdName?: string | undefined;
+    status?: string | undefined;
+    supportCount?: number | undefined;
+    likesCount?: number | undefined;
+    authorName?: string | undefined;
   };
 }
 
@@ -103,24 +142,24 @@ export async function listRoleNotifications(
     const tabActivity: Record<string, string> = {};
 
     const rawReports = reportsRes && reportsRes.ok ? await reportsRes.json() : [];
-    const reports: any[] = Array.isArray(rawReports) ? rawReports : [];
+    const reports: ReportRow[] = Array.isArray(rawReports) ? rawReports : [];
 
     const rawUpdates = updatesRes && updatesRes.ok ? await updatesRes.json() : [];
-    const updates: any[] = Array.isArray(rawUpdates) ? rawUpdates : [];
+    const updates: ProgramUpdateRow[] = Array.isArray(rawUpdates) ? rawUpdates : [];
 
     const rawPrograms = programsRes && programsRes.ok ? await programsRes.json() : [];
-    const programs: any[] = Array.isArray(rawPrograms) ? rawPrograms : [];
+    const programs: ProgramRow[] = Array.isArray(rawPrograms) ? rawPrograms : [];
 
     const rawComments = commentsRes && commentsRes.ok ? await commentsRes.json() : [];
-    const comments: any[] = Array.isArray(rawComments) ? rawComments : [];
+    const comments: FeedActionRow[] = Array.isArray(rawComments) ? rawComments : [];
 
     const rawLikes = likesRes && likesRes.ok ? await likesRes.json() : [];
-    const likes: any[] = Array.isArray(rawLikes) ? rawLikes : [];
+    const likes: FeedActionRow[] = Array.isArray(rawLikes) ? rawLikes : [];
 
     const rawSupports = supportsRes && supportsRes.ok ? await supportsRes.json() : [];
-    const supports: any[] = Array.isArray(rawSupports) ? rawSupports : [];
+    const supports: FeedActionRow[] = Array.isArray(rawSupports) ? rawSupports : [];
 
-    const reportById = new Map<string, any>();
+    const reportById = new Map<string, ReportRow>();
     for (const r of reports) {
       reportById.set(r.id, r);
     }
@@ -157,7 +196,7 @@ export async function listRoleNotifications(
 
       for (const rep of userReports) {
         const status = (rep.status || "").toUpperCase();
-        const opdName = opdMap.get(rep.opd_id) ?? "Dinas Terkait";
+        const opdName = opdMap.get(rep.opd_id ?? "") ?? "Dinas Terkait";
         const time = rep.updated_at || rep.created_at || new Date().toISOString();
         const tab = "/pelapor/laporan";
         if (!tabActivity[tab] || new Date(time) > new Date(tabActivity[tab])) {
@@ -395,7 +434,7 @@ export async function listRoleNotifications(
 
       for (const upd of updates) {
         const isAssignment = upd.title === "PENUGASAN_OPD";
-        const opdName = opdMap.get(upd.opd_id) ?? "Dinas Terkait";
+        const opdName = opdMap.get(upd.opd_id ?? "") ?? "Dinas Terkait";
         const time = upd.created_at || new Date().toISOString();
 
         if (!isAssignment) {

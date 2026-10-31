@@ -21,6 +21,76 @@ import type { Schema } from "@/lib/schema";
 
 type Issue = Schema<"IssueDetail">;
 
+export interface VerificationTableItem {
+  issue_id: string;
+  code?: string;
+  status?: string;
+  kind: Schema<"VerificationKind">;
+  title: string;
+  summary?: string | null;
+  reporter_count: number;
+  created_at: string;
+  photo_urls?: string[];
+  ai_suggestion?: {
+    opd: { code: string; name: string; slug: string };
+    category: { code: string; name: string };
+    confidence: number;
+    is_unregistered_opd?: boolean;
+    recommended_action?: string;
+  } | null;
+  current_opd?: { code: string; name: string; slug: string } | null;
+  transfer_reason?: string | null;
+  transfer_note?: string | null;
+}
+
+interface VerificationPage {
+  page: number;
+  limit: number;
+  total: number;
+  items: VerificationTableItem[];
+}
+
+interface RawIssue {
+  id: string;
+  code?: string;
+  status?: string;
+  title: string;
+  summary?: string | null;
+  unique_reporters_count?: number;
+  created_at: string;
+  photo_urls?: string[];
+  cover_photo_url?: string | null;
+  is_unregistered_opd?: boolean;
+  ai_opd_code?: string;
+  ai_opd_name?: string;
+  ai_category_code?: string;
+  ai_category_name?: string;
+  ai_confidence?: number;
+  ai_recommendation?: string;
+  opd_code?: string;
+  opd_name?: string;
+}
+
+interface RawUser {
+  id: string;
+  email: string;
+  display_name?: string | null;
+  role?: string;
+  status?: string;
+  opd_id?: string | null;
+  opd_code?: string | null;
+  opd_slug?: string | null;
+  opd_name?: string | null;
+  last_sign_in_at?: string | null;
+}
+
+interface RawOpd {
+  code: string;
+  name: string;
+  slug: string;
+  is_active?: boolean;
+}
+
 const AI_CONFIDENCE = 0.58;
 
 function record(action: string, targetType: string, targetId: string | null, detail: string | null) {
@@ -93,7 +163,7 @@ export async function getAdminOverview(): Promise<Schema<"AdminOverview">> {
     }
   } catch {}
 
-  const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
   const supabaseKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
 
@@ -178,7 +248,7 @@ export async function getAdminOverview(): Promise<Schema<"AdminOverview">> {
 
 export async function listVerification(
   params: PageParams & { kind?: Schema<"VerificationKind"> | undefined; opdCode?: string | undefined },
-): Promise<Schema<"VerificationList">> {
+): Promise<VerificationPage> {
   const jar = await cookies();
   const token = jar.get("govra_token")?.value;
   const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
@@ -193,9 +263,8 @@ export async function listVerification(
     if (res.ok) {
       const data = await res.json();
       const rawItems = Array.isArray(data.items) ? data.items : [];
-      let mapped: Schema<"VerificationItem">[] = rawItems.map((iss: Record<string, any>) => {
+      let mapped: VerificationTableItem[] = rawItems.map((iss: RawIssue): VerificationTableItem => {
         const isTransfer = iss.status === "DIALIHKAN";
-        const isPending = iss.status === "DIAJUKAN" || iss.status === "MENUNGGU_VERIFIKASI";
         const isUnregistered = Boolean(iss.is_unregistered_opd) || iss.ai_opd_code === "TIDAK_TERDAFTAR";
         const opdCode = iss.ai_opd_code || (isUnregistered ? "TIDAK_TERDAFTAR" : "DBM-SDA");
         const opdName = iss.ai_opd_name || (isUnregistered ? "Tidak Masuk ke Dinas Manapun yang Terdaftar" : "Dinas Bina Marga & SDA");
@@ -206,7 +275,7 @@ export async function listVerification(
           issue_id: iss.id,
           code: iss.code || "GVR-2610-0000",
           status: iss.status || "DIAJUKAN",
-          kind: (isTransfer ? "PENGALIHAN" : (isPending ? "VERIFIKASI" : iss.status)) as Schema<"VerificationKind">,
+          kind: isTransfer ? "PENGALIHAN" : "VERIFIKASI",
           title: iss.title,
           summary: iss.summary || null,
           reporter_count: iss.unique_reporters_count || 1,
@@ -235,21 +304,21 @@ export async function listVerification(
             : null,
           transfer_reason: isTransfer ? "BUKAN_WEWENANG_OPD" : null,
           transfer_note: iss.summary || null,
-        } as unknown as Schema<"VerificationItem">;
+        };
       });
 
       if (params.kind === "VERIFIKASI") {
-        mapped = mapped.filter((item) => (item as any).status === "DIAJUKAN" || (item as any).status === "MENUNGGU_VERIFIKASI" || item.kind === "VERIFIKASI");
+        mapped = mapped.filter((item) => item.status === "DIAJUKAN" || item.status === "MENUNGGU_VERIFIKASI" || item.kind === "VERIFIKASI");
       } else if (params.kind === "PENGALIHAN") {
-        mapped = mapped.filter((item) => (item as any).status === "DIALIHKAN" || item.kind === "PENGALIHAN");
+        mapped = mapped.filter((item) => item.status === "DIALIHKAN" || item.kind === "PENGALIHAN");
       }
       if (params.opdCode) {
         mapped = mapped.filter((item) => {
           if (params.opdCode === "TIDAK_TERDAFTAR") {
-            const sug = item.ai_suggestion as any;
+            const sug = item.ai_suggestion;
             return sug?.is_unregistered_opd || sug?.opd?.code === "TIDAK_TERDAFTAR";
           }
-          const currentCode = (item as any).current_opd?.code;
+          const currentCode = item.current_opd?.code;
           const aiCode = item.ai_suggestion?.opd.code;
           return currentCode === params.opdCode || aiCode === params.opdCode;
         });
@@ -297,7 +366,7 @@ export async function routeIssue(id: string, input: RouteInput): Promise<Outcome
     console.error("[ROUTE ISSUE API ERROR]", err);
   }
 
-  const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
   const supabaseKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
 
@@ -311,7 +380,7 @@ export async function routeIssue(id: string, input: RouteInput): Promise<Outcome
       if (Array.isArray(opds) && opds.length > 0) opdId = opds[0].id;
     }
 
-    const payload: Record<string, any> = {
+    const payload: Record<string, unknown> = {
       status: "DITERUSKAN",
       updated_at: new Date().toISOString(),
     };
@@ -372,13 +441,13 @@ export async function rejectIssue(id: string, input: RejectInput): Promise<Outco
     console.error("[REJECT ISSUE API ERROR]", err);
   }
 
-  const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
   const supabaseKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
 
   try {
     const fullReason = `${REJECTION_LABEL[input.reason] || input.reason}: ${input.explanation}`;
-    const payload: Record<string, any> = {
+    const payload: Record<string, unknown> = {
       status: "DITOLAK",
       hide_reason: fullReason,
       updated_at: new Date().toISOString(),
@@ -432,24 +501,24 @@ export async function listUsers(
     if (res.ok) {
       const data = await res.json();
       const raw = Array.isArray(data.items) ? data.items : [];
-      const dinasOnly = raw.filter((u: Record<string, any>) => {
+      const dinasOnly = raw.filter((u: RawUser) => {
         const r = (u.role || "").toLowerCase();
         return r === "dinas" || Boolean(u.opd_code) || Boolean(u.opd_id);
       });
-      const mapped: Schema<"AdminUser">[] = dinasOnly.map((u: Record<string, any>) => {
-        let role = "DINAS";
+      const mapped: Schema<"AdminUser">[] = dinasOnly.map((u: RawUser): Schema<"AdminUser"> => {
+        let role: Schema<"AdminUser">["role"] = "DINAS";
         const r = (u.role || "").toLowerCase();
         if (r === "admin") role = "ADMIN";
         else if (r === "kepala_daerah" || r === "admin") role = "ADMIN";
-        else if (r === "pelapor" || r === "citizen") role = "CITIZEN";
+        else if (r === "pelapor" || r === "citizen") role = "PELAPOR";
 
         return {
           id: u.id,
           email: u.email,
           display_name: u.display_name || u.email,
-          role: role as any,
+          role,
           opd: u.opd_code ? { code: u.opd_code, slug: u.opd_slug || u.opd_code.toLowerCase(), name: u.opd_name || u.opd_code } : null,
-          status: u.status === "ACTIVE" ? "ACTIVE" : "INACTIVE",
+          status: u.status === "ACTIVE" ? "ACTIVE" : "DISABLED",
           last_sign_in_at: u.last_sign_in_at || null,
         };
       });
@@ -513,7 +582,7 @@ export async function updateUser(id: string, input: UpdateUserInput): Promise<Ou
 }
 
 export async function listOpdsAdmin(): Promise<Schema<"OpdDetailList">> {
-  const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
   const supabaseKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
 
@@ -531,7 +600,7 @@ export async function listOpdsAdmin(): Promise<Schema<"OpdDetailList">> {
       if (Array.isArray(data) && data.length > 0) {
         const storeOpds = adminStore().opds;
         return {
-          items: data.map((d: Record<string, any>) => {
+          items: data.map((d: RawOpd) => {
             const found = storeOpds.find((o) => o.code === d.code);
             return {
               code: d.code,
@@ -731,7 +800,7 @@ export async function hideReport(id: string, input: HideInput): Promise<Outcome<
   return { ok: true, value: next };
 }
 
-export interface AuditFilters extends PageParams {
+interface AuditFilters extends PageParams {
   action?: string | undefined;
 }
 

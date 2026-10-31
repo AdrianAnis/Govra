@@ -1,13 +1,12 @@
 import { matchesQuery, paginate, type PageParams } from "@/lib/data/paging";
 import { PROGRAM_DETAILS } from "@/lib/mock/programs";
-import { goalRef, districtRef, opdRef } from "@/lib/mock/reference";
 import type { Schema } from "@/lib/schema";
 
-const supabaseUrl = process.env.SUPABASE_URL || "https://gtsskmxircedhfggqena.supabase.co";
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseKey =
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
 
-export interface ProgramFilters extends PageParams {
+interface ProgramFilters extends PageParams {
   q?: string | undefined;
   opd?: string | undefined;
   district_id?: string | undefined;
@@ -44,10 +43,34 @@ function matches(program: Program, filters: ProgramFilters): boolean {
   );
 }
 
+interface ProgramRow {
+  id: string;
+  code: string;
+  name: string;
+  opd_id?: string | null | undefined;
+  status?: string | undefined;
+  target_output?: number | string | undefined;
+  realization_output?: number | string | undefined;
+  target_unit?: string | undefined;
+  budget_pagu?: number | string | undefined;
+  budget_realization?: number | string | undefined;
+  start_date?: string | undefined;
+  end_date?: string | undefined;
+}
+
+interface ProgramUpdateRow {
+  program_id?: string | undefined;
+  title?: string | undefined;
+  content?: string | undefined;
+  documentation_photos?: unknown;
+  created_at?: string | undefined;
+  progress_percentage?: number | undefined;
+}
+
 function mapSupabaseToDetail(
-  p: any,
+  p: ProgramRow,
   opdMap: Map<string, { code: string; name: string; slug: string }>,
-  updatesMap: Map<string, any[]>
+  updatesMap: Map<string, ProgramUpdateRow[]>
 ): Program {
   const opdInfo = (p.opd_id && opdMap.get(p.opd_id)) || {
     code: "BMSDA",
@@ -132,17 +155,17 @@ function mapSupabaseToDetail(
       return docs;
     })(),
     updates: pUpdates
-      .filter((u: any) => u.title !== "PENUGASAN_OPD")
-      .map((u: any) => {
+      .filter((u: ProgramUpdateRow) => u.title !== "PENUGASAN_OPD")
+      .map((u: ProgramUpdateRow) => {
         let photos: string[] = [];
         if (Array.isArray(u.documentation_photos)) {
           photos = u.documentation_photos.filter(
-            (url: any) => typeof url === "string" && url.trim().length > 0
+            (url: unknown): url is string => typeof url === "string" && url.trim().length > 0
           );
         }
         return {
           date: (u.created_at || "").slice(0, 10) || "2026-10-30",
-          note: u.title ? `${u.title}: ${u.content}` : u.content,
+          note: u.title ? `${u.title}: ${u.content ?? ""}` : (u.content ?? ""),
           progress_percent: u.progress_percentage ?? progressPercent,
           photos,
         };
@@ -178,13 +201,10 @@ export async function listPrograms(filters: ProgramFilters = {}): Promise<Schema
           opdMap.set(o.id, { code: o.code, name: o.name, slug: o.slug || o.code.toLowerCase() });
         }
 
-        const updatesMap = new Map<string, any[]>();
+        const updatesMap = new Map<string, ProgramUpdateRow[]>();
         for (const u of updates) {
           if (!u.program_id) continue;
-          if (!updatesMap.has(u.program_id)) {
-            updatesMap.set(u.program_id, []);
-          }
-          updatesMap.get(u.program_id)!.push(u);
+          updatesMap.set(u.program_id, [...(updatesMap.get(u.program_id) ?? []), u]);
         }
 
         const details = progs.map((p) => mapSupabaseToDetail(p, opdMap, updatesMap));
@@ -226,13 +246,10 @@ export async function getProgram(code: string): Promise<Program | null> {
           opdMap.set(o.id, { code: o.code, name: o.name, slug: o.slug || o.code.toLowerCase() });
         }
 
-        const updatesMap = new Map<string, any[]>();
+        const updatesMap = new Map<string, ProgramUpdateRow[]>();
         for (const u of updates) {
           if (!u.program_id) continue;
-          if (!updatesMap.has(u.program_id)) {
-            updatesMap.set(u.program_id, []);
-          }
-          updatesMap.get(u.program_id)!.push(u);
+          updatesMap.set(u.program_id, [...(updatesMap.get(u.program_id) ?? []), u]);
         }
 
         return mapSupabaseToDetail(progs[0], opdMap, updatesMap);

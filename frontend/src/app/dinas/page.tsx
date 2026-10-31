@@ -11,7 +11,7 @@ import { currentTime } from "@/lib/clock";
 import { listAgencyIssues } from "@/lib/data/agency";
 import { getDistributionPoints } from "@/lib/data/map";
 import { getSessionUser } from "@/lib/data/session";
-import { formatNumber, formatRelativeTime } from "@/lib/format";
+import { formatNumber } from "@/lib/format";
 import { agencyIssueHref } from "@/lib/routes";
 import type { Schema } from "@/lib/schema";
 import { cn } from "@/lib/utils";
