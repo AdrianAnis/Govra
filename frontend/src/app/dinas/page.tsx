@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Users } from "lucide-react";
 import { AdminDistributionMap } from "@/components/admin/admin-distribution-map";
 import { PageHeader } from "@/components/page-header";
+import { StatCard, StatGrid } from "@/components/stat-card";
 import { IssueStatusBadge } from "@/components/status-badge";
 import { UrgencyMarker } from "@/components/urgency-marker";
 import { Button } from "@/components/ui/button";
@@ -75,43 +76,12 @@ export default async function AgencyDashboardPage() {
         </Link>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-6">
-          <span className="text-base font-semibold text-fg-muted">Laporan Masuk</span>
-          <div className="mt-4">
-            <span className="text-4xl font-bold tracking-tight tabular-nums text-fg">
-              {formatNumber(masukCount)}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex flex-col justify-between rounded-lg border border-border border-l-4 border-l-secondary bg-surface p-6">
-          <span className="text-base font-semibold text-fg-muted">Laporan Urgent</span>
-          <div className="mt-4">
-            <span className="text-4xl font-bold tracking-tight tabular-nums text-secondary">
-              {formatNumber(urgentCount)}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-6">
-          <span className="text-base font-semibold text-fg-muted">Sedang Diproses</span>
-          <div className="mt-4">
-            <span className="text-4xl font-bold tracking-tight tabular-nums text-fg">
-              {formatNumber(prosesCount)}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-6">
-          <span className="text-base font-semibold text-fg-muted">Tuntas Dikerjakan</span>
-          <div className="mt-4">
-            <span className="text-4xl font-bold tracking-tight tabular-nums text-fg">
-              {formatNumber(selesaiCount)}
-            </span>
-          </div>
-        </div>
-      </div>
+      <StatGrid>
+        <StatCard label="Laporan Masuk" value={formatNumber(masukCount)} hint="Menunggu ditanggapi" />
+        <StatCard label="Laporan Urgent" value={formatNumber(urgentCount)} hint="Perlu penanganan lebih dulu" />
+        <StatCard label="Sedang Diproses" value={formatNumber(prosesCount)} hint="Sedang ditangani petugas" />
+        <StatCard label="Tuntas Dikerjakan" value={formatNumber(selesaiCount)} hint="Sudah selesai" />
+      </StatGrid>
 
       <AdminDistributionMap
         points={mapPoints}

@@ -220,12 +220,12 @@ export function VerificationTable({ items: initialItems, opds, now }: Verificati
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-border bg-surface-muted text-xs font-semibold text-fg-muted uppercase tracking-wider">
-                <th className="px-5 py-3.5">Kode</th>
-                <th className="px-5 py-3.5">Waktu</th>
-                <th className="px-5 py-3.5 min-w-[280px]">Judul Laporan</th>
-                <th className="px-5 py-3.5 min-w-[220px]">Dinas / AI</th>
-                <th className="px-5 py-3.5">Status</th>
-                <th className="px-5 py-3.5 text-right">Aksi</th>
+                <th className="px-4 py-3.5">Kode</th>
+                <th className="px-4 py-3.5">Waktu</th>
+                <th className="px-4 py-3.5 min-w-48">Judul Laporan</th>
+                <th className="px-4 py-3.5 min-w-40">Dinas / AI</th>
+                <th className="px-4 py-3.5">Status</th>
+                <th className="px-4 py-3.5 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -244,15 +244,15 @@ export function VerificationTable({ items: initialItems, opds, now }: Verificati
                     onClick={() => openDetail(item)}
                     className="hover:bg-primary-soft/40 cursor-pointer transition-colors group"
                   >
-                    <td className="px-5 py-4 font-mono text-sm font-medium text-fg whitespace-nowrap tabular-nums">
+                    <td className="px-4 py-4 font-mono text-sm font-medium text-fg whitespace-nowrap tabular-nums">
                       {item.code || "GVR-2610-0000"}
                     </td>
 
-                    <td className="px-5 py-4 text-sm text-fg-muted whitespace-nowrap tabular-nums">
+                    <td className="px-4 py-4 text-sm text-fg-muted whitespace-nowrap tabular-nums">
                       {formatRelativeTime(item.created_at, new Date(now))}
                     </td>
 
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-4">
                       <div className="flex flex-col gap-1">
                         <span className="text-sm font-medium text-fg group-hover:text-primary transition-colors line-clamp-1">
                           {item.title}
@@ -265,7 +265,7 @@ export function VerificationTable({ items: initialItems, opds, now }: Verificati
                       </div>
                     </td>
 
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-4">
                       {isUnreg ? (
                         <span className="text-sm text-fg font-medium">
                           Tidak Masuk Dinas
@@ -284,12 +284,12 @@ export function VerificationTable({ items: initialItems, opds, now }: Verificati
                       )}
                     </td>
 
-                    <td className="px-5 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <IssueStatusBadge status={issueStatus} />
                     </td>
 
                     <td
-                      className="px-5 py-4 text-right whitespace-nowrap"
+                      className="px-4 py-4 text-right whitespace-nowrap"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Button

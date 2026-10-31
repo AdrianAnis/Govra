@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/page-header";
+import { StatCard, StatGrid } from "@/components/stat-card";
 import { getPemerintahOpdPerformance } from "@/lib/data/pemerintah";
 import { formatNumber } from "@/lib/format";
 
@@ -25,27 +26,11 @@ export default async function PemerintahKinerjaOpdPage() {
         description="Evaluasi efektivitas dan responsivitas Organisasi Perangkat Daerah dalam menindaklanjuti pengaduan warga."
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="flex flex-col gap-1 rounded-lg border bg-surface p-5">
-          <span className="text-xs font-semibold text-fg-muted">Total Instansi (OPD)</span>
-          <span className="text-3xl font-bold tabular-nums">{opdList.length}</span>
-          <span className="text-xs text-fg-muted">Unit kerja pemerintah daerah</span>
-        </div>
-        <div className="flex flex-col gap-1 rounded-lg border bg-surface p-5">
-          <span className="text-xs font-semibold text-fg-muted">Kinerja Sangat Baik</span>
-          <span className="text-3xl font-bold tabular-nums text-emerald-600">
-            {highPerformers}
-          </span>
-          <span className="text-xs text-fg-muted">Tingkat penyelesaian ≥ 80%</span>
-        </div>
-        <div className="flex flex-col gap-1 rounded-lg border bg-surface p-5">
-          <span className="text-xs font-semibold text-fg-muted">Perlu Perhatian</span>
-          <span className="text-3xl font-bold tabular-nums text-amber-600">
-            {needAttention}
-          </span>
-          <span className="text-xs text-fg-muted">Tingkat penyelesaian &lt; 60%</span>
-        </div>
-      </div>
+      <StatGrid columns={3}>
+        <StatCard label="Total Instansi (OPD)" value={opdList.length} hint="Unit kerja pemerintah daerah" />
+        <StatCard label="Kinerja Sangat Baik" value={highPerformers} hint="Tingkat penyelesaian ≥ 80%" />
+        <StatCard label="Perlu Perhatian" value={needAttention} hint="Tingkat penyelesaian < 60%" />
+      </StatGrid>
 
       <div className="flex flex-col gap-4 rounded-lg border bg-surface p-6">
         <div className="flex items-center justify-between border-b pb-4">
