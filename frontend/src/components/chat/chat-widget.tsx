@@ -21,15 +21,25 @@ interface ChatWidgetProps {
 type Notice = "error" | "limit";
 
 const SMALL_SCREEN = "(max-width: 639px)";
+const STORAGE_KEY = "chatTurns";
 const BASE_SUGGESTIONS: readonly string[] = [
   "Bagaimana cara membuat laporan?",
   "Proker apa saja di Kecamatan Utara?",
   "Isu banjir apa yang sedang ditangani?",
 ];
 
+function loadPersistedTurns(): ChatTurn[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return JSON.parse(saved) as ChatTurn[];
+  } catch {}
+  return [];
+}
+
 function ChatWidget({ signedIn }: ChatWidgetProps) {
   const [open, setOpen] = useState(false);
-  const [turns, setTurns] = useState<ChatTurn[]>([]);
+  const [turns, setTurns] = useState<ChatTurn[]>(loadPersistedTurns);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -39,6 +49,12 @@ function ChatWidget({ signedIn }: ChatWidgetProps) {
   const suggestions = signedIn ? ["Status laporan saya", ...BASE_SUGGESTIONS] : BASE_SUGGESTIONS;
   const full = turns.length >= MAX_MESSAGES;
   const trackHref = signedIn ? REPORTER_HOME : loginHref(REPORTER_HOME);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(turns));
+    }
+  }, [turns]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });

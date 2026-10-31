@@ -44,7 +44,7 @@ func NewRepository(database *db.Database) Repository {
 	otps := make(map[string]*OTPVerification)
 	rateLimits := make(map[string]*AuthRateLimit)
 
-	pwdHash, _ := bcrypt.GenerateFromPassword([]byte("Password123!"), bcrypt.DefaultCost)
+	pwdHash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 	seeds := []*User{
 		{
 			ID:           "00000000-0000-0000-0000-000000000001",
@@ -127,9 +127,17 @@ func NewRepository(database *db.Database) Repository {
 		},
 		{
 			ID:           "00000000-0000-0000-0000-000000000006",
-			Email:        "warga@example.com",
+			Email:        "warga@kotacontoh.go.id",
 			PasswordHash: string(pwdHash),
 			DisplayName:  "Warga Kota",
+			Role:         RolePelapor,
+			Status:       "ACTIVE",
+		},
+		{
+			ID:           "00000000-0000-0000-0000-000000000014",
+			Email:        "warga@example.com",
+			PasswordHash: string(pwdHash),
+			DisplayName:  "Warga Kota (Demo)",
 			Role:         RolePelapor,
 			Status:       "ACTIVE",
 		},

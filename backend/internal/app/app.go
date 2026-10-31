@@ -17,6 +17,7 @@ import (
 	"govra/internal/platform/db"
 	"govra/internal/platform/email"
 	"govra/internal/platform/httpx"
+	"strings"
 	"govra/internal/program"
 	"govra/internal/report"
 )
@@ -48,7 +49,13 @@ func New(cfg *config.Config) (*Application, error) {
 		AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",
 	}))
 	fiberApp.Use(httpx.RequestIDMiddleware())
-	fiberApp.Use(httpx.RequireBFFKey(cfg.BFFSharedKey))
+	fiberApp.Use(func(c *fiber.Ctx) error {
+    // Allow public auth endpoints without BFF key
+    if strings.HasPrefix(c.Path(), "/auth") {
+        return c.Next()
+    }
+    return httpx.RequireBFFKey(cfg.BFFSharedKey)(c)
+})
 
 	tokenManager := pauth.NewTokenManager(cfg.SupabaseJWTSecret)
 	fiberApp.Use(pauth.AuthMiddleware(tokenManager))

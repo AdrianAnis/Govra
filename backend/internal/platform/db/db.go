@@ -21,8 +21,10 @@ type Database struct {
 }
 
 func New(databaseURL, supabaseURL, supabaseKey string) (*Database, error) {
+	cleanURL := strings.TrimRight(supabaseURL, "/")
+	cleanURL = strings.TrimSuffix(cleanURL, "/rest/v1")
 	d := &Database{
-		SupabaseURL: strings.TrimRight(supabaseURL, "/"),
+		SupabaseURL: cleanURL,
 		SupabaseKey: supabaseKey,
 		HTTPClient: &http.Client{
 			Timeout: 10 * time.Second,

@@ -118,15 +118,19 @@ func handleFallbackPrograms(ctx context.Context, repo Repository, question strin
 
 func extractQueryTerms(text string) []string {
 	stopWords := map[string]bool{
-		"apa": true, "bagaimana": true, "proker": true, "program": true,
-		"dinas": true, "tolong": true, "tentang": true, "status": true,
-		"kota": true, "adalah": true, "yang": true, "di": true,
+		"apa": true, "proker": true, "program": true, "kerja": true,
+		"yang": true, "tolong": true, "tampilkan": true, "info": true,
+		"ada": true, "bagaimana": true, "dinas": true, "tentang": true,
+		"status": true, "kota": true, "adalah": true, "di": true,
+		"sedang": true, "berjalan": true, "proses": true, "diproses": true,
+		"dikerjakan": true, "diprises": true, "sekarang": true, "saat": true,
+		"ini": true, "terbaru": true, "aktif": true, "semua": true,
 	}
 	words := strings.Fields(strings.ToLower(text))
 	var res []string
 	for _, w := range words {
 		cleaned := strings.Trim(w, `.,!?:;'"()[]{}*-/`)
-		if len(cleaned) >= 4 && !stopWords[cleaned] {
+		if len(cleaned) >= 3 && !stopWords[cleaned] {
 			res = append(res, cleaned)
 		}
 	}

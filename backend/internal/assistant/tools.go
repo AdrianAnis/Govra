@@ -28,13 +28,13 @@ func getToolDeclarations() []ai.ChatToolDeclaration {
 		},
 		{
 			Name:        "search_programs",
-			Description: "Mencari daftar program kerja pemerintah daerah berdasarkan kata kunci, OPD penanggung jawab, atau status pelaksanaan.",
+			Description: "Mencari daftar program kerja pemerintah daerah. Gunakan query=\"\" (string kosong) jika pengguna bertanya secara umum tentang proker yang berjalan, aktif, terbaru, atau sedang dikerjakan tanpa menyebut nama spesifik. Gunakan query berisi nama hanya jika pengguna menyebut nama kegiatan atau OPD tertentu.",
 			Parameters: ai.ChatToolParameters{
 				Type: "OBJECT",
 				Properties: map[string]ai.ChatToolProperty{
 					"query": {
 						Type:        "STRING",
-						Description: "Kata kunci pencarian nama atau bidang program kerja",
+						Description: "Nama spesifik proker atau bidang kegiatan. Kirim string kosong (\"\") untuk daftar proker terbaru tanpa filter nama.",
 					},
 					"opd": {
 						Type:        "STRING",
