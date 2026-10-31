@@ -1,4 +1,5 @@
 import { type Role, getSafeRedirect, safeNext, SESSION_COOKIE } from "@/lib/session";
+import { SECURE_FLAG } from "@/lib/cookie-flags";
 import { signProfile, signValue } from "@/lib/session-sign";
 
 const SEE_OTHER_STATUS = 303;
@@ -57,9 +58,9 @@ export async function POST(request: Request) {
       const target = new URL(targetPath, request.url);
 
       const headers = new Headers({ Location: target.toString() });
-      headers.append("Set-Cookie", `${SESSION_COOKIE}=${await signValue(role)}; Path=/; HttpOnly; SameSite=Lax`);
-      headers.append("Set-Cookie", `govra_token=${data.token}; Path=/; HttpOnly; SameSite=Lax`);
-      headers.append("Set-Cookie", `govra_profile=${await signProfile(data.profile)}; Path=/; HttpOnly; SameSite=Lax`);
+      headers.append("Set-Cookie", `${SESSION_COOKIE}=${await signValue(role)}; Path=/; HttpOnly; SameSite=Lax${SECURE_FLAG}`);
+      headers.append("Set-Cookie", `govra_token=${data.token}; Path=/; HttpOnly; SameSite=Lax${SECURE_FLAG}`);
+      headers.append("Set-Cookie", `govra_profile=${await signProfile(data.profile)}; Path=/; HttpOnly; SameSite=Lax${SECURE_FLAG}`);
 
       return new Response(null, { status: SEE_OTHER_STATUS, headers });
     }

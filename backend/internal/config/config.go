@@ -18,6 +18,7 @@ type Config struct {
 	GeminiAPIKeyTriage string
 	GeminiAPIKeyAsst   string
 	GeminiModel        string
+	CORSOrigins        string
 }
 
 func loadDotEnv() {
@@ -71,5 +72,6 @@ func Load() *Config {
 		GeminiAPIKeyTriage: getEnv("GEMINI_API_KEY_TRIAGE", ""),
 		GeminiAPIKeyAsst:   getEnv("GEMINI_API_KEY_ASSISTANT", ""),
 		GeminiModel:        getEnv("GEMINI_MODEL", "gemini-2.5-flash"),
+		CORSOrigins:        getEnv("CORS_ORIGINS", "*"),
 	}
 }
