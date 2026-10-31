@@ -3,6 +3,7 @@ import { errorResponse } from "@/lib/api-response";
 import { createReport } from "@/lib/data/reports";
 import { rejectCrossOrigin } from "@/lib/origin";
 import { checkFile, createReportSchema, MAX_FILES } from "@/lib/report-draft";
+import { directSupabase } from "@/lib/supabase-direct";
 
 const CREATED_STATUS = 201;
 const INVALID_STATUS = 422;
@@ -13,8 +14,7 @@ function textOf(value: FormDataEntryValue | null): string {
 }
 
 async function uploadToSupabaseStorage(file: File): Promise<string | null> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  const { url: supabaseUrl, serviceKey } = directSupabase();
   if (!supabaseUrl || !serviceKey) {
     return null;
   }

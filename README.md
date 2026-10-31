@@ -274,8 +274,12 @@ BFF_SHARED_KEY=
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+SESSION_SECRET=
+ALLOW_DIRECT_SUPABASE=
 ```
 
+> `SESSION_SECRET` (opsional) dipakai menandatangani cookie sesi; bila kosong dipakai `BFF_SHARED_KEY`. `ALLOW_DIRECT_SUPABASE=1` mengizinkan frontend memanggil Supabase langsung di mode produksi (di mode pengembangan selalu aktif). Biarkan kosong di produksi setelah semua data lewat API Go.
+>
 > `BFF_SHARED_KEY` harus sama persis dengan nilai di `backend/.env`. `SUPABASE_SERVICE_ROLE_KEY` saat ini masih dipakai jalur cadangan di `frontend/src/lib/data/*` dan sebaiknya dihapus dari frontend setelah semua data diambil lewat API Go.
 
 ---

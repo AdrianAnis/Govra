@@ -136,8 +136,8 @@ function PanelMobileBar({ title, items, user }: PanelMobileProps) {
         </SheetContent>
       </Sheet>
       <span className="flex items-center gap-3">
-        <Logo className="h-6" />
-        <span className="text-sm font-semibold text-fg-muted">{sectionLabel(title)}</span>
+        <Logo tone="light" className="h-6" />
+        <span className="text-sm font-semibold text-secondary-fg/70">{sectionLabel(title)}</span>
       </span>
       <div className="ml-auto flex items-center gap-1">
         <Link

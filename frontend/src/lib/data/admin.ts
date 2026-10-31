@@ -18,6 +18,7 @@ import { matchesQuery, paginate, type PageParams } from "@/lib/data/paging";
 import { adminStore, AUDIT_ACTOR } from "@/lib/mock/admin";
 import { PUBLIC_ISSUES, UNVERIFIED_ISSUES } from "@/lib/mock/issues";
 import type { Schema } from "@/lib/schema";
+import { directSupabase } from "@/lib/supabase-direct";
 
 type Issue = Schema<"IssueDetail">;
 
@@ -163,9 +164,7 @@ export async function getAdminOverview(): Promise<Schema<"AdminOverview">> {
     }
   } catch {}
 
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
+  const { url: supabaseUrl, key: supabaseKey } = directSupabase();
 
   try {
     const [reportsRes, issuesRes, profilesRes] = await Promise.all([
@@ -366,9 +365,7 @@ export async function routeIssue(id: string, input: RouteInput): Promise<Outcome
     console.error("[ROUTE ISSUE API ERROR]", err);
   }
 
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
+  const { url: supabaseUrl, key: supabaseKey } = directSupabase();
 
   try {
     const opdRes = await fetch(`${supabaseUrl}/rest/v1/opds?code=eq.${encodeURIComponent(input.opd_code)}&select=id`, {
@@ -441,9 +438,7 @@ export async function rejectIssue(id: string, input: RejectInput): Promise<Outco
     console.error("[REJECT ISSUE API ERROR]", err);
   }
 
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
+  const { url: supabaseUrl, key: supabaseKey } = directSupabase();
 
   try {
     const fullReason = `${REJECTION_LABEL[input.reason] || input.reason}: ${input.explanation}`;
@@ -582,9 +577,7 @@ export async function updateUser(id: string, input: UpdateUserInput): Promise<Ou
 }
 
 export async function listOpdsAdmin(): Promise<Schema<"OpdDetailList">> {
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
+  const { url: supabaseUrl, key: supabaseKey } = directSupabase();
 
   try {
     const res = await fetch(`${supabaseUrl}/rest/v1/opds?select=id,code,name,slug,is_active&order=code.asc`, {

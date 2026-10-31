@@ -1,9 +1,8 @@
 import { formatRelativeTime, formatRupiah } from "@/lib/format";
 import { getSessionUser } from "@/lib/data/session";
+import { directSupabase } from "@/lib/supabase-direct";
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
+const { url: supabaseUrl, key: supabaseKey } = directSupabase();
 
 export type NotificationCategory =
   | "PROKER"

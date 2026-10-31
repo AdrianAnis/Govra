@@ -15,6 +15,7 @@ import { toIssueStatus, toUrgency } from "@/lib/status";
 import type { Schema } from "@/lib/schema";
 import { categoryRef, opdRef } from "@/lib/mock/reference";
 import { getSessionUser } from "@/lib/data/session";
+import { directSupabase } from "@/lib/supabase-direct";
 
 const OPD_LOOKUP: Record<string, { code: string; name: string }> = {
   "e0000000-0000-0000-0000-000000000001": { code: "DBM-SDA", name: "Dinas Bina Marga & SDA" },
@@ -207,9 +208,7 @@ function reportsOf(issue: Issue): AgencyReport[] {
 export async function listAgencyIssues(filters: AgencyFilters = {}, opdIdOverride?: string): Promise<Schema<"AgencyIssueList">> {
   const user = await getSessionUser();
   const targetOpdId = opdIdOverride || user?.opdId;
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
+  const { url: supabaseUrl, key: supabaseKey } = directSupabase();
 
   try {
     let endpoint = `${supabaseUrl}/rest/v1/reports?order=created_at.desc&limit=100`;
@@ -302,9 +301,7 @@ export async function listAgencyIssues(filters: AgencyFilters = {}, opdIdOverrid
 }
 
 export async function getAgencyIssue(id: string): Promise<Schema<"AgencyIssueDetail"> | null> {
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
+  const { url: supabaseUrl, key: supabaseKey } = directSupabase();
 
   try {
     const [reportRes, attRes, issRes] = await Promise.all([
@@ -491,9 +488,7 @@ export async function getAgencyIssue(id: string): Promise<Schema<"AgencyIssueDet
 }
 
 export async function transitionIssue(id: string, input: TransitionInput): Promise<Outcome<Schema<"TransitionResult">>> {
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
+  const { url: supabaseUrl, key: supabaseKey } = directSupabase();
 
   let currentStatus: Status = "DITERUSKAN";
   let opdName = "Dinas Terkait";

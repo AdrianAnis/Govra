@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/data/session";
 import { getErrorMessage } from "@/lib/error-message";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+import { directSupabase } from "@/lib/supabase-direct";
 
 export async function POST(request: Request) {
+  const { url: supabaseUrl, serviceKey } = directSupabase();
   const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Sesi tidak valid atau telah berakhir" }, { status: 401 });

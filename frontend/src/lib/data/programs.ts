@@ -1,10 +1,9 @@
 import { matchesQuery, paginate, type PageParams } from "@/lib/data/paging";
 import { PROGRAM_DETAILS } from "@/lib/mock/programs";
 import type { Schema } from "@/lib/schema";
+import { directSupabase } from "@/lib/supabase-direct";
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
+const { url: supabaseUrl, key: supabaseKey } = directSupabase();
 
 interface ProgramFilters extends PageParams {
   q?: string | undefined;

@@ -1,3 +1,4 @@
+import { verifyValue } from "@/lib/session-sign";
 import { ADMIN_HOME, AGENCY_HOME, PEMERINTAH_HOME, REPORTER_HOME } from "@/lib/routes";
 
 export const SESSION_COOKIE = "govra_session";
@@ -17,6 +18,10 @@ export const ROLE_HOME: Record<Role, string> = {
 
 export function parseRole(value: string | null | undefined): Role | null {
   return ROLES.find((role): role is Role => role === value) ?? null;
+}
+
+export async function readRole(signed: string | undefined): Promise<Role | null> {
+  return parseRole(await verifyValue(signed));
 }
 
 export function isProtectedPath(pathname: string): boolean {

@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import type { ReportMapPoint } from "@/components/admin/admin-distribution-map";
+import { directSupabase } from "@/lib/supabase-direct";
 
 const BFF_KEY = process.env.BFF_SHARED_KEY || "";
 
@@ -76,8 +77,7 @@ export async function getDistributionPoints(opdId?: string): Promise<ReportMapPo
     }
   } catch {}
 
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  const { url: supabaseUrl, serviceKey: supabaseKey } = directSupabase();
 
   if (!supabaseUrl || !supabaseKey) {
     return [];
