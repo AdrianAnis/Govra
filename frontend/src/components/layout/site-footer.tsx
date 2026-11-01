@@ -21,6 +21,9 @@ function SiteFooter() {
               Platform transparansi program kerja pemerintah daerah dan pelaporan warga berbasis AI.
               Pantau proker, laporkan masalah, dan lacak penanganannya sampai selesai.
             </p>
+            <div className="rounded-lg border border-secondary-fg/15 bg-secondary-fg/5 p-3 text-xs leading-relaxed text-secondary-fg/70">
+              <strong>Disclaimer:</strong> Govra adalah inisiatif platform independen berbasis teknologi untuk partisipasi publik warga, dan bukan merupakan situs resmi dari kementerian, pemerintah daerah, atau instansi kenegaraan mana pun.
+            </div>
             <Link href={REPORT_NEW} className={cn(buttonVariants({ variant: "accent" }))}>
               Lapor Sekarang
             </Link>
@@ -42,9 +45,13 @@ function SiteFooter() {
             ))}
           </nav>
         </div>
-        <div className="flex flex-col gap-2 border-t border-secondary-fg/15 pt-6 text-sm text-secondary-fg/60 sm:flex-row sm:justify-between">
-          <p>© {currentTime().getFullYear()} Govra. Seluruh hak dilindungi.</p>
-          <p>Transparansi program daerah untuk warga.</p>
+        <div className="flex flex-col gap-2 border-t border-secondary-fg/15 pt-6 text-sm text-secondary-fg/60 sm:flex-row sm:justify-between items-center">
+          <p>© {currentTime().getFullYear()} Govra. Platform Independen Partisipasi Publik.</p>
+          <div className="flex items-center gap-4 text-xs text-secondary-fg/70">
+            <Link href="/privasi" className="hover:underline">Kebijakan Privasi</Link>
+            <span>•</span>
+            <Link href="/syarat-ketentuan" className="hover:underline">Syarat & Ketentuan</Link>
+          </div>
         </div>
       </Container>
     </footer>

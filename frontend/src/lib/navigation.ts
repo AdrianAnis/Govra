@@ -47,10 +47,11 @@ export const FOOTER_GROUPS: readonly FooterGroup[] = [
     ],
   },
   {
-    title: "Transparansi",
+    title: "Transparansi & Hukum",
     links: [
       { href: "/metodologi", label: "Metodologi" },
       { href: "/privasi", label: "Kebijakan privasi" },
+      { href: "/syarat-ketentuan", label: "Syarat & ketentuan" },
     ],
   },
 ];

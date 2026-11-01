@@ -41,10 +41,21 @@ function AuthShell({ children }: { children: ReactNode }) {
             </p>
           </div>
         </div>
-        <main id="konten" tabIndex={-1} className="outline-none flex items-center justify-center lg:justify-end">
+        <main id="konten" tabIndex={-1} className="outline-none flex flex-col items-center justify-center lg:items-end">
           <div className="w-full max-w-md rounded-lg bg-surface p-6 text-fg shadow-lg sm:p-8">
             {children}
           </div>
+          <p className="mt-4 max-w-md text-center text-xs leading-relaxed text-secondary-fg/75">
+            Govra adalah platform independen partisipasi publik, bukan instansi pemerintah.
+            Dengan melanjutkan, Anda menyetujui{" "}
+            <Link href="/syarat-ketentuan" className="underline hover:text-secondary-fg">
+              Syarat & Ketentuan
+            </Link>{" "}
+            dan{" "}
+            <Link href="/privasi" className="underline hover:text-secondary-fg">
+              Kebijakan Privasi
+            </Link>.
+          </p>
         </main>
       </div>
     </div>

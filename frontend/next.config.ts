@@ -35,6 +35,10 @@ const nextConfig: NextConfig = {
       { source: "/laporan-saya/:kode", destination: "/pelapor/laporan/:kode", permanent: false },
       { source: "/lapor", destination: "/pelapor/lapor", permanent: false },
       { source: "/profil", destination: "/pelapor/profil", permanent: false },
+      { source: "/privacy", destination: "/privasi", permanent: true },
+      { source: "/terms", destination: "/syarat-ketentuan", permanent: true },
+      { source: "/syarat", destination: "/syarat-ketentuan", permanent: true },
+      { source: "/terms-of-service", destination: "/syarat-ketentuan", permanent: true },
     ];
   },
   turbopack: {
