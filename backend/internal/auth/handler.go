@@ -23,6 +23,7 @@ func (h *Handler) RegisterRoutes(app fiber.Router) {
 	g.Post("/verify-otp", h.VerifyOTP)
 	g.Post("/forgot-password", h.ForgotPassword)
 	g.Post("/reset-password", h.ResetPassword)
+	g.Post("/oauth-login", h.OAuthLogin)
 
 	app.Get("/me", h.GetMe)
 	app.Get("/me/export", h.ExportMyData)
@@ -129,6 +130,18 @@ func (h *Handler) GetMe(c *fiber.Ctx) error {
 		"opd_id":       user.OpdID,
 		"phone":        user.Phone,
 	})
+}
+
+func (h *Handler) OAuthLogin(c *fiber.Ctx) error {
+	var req OAuthLoginRequest
+	if err := c.BodyParser(&req); err != nil {
+		return httpx.NewAppError(fiber.StatusBadRequest, "BAD_REQUEST", "Format permintaan tidak valid")
+	}
+	res, err := h.service.OAuthLogin(c.Context(), req)
+	if err != nil {
+		return httpx.NewAppError(fiber.StatusForbidden, "OAUTH_LOGIN_FAILED", err.Error())
+	}
+	return c.JSON(res)
 }
 
 func (h *Handler) ExportMyData(c *fiber.Ctx) error {

@@ -20,12 +20,15 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const registered = params.registered === "sukses";
   const reset = params.reset === "sukses";
   const error = params.error === "gagal";
+  const errorDinasGoogle = params.error === "google_dinas_terlarang";
+  const errorBatalGoogle = params.error === "google_batal";
+  const errorGagalGoogle = params.error === "google_gagal";
 
   return (
     <AuthCard
       title="Selamat Datang"
       description="Masuk untuk melanjutkan ke akun Anda."
-      alternate={<GoogleButton />}
+      alternate={<GoogleButton lanjut={next} />}
       note={
         <p>
           Belum memiliki akun? <AuthLink href="/daftar">Daftar Sekarang</AuthLink>
@@ -48,6 +51,24 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-800 dark:text-red-300">
           <p className="font-semibold">Gagal Masuk</p>
           <p>Email atau kata sandi tidak valid. Silakan periksa kembali.</p>
+        </div>
+      )}
+      {errorDinasGoogle && (
+        <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-800 dark:text-red-300">
+          <p className="font-semibold">Akses Ditolak</p>
+          <p>Akun kedinasan dan administrator tidak diizinkan masuk melalui Google. Silakan masuk menggunakan email kedinasan dan kata sandi Anda.</p>
+        </div>
+      )}
+      {errorBatalGoogle && (
+        <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-300">
+          <p className="font-semibold">Autentikasi Dibatalkan</p>
+          <p>Proses autentikasi dengan akun Google dibatalkan.</p>
+        </div>
+      )}
+      {errorGagalGoogle && (
+        <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-800 dark:text-red-300">
+          <p className="font-semibold">Gagal Menghubungkan Google</p>
+          <p>Terjadi kendala saat menghubungkan akun Google. Silakan coba kembali.</p>
         </div>
       )}
       <form

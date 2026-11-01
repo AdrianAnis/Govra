@@ -202,3 +202,58 @@ func TestRateLimitingSendOTPAndVerify(t *testing.T) {
 		t.Fatal("expected 3rd wrong verification to trigger lockout")
 	}
 }
+
+func TestOAuthLogin(t *testing.T) {
+	ctx := context.Background()
+	repo := auth.NewRepository(nil)
+	tm := pauth.NewTokenManager("test-jwt-secret-key-32-chars-long!")
+	emailClient := email.NewClient("", "")
+	svc := auth.NewService(repo, tm, emailClient)
+
+	_, err := svc.OAuthLogin(ctx, auth.OAuthLoginRequest{
+		Email:       "admin@kotacontoh.go.id",
+		DisplayName: "Admin Pusat",
+		Provider:    "google",
+	})
+	if err == nil {
+		t.Fatal("expected admin Google login to be rejected")
+	}
+
+	_, err = svc.OAuthLogin(ctx, auth.OAuthLoginRequest{
+		Email:       "dishub@kotacontoh.go.id",
+		DisplayName: "Dinas Perhubungan",
+		Provider:    "google",
+	})
+	if err == nil {
+		t.Fatal("expected dinas Google login to be rejected")
+	}
+
+	res, err := svc.OAuthLogin(ctx, auth.OAuthLoginRequest{
+		Email:       "baru.warga@gmail.com",
+		DisplayName: "Warga Baru",
+		AvatarURL:   "https://lh3.googleusercontent.com/photo.jpg",
+		Provider:    "google",
+	})
+	if err != nil {
+		t.Fatalf("expected new user Google login to succeed: %v", err)
+	}
+	if res.Profile.Role != auth.RolePelapor {
+		t.Fatalf("expected role pelapor, got: %s", res.Profile.Role)
+	}
+	if res.Token == "" {
+		t.Fatal("expected non-empty JWT token")
+	}
+
+	resLogin, err := svc.OAuthLogin(ctx, auth.OAuthLoginRequest{
+		Email:       "baru.warga@gmail.com",
+		DisplayName: "Warga Baru",
+		Provider:    "google",
+	})
+	if err != nil {
+		t.Fatalf("expected existing user Google login to succeed: %v", err)
+	}
+	if resLogin.Profile.Role != auth.RolePelapor {
+		t.Fatalf("expected role pelapor, got: %s", resLogin.Profile.Role)
+	}
+	}
+

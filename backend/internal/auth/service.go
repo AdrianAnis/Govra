@@ -25,6 +25,7 @@ type Service interface {
 	ForgotPassword(ctx context.Context, emailAddress string) (map[string]any, error)
 	ResetPassword(ctx context.Context, req ResetPasswordRequest) error
 	GetProfile(ctx context.Context, userID string) (*User, error)
+	OAuthLogin(ctx context.Context, req OAuthLoginRequest) (*AuthResponse, error)
 }
 
 type service struct {
@@ -343,4 +344,47 @@ func (s *service) ResetPassword(ctx context.Context, req ResetPasswordRequest) e
 
 func (s *service) GetProfile(ctx context.Context, userID string) (*User, error) {
 	return s.repo.GetUserByID(ctx, userID)
+}
+
+func (s *service) OAuthLogin(ctx context.Context, req OAuthLoginRequest) (*AuthResponse, error) {
+	if req.Email == "" {
+		return nil, errors.New("email wajib diisi")
+	}
+	u, err := s.repo.GetUserByEmail(ctx, req.Email)
+	if err == nil && u != nil {
+		if u.Role == RoleAdmin || u.Role == RoleDinas {
+			return nil, errors.New("akun kedinasan dan administrator tidak diizinkan masuk melalui Google")
+		}
+		if u.Status != "ACTIVE" {
+			return nil, errors.New("akun anda sedang dinonaktifkan")
+		}
+		if req.AvatarURL != "" && u.AvatarURL == "" {
+			u.AvatarURL = req.AvatarURL
+		}
+	} else {
+		displayName := req.DisplayName
+		if displayName == "" {
+			displayName = "Pengguna"
+		}
+		u = &User{
+			ID:          uuid.New().String(),
+			Email:       req.Email,
+			DisplayName: displayName,
+			Role:        RolePelapor,
+			Status:      "ACTIVE",
+			AvatarURL:   req.AvatarURL,
+		}
+		if err := s.repo.CreateUser(ctx, u); err != nil {
+			return nil, err
+		}
+	}
+
+	token, err := s.tokenManager.Generate(u.ID, u.Email, u.DisplayName, string(u.Role), u.OpdID)
+	if err != nil {
+		return nil, err
+	}
+	return &AuthResponse{
+		Token:   token,
+		Profile: *u,
+	}, nil
 }

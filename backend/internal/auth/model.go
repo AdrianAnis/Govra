@@ -93,3 +93,10 @@ type AuthResponse struct {
 	Token   string `json:"token"`
 	Profile User   `json:"profile"`
 }
+
+type OAuthLoginRequest struct {
+	Email       string `json:"email"`
+	DisplayName string `json:"display_name"`
+	AvatarURL   string `json:"avatar_url,omitempty"`
+	Provider    string `json:"provider"`
+}
