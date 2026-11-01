@@ -13,8 +13,8 @@ function FocusHeader({ children }: { children?: ReactNode }) {
           <Wordmark />
         </div>
         {children && (
-          <div className="order-last w-full pb-4 xl:absolute xl:inset-x-10 xl:order-none xl:w-auto xl:pb-0">
-            <div className="mx-auto max-w-3xl">{children}</div>
+          <div className="order-last w-full pb-4 xl:pointer-events-none xl:absolute xl:inset-x-10 xl:order-none xl:w-auto xl:pb-0">
+            <div className="pointer-events-auto mx-auto max-w-3xl">{children}</div>
           </div>
         )}
         <div className="flex h-16 items-center">
