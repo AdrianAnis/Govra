@@ -48,6 +48,7 @@ interface ApiIssue {
   urgency?: string;
   safety_risk?: string;
   unique_reporters_count?: number;
+  cover_photo_url?: string;
   sla_due_at?: string;
   created_at?: string;
   updated_at?: string;
@@ -100,7 +101,7 @@ function mapApiToIssue(item: ApiIssue): Issue {
     status: toIssueStatus(item.status || "MENUNGGU_VERIFIKASI", "MENUNGGU_VERIFIKASI"),
     urgency: toUrgency(item.urgency || "NORMAL"),
     reporter_count: item.unique_reporters_count ?? 1,
-    cover_photo: null,
+    cover_photo: item.cover_photo_url ? { url: item.cover_photo_url, mime: "image/jpeg" as const } : null,
     response_overdue: false,
     created_at: item.created_at || new Date().toISOString(),
     updated_at: item.updated_at || new Date().toISOString(),
