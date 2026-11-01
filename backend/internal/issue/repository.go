@@ -276,6 +276,7 @@ func (r *repository) GetIssueByID(ctx context.Context, id string) (*Issue, error
 				CreatedAt:            ri.CreatedAt,
 				UpdatedAt:            ri.UpdatedAt,
 			}
+			iss.Events = r.loadRESTEvents(ctx, ri.ID)
 			return &iss, nil
 		}
 
@@ -376,6 +377,70 @@ func (r *repository) GetIssueByID(ctx context.Context, id string) (*Issue, error
 		return nil, errors.New("isu tidak ditemukan")
 	}
 	return iss, nil
+}
+
+func (r *repository) loadRESTEvents(ctx context.Context, issueID string) []IssueEvent {
+	var rows []struct {
+		ID             string          `json:"id"`
+		AuthorID       *string         `json:"author_id"`
+		FromStatus     *string         `json:"from_status"`
+		ToStatus       string          `json:"to_status"`
+		Note           *string         `json:"note"`
+		EvidencePhotos json.RawMessage `json:"evidence_photos"`
+		CreatedAt      time.Time       `json:"created_at"`
+	}
+	_ = r.db.PostgRESTGet(ctx, fmt.Sprintf("issue_events?issue_id=eq.%s&order=created_at.asc", url.QueryEscape(issueID)), &rows)
+	if len(rows) == 0 {
+		return nil
+	}
+
+	authorIDs := make([]string, 0, len(rows))
+	seen := map[string]bool{}
+	for _, row := range rows {
+		if row.AuthorID != nil && !seen[*row.AuthorID] {
+			seen[*row.AuthorID] = true
+			authorIDs = append(authorIDs, *row.AuthorID)
+		}
+	}
+	authorNames := map[string]string{}
+	if len(authorIDs) > 0 {
+		var profiles []struct {
+			ID          string  `json:"id"`
+			DisplayName *string `json:"display_name"`
+		}
+		_ = r.db.PostgRESTGet(ctx, fmt.Sprintf("profiles?select=id,display_name&id=in.(%s)", strings.Join(authorIDs, ",")), &profiles)
+		for _, profile := range profiles {
+			if profile.DisplayName != nil {
+				authorNames[profile.ID] = *profile.DisplayName
+			}
+		}
+	}
+
+	events := make([]IssueEvent, 0, len(rows))
+	for _, row := range rows {
+		evt := IssueEvent{
+			ID:         row.ID,
+			ToStatus:   row.ToStatus,
+			AuthorName: "Sistem",
+			CreatedAt:  row.CreatedAt,
+		}
+		if row.FromStatus != nil {
+			evt.FromStatus = *row.FromStatus
+		}
+		if row.Note != nil {
+			evt.Note = *row.Note
+		}
+		if row.AuthorID != nil {
+			if name, ok := authorNames[*row.AuthorID]; ok {
+				evt.AuthorName = name
+			}
+		}
+		if len(row.EvidencePhotos) > 0 {
+			_ = json.Unmarshal(row.EvidencePhotos, &evt.EvidencePhotos)
+		}
+		events = append(events, evt)
+	}
+	return events
 }
 
 func (r *repository) SaveIssue(ctx context.Context, iss *Issue) error {
