@@ -15,6 +15,9 @@ export const metadata: Metadata = {
   title: "Govra",
   description:
     "Platform transparansi program kerja pemerintah daerah dan pelaporan warga berbasis AI.",
+  verification: {
+    google: "_Rhj6jlD76gyJk_WF--JAUBiPhTxBcno4bXmeW0rHY0",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -8,6 +8,7 @@ const BFF_KEY = process.env.BFF_SHARED_KEY || "";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
+  const stateParam = url.searchParams.get("state");
   const errorParam = url.searchParams.get("error");
   const errorDescription = (url.searchParams.get("error_description") || "").toLowerCase();
 
@@ -16,7 +17,9 @@ export async function GET(request: Request) {
 
   let mode = "masuk";
   let lanjut = "/pelapor";
+  let flowType = "supabase";
   let codeVerifier = "";
+  let savedState = "";
 
   if (rawFlowCookie) {
     try {
@@ -27,8 +30,14 @@ export async function GET(request: Request) {
       if (parsed.lanjut) {
         lanjut = safeNext(parsed.lanjut);
       }
+      if (parsed.type) {
+        flowType = parsed.type;
+      }
       if (parsed.codeVerifier) {
         codeVerifier = parsed.codeVerifier;
+      }
+      if (parsed.state) {
+        savedState = parsed.state;
       }
     } catch {}
   }
@@ -43,47 +52,107 @@ export async function GET(request: Request) {
     return Response.redirect(new URL(`/${mode}?error=google_gagal`, request.url).toString(), 302);
   }
 
-  if (!code || !codeVerifier) {
+  if (!code) {
     return Response.redirect(new URL(`/${mode}?error=google_gagal`, request.url).toString(), 302);
   }
 
-  const rawUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const cleanSupabaseUrl = rawUrl.replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "");
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_ANON_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    "";
+  let email = "";
+  let displayName = "";
+  let avatarUrl = "";
+
+  if (flowType === "google") {
+    if (savedState && stateParam && savedState !== stateParam) {
+      return Response.redirect(new URL(`/${mode}?error=google_gagal`, request.url).toString(), 302);
+    }
+
+    const clientId = process.env.GOOGLE_CLIENT_ID || "";
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET || "";
+    const redirectUri = `${url.origin}/api/auth/callback/google`;
+
+    try {
+      const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          code,
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: redirectUri,
+          grant_type: "authorization_code",
+        }),
+      });
+
+      if (!tokenRes.ok) {
+        return Response.redirect(new URL(`/${mode}?error=google_gagal`, request.url).toString(), 302);
+      }
+
+      const tokenData = await tokenRes.json();
+      const userRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      });
+
+      if (!userRes.ok) {
+        return Response.redirect(new URL(`/${mode}?error=google_gagal`, request.url).toString(), 302);
+      }
+
+      const userData = await userRes.json();
+      email = String(userData.email || "").trim().toLowerCase();
+      displayName = String(userData.name || userData.given_name || email.split("@")[0]).trim();
+      avatarUrl = String(userData.picture || "").trim();
+    } catch {
+      return Response.redirect(new URL(`/${mode}?error=google_gagal`, request.url).toString(), 302);
+    }
+  } else {
+    if (!codeVerifier) {
+      return Response.redirect(new URL(`/${mode}?error=google_gagal`, request.url).toString(), 302);
+    }
+
+    const rawUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+    const cleanSupabaseUrl = rawUrl.replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "");
+    const supabaseKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.SUPABASE_ANON_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+      "";
+
+    try {
+      const tokenRes = await fetch(`${cleanSupabaseUrl}/auth/v1/token?grant_type=pkce`, {
+        method: "POST",
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          auth_code: code,
+          code_verifier: codeVerifier,
+        }),
+      });
+
+      if (!tokenRes.ok) {
+        return Response.redirect(new URL(`/${mode}?error=google_gagal`, request.url).toString(), 302);
+      }
+
+      const tokenData = await tokenRes.json();
+      const user = tokenData.user;
+      if (!user || !user.email) {
+        return Response.redirect(new URL(`/${mode}?error=google_gagal`, request.url).toString(), 302);
+      }
+
+      email = String(user.email).trim().toLowerCase();
+      const metadata = user.user_metadata || {};
+      displayName = String(metadata.full_name || metadata.name || email.split("@")[0]).trim();
+      avatarUrl = String(metadata.avatar_url || metadata.picture || "").trim();
+    } catch {
+      return Response.redirect(new URL(`/${mode}?error=google_gagal`, request.url).toString(), 302);
+    }
+  }
+
+  if (!email) {
+    return Response.redirect(new URL(`/${mode}?error=google_gagal`, request.url).toString(), 302);
+  }
 
   try {
-    const tokenRes = await fetch(`${cleanSupabaseUrl}/auth/v1/token?grant_type=pkce`, {
-      method: "POST",
-      headers: {
-        apikey: supabaseKey,
-        Authorization: `Bearer ${supabaseKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        auth_code: code,
-        code_verifier: codeVerifier,
-      }),
-    });
-
-    if (!tokenRes.ok) {
-      return Response.redirect(new URL(`/${mode}?error=google_gagal`, request.url).toString(), 302);
-    }
-
-    const tokenData = await tokenRes.json();
-    const user = tokenData.user;
-    if (!user || !user.email) {
-      return Response.redirect(new URL(`/${mode}?error=google_gagal`, request.url).toString(), 302);
-    }
-
-    const email = String(user.email).trim().toLowerCase();
-    const metadata = user.user_metadata || {};
-    const displayName = String(metadata.full_name || metadata.name || email.split("@")[0]).trim();
-    const avatarUrl = String(metadata.avatar_url || metadata.picture || "").trim();
-
     const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
     const backendRes = await fetch(`${apiBase}/auth/oauth-login`, {
       method: "POST",
