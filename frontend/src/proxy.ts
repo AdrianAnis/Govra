@@ -19,6 +19,14 @@ function redirectToLogin(request: NextRequest) {
 }
 
 export async function proxy(request: NextRequest) {
+  if (
+    request.nextUrl.pathname === "/" &&
+    (request.nextUrl.searchParams.has("code") || request.nextUrl.searchParams.has("error"))
+  ) {
+    const target = new URL(`/api/auth/callback/google${request.nextUrl.search}`, request.url);
+    return NextResponse.redirect(target);
+  }
+
   if (isProtectedPath(request.nextUrl.pathname) && !(await readRole(request.cookies.get(SESSION_COOKIE)?.value))) {
     return redirectToLogin(request);
   }
