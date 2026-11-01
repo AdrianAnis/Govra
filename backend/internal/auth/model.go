@@ -99,4 +99,5 @@ type OAuthLoginRequest struct {
 	DisplayName string `json:"display_name"`
 	AvatarURL   string `json:"avatar_url,omitempty"`
 	Provider    string `json:"provider"`
+	Mode        string `json:"mode,omitempty"`
 }

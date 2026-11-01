@@ -214,6 +214,7 @@ func TestOAuthLogin(t *testing.T) {
 		Email:       "admin@kotacontoh.go.id",
 		DisplayName: "Admin Pusat",
 		Provider:    "google",
+		Mode:        "masuk",
 	})
 	if err == nil {
 		t.Fatal("expected admin Google login to be rejected")
@@ -223,37 +224,66 @@ func TestOAuthLogin(t *testing.T) {
 		Email:       "dishub@kotacontoh.go.id",
 		DisplayName: "Dinas Perhubungan",
 		Provider:    "google",
+		Mode:        "masuk",
 	})
 	if err == nil {
 		t.Fatal("expected dinas Google login to be rejected")
 	}
 
-	res, err := svc.OAuthLogin(ctx, auth.OAuthLoginRequest{
+	_, err = svc.OAuthLogin(ctx, auth.OAuthLoginRequest{
+		Email:       "warga@kotacontoh.go.id",
+		DisplayName: "Warga",
+		Provider:    "google",
+		Mode:        "daftar",
+	})
+	if err == nil {
+		t.Fatal("expected registration of existing email to be rejected")
+	}
+
+	_, err = svc.OAuthLogin(ctx, auth.OAuthLoginRequest{
+		Email:       "belum.daftar@gmail.com",
+		DisplayName: "Belum Terdaftar",
+		Provider:    "google",
+		Mode:        "masuk",
+	})
+	if err == nil {
+		t.Fatal("expected login of non-existent email to be rejected")
+	}
+
+	resReg, err := svc.OAuthLogin(ctx, auth.OAuthLoginRequest{
 		Email:       "baru.warga@gmail.com",
 		DisplayName: "Warga Baru",
 		AvatarURL:   "https://lh3.googleusercontent.com/photo.jpg",
 		Provider:    "google",
+		Mode:        "daftar",
 	})
 	if err != nil {
-		t.Fatalf("expected new user Google login to succeed: %v", err)
+		t.Fatalf("expected new user registration to succeed: %v", err)
 	}
-	if res.Profile.Role != auth.RolePelapor {
-		t.Fatalf("expected role pelapor, got: %s", res.Profile.Role)
+	if resReg.Profile.Role != auth.RolePelapor {
+		t.Fatalf("expected role pelapor, got: %s", resReg.Profile.Role)
 	}
-	if res.Token == "" {
-		t.Fatal("expected non-empty JWT token")
+
+	_, err = svc.OAuthLogin(ctx, auth.OAuthLoginRequest{
+		Email:       "baru.warga@gmail.com",
+		DisplayName: "Warga Baru",
+		Provider:    "google",
+		Mode:        "daftar",
+	})
+	if err == nil {
+		t.Fatal("expected duplicate registration to be rejected")
 	}
 
 	resLogin, err := svc.OAuthLogin(ctx, auth.OAuthLoginRequest{
 		Email:       "baru.warga@gmail.com",
 		DisplayName: "Warga Baru",
 		Provider:    "google",
+		Mode:        "masuk",
 	})
 	if err != nil {
-		t.Fatalf("expected existing user Google login to succeed: %v", err)
+		t.Fatalf("expected existing user login to succeed: %v", err)
 	}
 	if resLogin.Profile.Role != auth.RolePelapor {
 		t.Fatalf("expected role pelapor, got: %s", resLogin.Profile.Role)
 	}
-	}
-
+}

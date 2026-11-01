@@ -20,7 +20,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const registered = params.registered === "sukses";
   const reset = params.reset === "sukses";
   const error = params.error === "gagal";
+  const errorEmailSudahTerdaftar = params.error === "email_sudah_terdaftar";
   const errorDinasGoogle = params.error === "google_dinas_terlarang";
+  const errorNonaktif = params.error === "akun_nonaktif";
+  const errorSupabaseUnconfigured = params.error === "supabase_google_unconfigured";
   const errorBatalGoogle = params.error === "google_batal";
   const errorGagalGoogle = params.error === "google_gagal";
 
@@ -28,7 +31,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <AuthCard
       title="Selamat Datang"
       description="Masuk untuk melanjutkan ke akun Anda."
-      alternate={<GoogleButton lanjut={next} />}
+      alternate={<GoogleButton mode="masuk" lanjut={next} />}
       note={
         <p>
           Belum memiliki akun? <AuthLink href="/daftar">Daftar Sekarang</AuthLink>
@@ -53,16 +56,34 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <p>Email atau kata sandi tidak valid. Silakan periksa kembali.</p>
         </div>
       )}
+      {errorEmailSudahTerdaftar && (
+        <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-300">
+          <p className="font-semibold">Email Sudah Terdaftar</p>
+          <p>Akun dengan email ini sudah terdaftar. Silakan masuk langsung menggunakan akun Anda.</p>
+        </div>
+      )}
       {errorDinasGoogle && (
         <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-800 dark:text-red-300">
           <p className="font-semibold">Akses Ditolak</p>
           <p>Akun kedinasan dan administrator tidak diizinkan masuk melalui Google. Silakan masuk menggunakan email kedinasan dan kata sandi Anda.</p>
         </div>
       )}
+      {errorNonaktif && (
+        <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-800 dark:text-red-300">
+          <p className="font-semibold">Akun Dinonaktifkan</p>
+          <p>Akun Anda sedang dinonaktifkan. Silakan hubungi pengelola sistem.</p>
+        </div>
+      )}
+      {errorSupabaseUnconfigured && (
+        <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-300">
+          <p className="font-semibold">Konfigurasi Supabase Belum Aktif</p>
+          <p>Penyedia autentikasi Google belum diaktifkan di dashboard Supabase. Silakan ikuti panduan pengaturan Supabase Google Provider.</p>
+        </div>
+      )}
       {errorBatalGoogle && (
         <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-300">
           <p className="font-semibold">Autentikasi Dibatalkan</p>
-          <p>Proses autentikasi dengan akun Google dibatalkan.</p>
+          <p>Proses masuk dengan akun Google dibatalkan.</p>
         </div>
       )}
       {errorGagalGoogle && (

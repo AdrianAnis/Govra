@@ -351,17 +351,12 @@ func (s *service) OAuthLogin(ctx context.Context, req OAuthLoginRequest) (*AuthR
 		return nil, errors.New("email wajib diisi")
 	}
 	u, err := s.repo.GetUserByEmail(ctx, req.Email)
-	if err == nil && u != nil {
-		if u.Role == RoleAdmin || u.Role == RoleDinas {
-			return nil, errors.New("akun kedinasan dan administrator tidak diizinkan masuk melalui Google")
+	userExists := (err == nil && u != nil)
+
+	if req.Mode == "register" || req.Mode == "daftar" {
+		if userExists {
+			return nil, errors.New("email sudah terdaftar dalam sistem Govra. Silakan masuk menggunakan akun Anda.")
 		}
-		if u.Status != "ACTIVE" {
-			return nil, errors.New("akun anda sedang dinonaktifkan")
-		}
-		if req.AvatarURL != "" && u.AvatarURL == "" {
-			u.AvatarURL = req.AvatarURL
-		}
-	} else {
 		displayName := req.DisplayName
 		if displayName == "" {
 			displayName = "Pengguna"
@@ -376,6 +371,19 @@ func (s *service) OAuthLogin(ctx context.Context, req OAuthLoginRequest) (*AuthR
 		}
 		if err := s.repo.CreateUser(ctx, u); err != nil {
 			return nil, err
+		}
+	} else {
+		if !userExists {
+			return nil, errors.New("akun dengan email ini belum terdaftar. Silakan lakukan pendaftaran terlebih dahulu.")
+		}
+		if u.Role == RoleAdmin || u.Role == RoleDinas {
+			return nil, errors.New("akun kedinasan dan administrator tidak diizinkan masuk melalui Google")
+		}
+		if u.Status != "ACTIVE" {
+			return nil, errors.New("akun anda sedang dinonaktifkan")
+		}
+		if req.AvatarURL != "" && u.AvatarURL == "" {
+			u.AvatarURL = req.AvatarURL
 		}
 	}
 

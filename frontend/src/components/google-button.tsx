@@ -3,16 +3,21 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface GoogleButtonProps {
+  mode?: "masuk" | "daftar";
   lanjut?: string;
   className?: string;
 }
 
-function GoogleButton({ lanjut, className }: GoogleButtonProps) {
-  const href = lanjut ? `/api/auth/google?lanjut=${encodeURIComponent(lanjut)}` : "/api/auth/google";
+function GoogleButton({ mode = "masuk", lanjut, className }: GoogleButtonProps) {
+  const query = new URLSearchParams();
+  query.set("mode", mode);
+  if (lanjut) {
+    query.set("lanjut", lanjut);
+  }
 
   return (
     <Link
-      href={href}
+      href={`/api/auth/google?${query.toString()}`}
       className={cn(buttonVariants({ variant: "outline", size: "lg" }), "w-full", className)}
     >
       <span aria-hidden className="size-5 bg-google" />
