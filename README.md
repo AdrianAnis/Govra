@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="frontend/public/logo.svg" alt="Govra Logo" width="220" />
+  <img src="frontend/public/logo-white.svg" alt="Govra Logo" width="220" />
   <p><strong>Platform Transparansi Program Kerja & Pelaporan Warga Cerdas Berbasis AI</strong></p>
 
   [![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat&logo=go)](https://golang.org)
