@@ -84,7 +84,7 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
     const el = e.target;
     el.style.height = "auto";
     const nextHeight = Math.min(el.scrollHeight, 128);
-    el.style.height = `${Math.max(44, nextHeight)}px`;
+    el.style.height = `${Math.max(38, nextHeight)}px`;
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -178,14 +178,14 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
 
   return (
     <div className="flex h-dvh w-full max-w-full flex-col bg-background text-foreground overflow-hidden">
-      <header className="shrink-0 border-b border-neutral-200/90 dark:border-neutral-800 bg-surface px-3 sm:px-6 z-30 h-14 sm:h-16 flex items-center w-full max-w-full overflow-hidden">
+      <header className="shrink-0 border-b border-neutral- px-3 sm:px-6 z-30 h-14 sm:h-16 flex items-center w-full max-w-full overflow-hidden">
         <div className="flex items-center justify-between w-full min-w-0">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <button
               type="button"
               onClick={handleBack}
               aria-label="Kembali"
-              className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-neutral-200/90 dark:border-neutral-800 bg-background text-foreground transition-all duration-150 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-muted active:scale-95 cursor-pointer"
+              className="flex size-9 shrink-0 items-center justify-center rounded-lg borderbg-background text-foreground transition-all duration-150 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-muted active:scale-95 cursor-pointer"
             >
               <ArrowLeft className="size-4.5" />
             </button>
@@ -204,7 +204,7 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
               <button
                 type="button"
                 onClick={handleReset}
-                className="flex items-center gap-1.5 rounded-lg border border-neutral-200/90 dark:border-neutral-800 bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-150 hover:border-neutral-300 dark:hover:border-neutral-700 hover:text-foreground hover:bg-muted active:scale-95 shadow-2xs cursor-pointer"
+                className="flex items-center gap-1.5 rounded-lg border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-150 hover:border-neutral-300 dark:hover:border-neutral-700 hover:text-foreground hover:bg-muted active:scale-95 shadow-2xs cursor-pointer"
                 title="Mulai percakapan baru"
               >
                 <RotateCcw className="size-3.5" />
@@ -221,9 +221,6 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
         <div className="mx-auto flex w-full max-w-3xl min-w-0 flex-col min-h-full">
           {turns.length === 0 ? (
             <div className="my-auto flex flex-col items-center justify-center py-8 text-center w-full max-w-full overflow-hidden">
-              <div className="mb-3 flex size-12 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800 text-foreground border border-neutral-200/80 dark:border-neutral-700">
-                <Sparkles className="size-6 text-primary" />
-              </div>
 
               <h2 className="text-lg font-bold text-foreground sm:text-xl">
                 Halo, SobatGovra!
@@ -240,7 +237,7 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
                       key={item.label}
                       type="button"
                       onClick={() => submitQuery(item.query)}
-                      className="flex items-center gap-1.5 rounded-full border border-neutral-200/90 dark:border-neutral-800 bg-card px-3.5 py-2 text-xs font-medium text-foreground transition-all duration-150 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-muted active:scale-98 cursor-pointer shadow-2xs"
+                      className="flex items-center gap-1.5 rounded-full border  bg-card px-3.5 py-2 text-xs font-medium text-foreground transition-all duration-150 hover:border-neutral-30 hover:bg-muted active:scale-98 cursor-pointer"
                     >
                       <ItemIcon className="size-3.5 text-primary shrink-0" />
                       <span>{item.label}</span>
@@ -259,7 +256,7 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
                     className={cn("flex w-full min-w-0 gap-2 sm:gap-3 overflow-hidden", isUser ? "justify-end" : "justify-start")}
                   >
                     {!isUser && (
-                      <div className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800 text-foreground border border-neutral-200/90 dark:border-neutral-700 mt-0.5">
+                      <div className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800 text-foreground border mt-0.5">
                         <Bot className="size-4" />
                       </div>
                     )}
@@ -329,8 +326,8 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
 
       <footer className="shrink-0 border-t border-neutral-200/90 dark:border-neutral-800 bg-card/95 p-3 sm:p-4 backdrop-blur-md z-30 w-full max-w-full overflow-hidden">
         <div className="mx-auto max-w-3xl w-full">
-          <form onSubmit={onSubmit} className="relative flex items-end gap-2 w-full">
-            <div className="relative flex-1 min-w-0">
+          <form onSubmit={onSubmit} className="w-full">
+            <div className="flex items-center gap-2 rounded-2xl border border-neutral-200/90 dark:border-neutral-800 bg-background px-3.5 py-1.5 transition-colors hover:border-neutral-300 dark:hover:border-neutral-700 focus-within:border-neutral-400 dark:focus-within:border-neutral-600 shadow-2xs">
               <textarea
                 ref={textareaRef}
                 rows={1}
@@ -340,25 +337,25 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
                 onKeyDown={onKeyDown}
                 disabled={pending}
                 placeholder="Ketik pertanyaan atau sapaan..."
-                className="w-full min-h-[44px] max-h-32 resize-none rounded-xl border border-neutral-200/90 dark:border-neutral-800 bg-background px-3.5 py-2.5 pr-12 text-sm text-foreground shadow-xs transition-colors placeholder:text-muted-foreground focus:border-neutral-400 dark:focus:border-neutral-600 focus:outline-none focus:ring-0 hover:border-neutral-300 dark:hover:border-neutral-700 disabled:opacity-50 overflow-y-auto leading-relaxed"
+                className="flex-1 min-h-[38px] max-h-32 resize-none bg-transparent py-2 text-sm text-foreground transition-colors placeholder:text-muted-foreground outline-none border-0 focus:outline-none focus:ring-0 disabled:opacity-50 overflow-y-auto leading-relaxed"
               />
 
               <button
                 type="submit"
                 disabled={!input.trim() || pending}
                 aria-label="Kirim pesan"
-                className="absolute right-1.5 bottom-1.5 flex size-8 sm:size-8.5 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all duration-150 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer shadow-xs"
+                className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all duration-150 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer shadow-xs my-auto"
               >
                 {pending ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
-                  <Send className="size-3.5 sm:size-4" />
+                  <Send className="size-4" />
                 )}
               </button>
             </div>
           </form>
 
-          <p className="mt-1.5 text-center text-[10.5px] text-muted-foreground">
+          <p className="mt-2 text-center text-[10.5px] text-muted-foreground">
             Govra AI menjawab berdasarkan data resmi program dan laporan sistem.
           </p>
         </div>
