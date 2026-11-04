@@ -11,7 +11,7 @@ export default async function PublicLayout({ children }: LayoutProps<"/">) {
   return (
     <>
       <SiteHeader user={user} notifications={notifications} />
-      <main id="konten" tabIndex={-1} className="outline-none flex-1 max-w-full overflow-x-clip">
+      <main id="konten" tabIndex={-1} className="outline-none flex-1 max-w-full overflow-x-clip pb-20 md:pb-0">
         {children}
       </main>
       {!user && <SiteFooter />}
