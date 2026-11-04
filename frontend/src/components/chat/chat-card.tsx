@@ -23,11 +23,11 @@ export function ChatCardList({ cards, onNavigate }: ChatCardListProps) {
     <div className="mt-2.5 flex w-full min-w-0 max-w-full flex-col gap-2 overflow-hidden">
       {cards.map((card) => {
         let Icon = FileText;
-        let toneBg = "bg-neutral-100 text-foreground border-neutral-200/80 dark:bg-neutral-800 dark:border-neutral-700";
+        let toneBg = "bg-surface-muted text-foreground border-border";
 
         if (card.type === "PROGRAM") {
           Icon = Target;
-          toneBg = "bg-neutral-100 text-primary border-neutral-200/80 dark:bg-neutral-800 dark:border-neutral-700";
+          toneBg = "bg-surface-muted text-primary border-border";
         } else if (card.type === "ISSUE") {
           Icon = AlertTriangle;
           toneBg = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
@@ -45,7 +45,7 @@ export function ChatCardList({ cards, onNavigate }: ChatCardListProps) {
             key={card.id}
             href={card.href}
             {...(onNavigate ? { onClick: onNavigate } : {})}
-            className="group relative flex w-full min-w-0 max-w-full flex-col gap-2 rounded-xl border border-neutral-200/90 dark:border-neutral-800 bg-card p-3 shadow-2xs transition-all duration-150 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-muted/40 overflow-hidden"
+            className="group relative flex w-full min-w-0 max-w-full flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-2xs transition-all duration-150 hover:border-border-strong hover:bg-muted/40 overflow-hidden"
           >
             <div className="flex w-full min-w-0 items-start justify-between gap-2.5">
               <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -75,7 +75,7 @@ export function ChatCardList({ cards, onNavigate }: ChatCardListProps) {
                         ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
                         : isBad
                           ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
-                          : "bg-muted text-muted-foreground border-neutral-200 dark:border-neutral-800",
+                          : "bg-muted text-muted-foreground border-border",
                   )}
                 >
                   {card.badge}
@@ -104,7 +104,7 @@ export function ChatCardList({ cards, onNavigate }: ChatCardListProps) {
               </p>
             )}
 
-            <div className="mt-0.5 flex w-full min-w-0 items-center justify-between border-t border-neutral-200/80 dark:border-neutral-800/80 pt-2 text-[11px] font-medium text-primary">
+            <div className="mt-0.5 flex w-full min-w-0 items-center justify-between border-t border-border pt-2 text-[11px] font-medium text-primary">
               <span className="truncate flex-1">
                 {card.actionLabel || "Buka & Lihat Selengkapnya"}
               </span>

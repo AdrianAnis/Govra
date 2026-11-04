@@ -178,14 +178,14 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
 
   return (
     <div className="flex h-dvh w-full max-w-full flex-col bg-background text-foreground overflow-hidden">
-      <header className="shrink-0 border-b border-neutral- px-3 sm:px-6 z-30 h-14 sm:h-16 flex items-center w-full max-w-full overflow-hidden">
+      <header className="shrink-0 border-b border-border px-3 sm:px-6 z-30 h-14 sm:h-16 flex items-center w-full max-w-full overflow-hidden">
         <div className="flex items-center justify-between w-full min-w-0">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <button
               type="button"
               onClick={handleBack}
               aria-label="Kembali"
-              className="flex size-9 shrink-0 items-center justify-center rounded-lg borderbg-background text-foreground transition-all duration-150 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-muted active:scale-95 cursor-pointer"
+              className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-foreground transition-all duration-150 hover:border-border-strong hover:bg-muted active:scale-95 cursor-pointer"
             >
               <ArrowLeft className="size-4.5" />
             </button>
@@ -204,7 +204,7 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
               <button
                 type="button"
                 onClick={handleReset}
-                className="flex items-center gap-1.5 rounded-lg border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-150 hover:border-neutral-300 dark:hover:border-neutral-700 hover:text-foreground hover:bg-muted active:scale-95 shadow-2xs cursor-pointer"
+                className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-150 hover:border-border-strong hover:text-foreground hover:bg-muted active:scale-95 shadow-2xs cursor-pointer"
                 title="Mulai percakapan baru"
               >
                 <RotateCcw className="size-3.5" />
@@ -237,7 +237,7 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
                       key={item.label}
                       type="button"
                       onClick={() => submitQuery(item.query)}
-                      className="flex items-center gap-1.5 rounded-full border  bg-card px-3.5 py-2 text-xs font-medium text-foreground transition-all duration-150 hover:border-neutral-30 hover:bg-muted active:scale-98 cursor-pointer"
+                      className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-2 text-xs font-medium text-foreground transition-all duration-150 hover:border-border-strong hover:bg-muted active:scale-98 cursor-pointer"
                     >
                       <ItemIcon className="size-3.5 text-primary shrink-0" />
                       <span>{item.label}</span>
@@ -255,18 +255,14 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
                     key={turn.id}
                     className={cn("flex w-full min-w-0 gap-2 sm:gap-3 overflow-hidden", isUser ? "justify-end" : "justify-start")}
                   >
-                    {!isUser && (
-                      <div className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800 text-foreground border mt-0.5">
-                        <Bot className="size-4" />
-                      </div>
-                    )}
+
 
                     <div
                       className={cn(
                         "flex min-w-0 flex-col gap-2 rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-sm shadow-2xs break-words overflow-hidden",
                         isUser
                           ? "max-w-[85%] sm:max-w-[80%] bg-primary text-primary-foreground rounded-tr-xs"
-                          : "max-w-[88%] sm:max-w-[85%] border border-neutral-200/90 dark:border-neutral-800 bg-card text-foreground rounded-tl-xs",
+                          : "max-w-[88%] sm:max-w-[85%] bg-card text-foreground rounded-tl-xs",
                       )}
                     >
                       {isUser ? (
@@ -280,7 +276,7 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
                           )}
 
                           {turn.sources && turn.sources.length > 0 && (
-                            <div className="mt-2 flex flex-col gap-1.5 w-full min-w-0 max-w-full border-t border-neutral-200/80 dark:border-neutral-800/80 pt-2 text-xs text-muted-foreground">
+                            <div className="mt-2 flex flex-col gap-1.5 w-full min-w-0 max-w-full border-t border-border pt-2 text-xs text-muted-foreground">
                               <span className="font-medium text-[11px]">Tautan terkait:</span>
                               {turn.sources.map((s) => (
                                 <SourceLink key={s.path} source={s} onNavigate={() => { }} />
@@ -292,7 +288,7 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
                     </div>
 
                     {isUser && (
-                      <div className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground border border-neutral-200/90 dark:border-neutral-800 mt-0.5">
+                      <div className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground border border-border mt-0.5">
                         <User className="size-4" />
                       </div>
                     )}
@@ -302,10 +298,10 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
 
               {pending && (
                 <div className="flex w-full min-w-0 items-start gap-2 sm:gap-3 overflow-hidden">
-                  <div className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800 text-foreground border border-neutral-200/90 dark:border-neutral-700 mt-0.5">
+                  <div className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground border border-border mt-0.5">
                     <Bot className="size-4" />
                   </div>
-                  <div className="flex items-center gap-2 rounded-2xl border border-neutral-200/90 dark:border-neutral-800 bg-card px-3.5 py-2.5 text-xs text-muted-foreground shadow-2xs rounded-tl-xs min-w-0 max-w-[88%] break-words">
+                  <div className="flex items-center gap-2 rounded-2xl border border-border bg-card px-3.5 py-2.5 text-xs text-muted-foreground shadow-2xs rounded-tl-xs min-w-0 max-w-[88%] break-words">
                     <Loader2 className="size-3.5 animate-spin text-primary shrink-0" />
                     <span>SobatGovra, mohon tunggu sebentar saya sedang mengecek data...</span>
                   </div>
@@ -324,10 +320,10 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
         </div>
       </main>
 
-      <footer className="shrink-0 border-t border-neutral-200/90 dark:border-neutral-800 bg-card/95 p-3 sm:p-4 backdrop-blur-md z-30 w-full max-w-full overflow-hidden">
+      <footer className="shrink-0  p-3 sm:p-4 backdrop-blur-md z-30 w-full max-w-full overflow-hidden">
         <div className="mx-auto max-w-3xl w-full">
           <form onSubmit={onSubmit} className="w-full">
-            <div className="flex items-center gap-2 rounded-2xl border border-neutral-200/90 dark:border-neutral-800 bg-background px-3.5 py-1.5 transition-colors hover:border-neutral-300 dark:hover:border-neutral-700 focus-within:border-neutral-400 dark:focus-within:border-neutral-600 shadow-2xs">
+            <div className="flex items-center gap-2 rounded-2xl border border-border bg-background px-3.5 py-1.5 transition-colors hover:border-border-strong focus-within:border-border-strong focus-within:outline-none shadow-2xs">
               <textarea
                 ref={textareaRef}
                 rows={1}
@@ -337,7 +333,8 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
                 onKeyDown={onKeyDown}
                 disabled={pending}
                 placeholder="Ketik pertanyaan atau sapaan..."
-                className="flex-1 min-h-[38px] max-h-32 resize-none bg-transparent py-2 text-sm text-foreground transition-colors placeholder:text-muted-foreground outline-none border-0 focus:outline-none focus:ring-0 disabled:opacity-50 overflow-y-auto leading-relaxed"
+                style={{ outline: "none", boxShadow: "none" }}
+                className="flex-1 min-h-[38px] max-h-32 resize-none bg-transparent py-2 text-sm text-foreground transition-colors placeholder:text-muted-foreground outline-none border-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 [outline:none] focus:[outline:none] disabled:opacity-50 overflow-y-auto leading-relaxed"
               />
 
               <button

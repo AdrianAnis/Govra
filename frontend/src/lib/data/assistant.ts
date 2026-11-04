@@ -41,8 +41,10 @@ async function callGemini(
     return null;
   }
 
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const primaryModel = process.env.GEMINI_MODEL || "gemini-3-flash-preview";
+  const candidateModels = Array.from(
+    new Set([primaryModel, "gemini-3-flash-preview", "gemini-3.5-flash", "gemini-2.5-flash"]),
+  );
 
   const payload = {
     system_instruction: {
@@ -52,36 +54,37 @@ async function callGemini(
     generationConfig: {
       temperature: 0.3,
       maxOutputTokens: 1000,
-      thinkingConfig: { thinkingBudget: 0 },
     },
   };
 
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 12000);
+  for (const model of candidateModels) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 9000);
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
 
-    clearTimeout(timer);
+      clearTimeout(timer);
 
-    if (!res.ok) {
-      return null;
+      if (res.ok) {
+        const data = await res.json();
+        const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (typeof candidateText === "string" && candidateText.trim()) {
+          return candidateText.trim();
+        }
+      }
+    } catch {
+      continue;
     }
-
-    const data = await res.json();
-    const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (typeof candidateText === "string" && candidateText.trim()) {
-      return candidateText.trim();
-    }
-    return null;
-  } catch {
-    return null;
   }
+
+  return null;
 }
 
 export async function answerQuestion(
@@ -126,13 +129,14 @@ export async function answerQuestion(
 
   const myReportsContext =
     myReportsResult.items.length > 0
-      ? myReportsResult.items
+      ? `Pengguna memiliki ${myReportsResult.items.length} laporan aktif di sistem:\n` +
+        myReportsResult.items
           .map((r) => {
             const statusLabel = ISSUE_STATUS[r.status]?.label || r.status;
             return `- Kode: ${r.code}, Judul: "${r.title || 'Laporan Warga'}", Status: ${statusLabel}, Dibuat: ${r.created_at}`;
           })
           .join("\n")
-      : "Belum ada laporan aktif di akun pengguna ini.";
+      : "Pengguna saat ini belum memiliki laporan aduan yang diajukan di sistem.";
 
   const specificReportContext = specificReport
     ? `Detail Tiket ${specificReport.code}:\n` +
@@ -181,11 +185,10 @@ B. Pertanyaan Identitas Pengguna / Asisten:
 - JANGAN menyertakan tag kartu untuk pertanyaan identitas.
 
 C. Status & Antrean Tiket Laporan Warga:
-- Jika pengguna menanyakan laporan mereka atau kode tiket (misal TLK-...):
-  * Jika belum login, ingatkan untuk masuk terlebih dahulu dan sertakan tag [CARD:ACTION:login].
-  * Jika sudah login, jelaskan status laporan mereka dengan transparan dan empatik.
-  * Jelaskan ALASAN mengapa laporan masih dalam antrean/proses: dinas terkait sedang memvalidasi bukti lokasi di tengah tingginya volume aduan, melakukan tinjauan teknis, atau menjadwalkan tim lapangan.
-  * Jika ada kode laporan yang dibahas, cantumkan tag: [CARD:REPORT:kode_laporan] di baris terakhir.
+- Jika pengguna menanyakan berapa banyak laporan yang diajukan, status laporannya, atau kode tiket (misal TLK-...):
+  * Jika belum login: jelaskan bahwa mereka perlu masuk ke akun terlebih dahulu agar riwayat laporan dapat diakses, lalu cantumkan tag [CARD:ACTION:login] di baris terakhir.
+  * Jika sudah login: jelaskan berapa banyak laporan yang mereka miliki berdasarkan data [Daftar Laporan Pengguna Terdaftar], sebutkan judul dan status masing-masing dengan ramah, dan berikan alasan antrean (misal dinas memverifikasi bukti di tengah volume laporan yang masuk).
+  * Cantumkan tag: [CARD:REPORT:kode_laporan] di baris terakhir untuk tiap laporan yang relevan.
 
 D. Program Kerja (Proker) Pemda & Anggaran:
 - Jelaskan program kerja pemerintah daerah yang sedang berjalan, dinas (OPD) penanggung jawabnya, capaian progres, dan target waktu.
@@ -348,6 +351,80 @@ ${issuesContext}
   }
 
   const lower = question.toLowerCase();
+
+  const isAskingMyReports =
+    lower.includes("laporan yang pernah") ||
+    lower.includes("laporan saya") ||
+    lower.includes("laporanku") ||
+    lower.includes("berapa laporan") ||
+    lower.includes("status laporanku") ||
+    lower.includes("tiket saya");
+
+  if (isAskingMyReports) {
+    if (!signedIn) {
+      return {
+        reply:
+          "Halo SobatGovra! Untuk mengecek berapa banyak laporan yang pernah Anda ajukan beserta status terbarunya, silakan masuk ke akun Govra Anda terlebih dahulu ya.",
+        sources: [],
+        cards: [
+          {
+            id: "act-login-reports",
+            type: "ACTION",
+            title: "Masuk ke Akun Govra",
+            subtitle: "Masuk untuk melihat riwayat dan progres laporan aduan Anda",
+            href: "/masuk",
+            actionLabel: "Masuk ke Akun",
+          },
+        ],
+      };
+    }
+
+    if (myReportsResult.items.length === 0) {
+      return {
+        reply:
+          "Halo SobatGovra! Setelah dicek di sistem, saat ini Anda belum memiliki laporan aduan yang pernah diajukan. Jika Anda menemukan fasilitas publik yang bermasalah, silakan ajukan laporan pertama Anda!",
+        sources: [],
+        cards: [
+          {
+            id: "act-create-report",
+            type: "ACTION",
+            title: "Buat Laporan Aduan Baru",
+            subtitle: "Sampaikan keluhan fasilitas publik agar segera ditangani dinas",
+            href: "/pelapor/lapor",
+            actionLabel: "Mulai Buat Laporan",
+          },
+        ],
+      };
+    }
+
+    const cards: ChatCard[] = myReportsResult.items.map((r) => {
+      const statusLabel = ISSUE_STATUS[r.status]?.label || r.status;
+      const isDone = r.status === "SELESAI";
+      const isProc = r.status === "DIPROSES";
+      return {
+        id: `card-rep-${r.code}`,
+        type: "REPORT",
+        title: r.title || `Laporan ${r.code}`,
+        subtitle: `Kode Tiket: ${r.code}`,
+        status: statusLabel,
+        statusTone: isDone ? "good" : isProc ? "warn" : "neutral",
+        badge: statusLabel,
+        href: `/pelapor/laporan/${r.code}`,
+        actionLabel: "Lihat Linimasa & Bukti Laporan",
+      };
+    });
+
+    return {
+      reply: `Halo SobatGovra! Anda memiliki ${myReportsResult.items.length} laporan yang pernah diajukan di sistem Govra. Berikut adalah rincian laporan beserta status penanganannya saat ini:`,
+      sources: myReportsResult.items.map((r) => ({
+        kind: "ISSUE",
+        title: r.title || r.code,
+        path: `/pelapor/laporan/${r.code}`,
+      })),
+      cards,
+    };
+  }
+
   const isGreetingWord =
     /^(halo|hai|selamat\s+(pagi|siang|sore|malam)|pagi|siang|sore|malam|assalam|permisi|sampurasun|p|ping)[\s!.?]*$/i.test(
       lower.replace(/[!?.,]+/g, "").trim(),

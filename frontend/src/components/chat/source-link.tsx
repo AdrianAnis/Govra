@@ -9,7 +9,7 @@ function SourceLink({ source, onNavigate }: { source: ChatSource; onNavigate: ()
     <Link
       href={source.path}
       onClick={onNavigate}
-      className="group flex w-full min-w-0 max-w-full items-center justify-between gap-2.5 rounded-lg border border-neutral-200/90 dark:border-neutral-800 bg-surface px-3 py-2 text-xs transition-colors duration-150 hover:border-neutral-300 dark:hover:border-neutral-700 overflow-hidden"
+      className="group flex w-full min-w-0 max-w-full items-center justify-between gap-2.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs transition-colors duration-150 hover:border-border-strong overflow-hidden"
     >
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="text-[11px] font-semibold text-primary">{KIND_LABEL[source.kind]}</span>
