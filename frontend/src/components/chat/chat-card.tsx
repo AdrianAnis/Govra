@@ -20,14 +20,14 @@ export function ChatCardList({ cards, onNavigate }: ChatCardListProps) {
   if (!cards || cards.length === 0) return null;
 
   return (
-    <div className="mt-3 grid gap-2 sm:grid-cols-1">
+    <div className="mt-2.5 flex w-full min-w-0 max-w-full flex-col gap-2 overflow-hidden">
       {cards.map((card) => {
         let Icon = FileText;
-        let toneBg = "bg-primary/10 text-primary border-primary/20";
+        let toneBg = "bg-neutral-100 text-foreground border-neutral-200/80 dark:bg-neutral-800 dark:border-neutral-700";
 
         if (card.type === "PROGRAM") {
           Icon = Target;
-          toneBg = "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
+          toneBg = "bg-neutral-100 text-primary border-neutral-200/80 dark:bg-neutral-800 dark:border-neutral-700";
         } else if (card.type === "ISSUE") {
           Icon = AlertTriangle;
           toneBg = "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
@@ -45,12 +45,12 @@ export function ChatCardList({ cards, onNavigate }: ChatCardListProps) {
             key={card.id}
             href={card.href}
             {...(onNavigate ? { onClick: onNavigate } : {})}
-            className="group relative flex flex-col gap-2 rounded-xl border border-border/80 bg-card p-3.5 shadow-xs transition-all duration-200 hover:border-primary/60 hover:shadow-md hover:bg-card/90"
+            className="group relative flex w-full min-w-0 max-w-full flex-col gap-2 rounded-xl border border-neutral-200/90 dark:border-neutral-800 bg-card p-3 shadow-2xs transition-all duration-150 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-muted/40 overflow-hidden"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg border", toneBg)}>
-                  <Icon className="size-4" />
+            <div className="flex w-full min-w-0 items-start justify-between gap-2.5">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <div className={cn("flex size-7.5 shrink-0 items-center justify-center rounded-lg border", toneBg)}>
+                  <Icon className="size-3.5" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
@@ -68,14 +68,14 @@ export function ChatCardList({ cards, onNavigate }: ChatCardListProps) {
               {card.badge && (
                 <span
                   className={cn(
-                    "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border",
+                    "inline-flex shrink-0 max-w-[40%] truncate items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border",
                     isGood
                       ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                       : isWarn
                         ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
                         : isBad
                           ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
-                          : "bg-muted text-muted-foreground border-border",
+                          : "bg-muted text-muted-foreground border-neutral-200 dark:border-neutral-800",
                   )}
                 >
                   {card.badge}
@@ -84,7 +84,7 @@ export function ChatCardList({ cards, onNavigate }: ChatCardListProps) {
             </div>
 
             {typeof card.progress === "number" && (
-              <div className="flex flex-col gap-1">
+              <div className="flex w-full min-w-0 flex-col gap-1">
                 <div className="flex justify-between text-[10px] text-muted-foreground">
                   <span>Progres Fisik</span>
                   <span className="font-semibold text-foreground">{card.progress}%</span>
@@ -99,16 +99,16 @@ export function ChatCardList({ cards, onNavigate }: ChatCardListProps) {
             )}
 
             {card.meta && (
-              <p className="text-[11px] leading-relaxed text-muted-foreground/90 line-clamp-2">
+              <p className="text-[11px] leading-relaxed text-muted-foreground line-clamp-2 break-words">
                 {card.meta}
               </p>
             )}
 
-            <div className="mt-1 flex items-center justify-between border-t border-border/60 pt-2 text-[11px] font-medium text-primary">
-              <span className="flex items-center gap-1">
+            <div className="mt-0.5 flex w-full min-w-0 items-center justify-between border-t border-neutral-200/80 dark:border-neutral-800/80 pt-2 text-[11px] font-medium text-primary">
+              <span className="truncate flex-1">
                 {card.actionLabel || "Buka & Lihat Selengkapnya"}
               </span>
-              <ChevronRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+              <ChevronRight className="size-3.5 shrink-0 transition-transform duration-150 group-hover:translate-x-0.5 ml-1" />
             </div>
           </Link>
         );

@@ -16,8 +16,8 @@ import {
   MapPin,
   Sparkles,
 } from "lucide-react";
-import { MarkdownLite } from "@/components/chat/markdown-lite";
 import { Logo } from "@/components/brand/logo";
+import { MarkdownLite } from "@/components/chat/markdown-lite";
 import { ChatCardList } from "@/components/chat/chat-card";
 import { SourceLink } from "@/components/chat/source-link";
 import { MAX_MESSAGES, MAX_QUESTION_LENGTH, type ChatTurn } from "@/lib/chat";
@@ -60,7 +60,7 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
   const [pending, setPending] = useState(false);
   const [errorNotice, setErrorNotice] = useState<string | null>(null);
 
-  const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -76,14 +76,37 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
   }, [turns, pending]);
 
   useEffect(() => {
-    inputRef.current?.focus();
+    textareaRef.current?.focus();
   }, [pending]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+    const el = e.target;
+    el.style.height = "auto";
+    const nextHeight = Math.min(el.scrollHeight, 128);
+    el.style.height = `${Math.max(44, nextHeight)}px`;
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (input.trim() && !pending) {
+        submitQuery(input);
+        if (textareaRef.current) {
+          textareaRef.current.style.height = "auto";
+        }
+      }
+    }
+  };
 
   const handleReset = () => {
     setTurns([]);
     setInput("");
     setErrorNotice(null);
-    inputRef.current?.focus();
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.focus();
+    }
   };
 
   const handleBack = () => {
@@ -114,6 +137,9 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
     const nextTurns = [...turns, userTurn];
     setTurns(nextTurns);
     setInput("");
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
     setPending(true);
     setErrorNotice(null);
 
@@ -140,40 +166,45 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
-    submitQuery(input);
+    if (input.trim() && !pending) {
+      submitQuery(input);
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
+      }
+    }
   };
 
   const visibleSuggestions = SUGGESTIONS.filter((s) => !s.signedInOnly || signedIn);
 
   return (
-    <div className="flex h-dvh w-full flex-col bg-background text-foreground overflow-hidden">
-      <header className="shrink-0 border-b border-border bg-surface px-3 sm:px-6 z-30 h-14 sm:h-16 flex items-center">
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-2.5 sm:gap-3">
+    <div className="flex h-dvh w-full max-w-full flex-col bg-background text-foreground overflow-hidden">
+      <header className="shrink-0 border-b border-neutral-200/90 dark:border-neutral-800 bg-surface px-3 sm:px-6 z-30 h-14 sm:h-16 flex items-center w-full max-w-full overflow-hidden">
+        <div className="flex items-center justify-between w-full min-w-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <button
               type="button"
               onClick={handleBack}
               aria-label="Kembali"
-              className="flex size-9 items-center justify-center rounded-lg border border-border/80 bg-background text-foreground transition-all duration-150 hover:bg-muted active:scale-95 cursor-pointer"
+              className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-neutral-200/90 dark:border-neutral-800 bg-background text-foreground transition-all duration-150 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-muted active:scale-95 cursor-pointer"
             >
               <ArrowLeft className="size-4.5" />
             </button>
-            <div className="flex items-center gap-2">
-              <Link href="/" aria-label="Govra, ke beranda" className="inline-flex items-center">
+            <div className="flex items-center gap-2 min-w-0">
+              <Link href="/" aria-label="Govra, ke beranda" className="inline-flex items-center shrink-0">
                 <Logo className="h-7 sm:h-8" />
               </Link>
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] sm:text-xs font-semibold text-primary">
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] sm:text-xs font-semibold text-primary shrink-0">
                 AI
               </span>
             </div>
           </div>
 
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-end shrink-0">
             {turns.length > 0 ? (
               <button
                 type="button"
                 onClick={handleReset}
-                className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-150 hover:text-foreground hover:bg-muted active:scale-95 shadow-xs cursor-pointer"
+                className="flex items-center gap-1.5 rounded-lg border border-neutral-200/90 dark:border-neutral-800 bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-150 hover:border-neutral-300 dark:hover:border-neutral-700 hover:text-foreground hover:bg-muted active:scale-95 shadow-2xs cursor-pointer"
                 title="Mulai percakapan baru"
               >
                 <RotateCcw className="size-3.5" />
@@ -186,25 +217,22 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
         </div>
       </header>
 
-      {/* CHAT BODY AREA */}
-      <main className="flex-1 overflow-y-auto px-3 py-4 sm:px-6">
-        <div className="mx-auto flex w-full max-w-3xl flex-col min-h-full">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 sm:px-6 w-full max-w-full">
+        <div className="mx-auto flex w-full max-w-3xl min-w-0 flex-col min-h-full">
           {turns.length === 0 ? (
-            /* CLEAN MINIMALIST WELCOME STATE (NO BROCHURE SLOP) */
-            <div className="my-auto flex flex-col items-center justify-center py-8 text-center">
-              <div className="mb-3 flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <Sparkles className="size-6" />
+            <div className="my-auto flex flex-col items-center justify-center py-8 text-center w-full max-w-full overflow-hidden">
+              <div className="mb-3 flex size-12 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800 text-foreground border border-neutral-200/80 dark:border-neutral-700">
+                <Sparkles className="size-6 text-primary" />
               </div>
 
               <h2 className="text-lg font-bold text-foreground sm:text-xl">
-                Halo, SobatGovra! 👋
+                Halo, SobatGovra!
               </h2>
               <p className="mt-1.5 max-w-md text-xs sm:text-sm text-muted-foreground px-4 leading-relaxed">
                 Ada yang bisa saya bantu hari ini seputar program kota atau laporan warga Anda?
               </p>
 
-              {/* QUICK SUGGESTION PILLS */}
-              <div className="mt-6 flex flex-wrap justify-center gap-2 max-w-xl px-2">
+              <div className="mt-6 flex flex-wrap justify-center gap-2 max-w-xl px-2 w-full">
                 {visibleSuggestions.map((item) => {
                   const ItemIcon = item.icon;
                   return (
@@ -212,7 +240,7 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
                       key={item.label}
                       type="button"
                       onClick={() => submitQuery(item.query)}
-                      className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-2 text-xs font-medium text-foreground transition-all duration-150 hover:border-primary/60 hover:bg-muted active:scale-98 cursor-pointer shadow-2xs"
+                      className="flex items-center gap-1.5 rounded-full border border-neutral-200/90 dark:border-neutral-800 bg-card px-3.5 py-2 text-xs font-medium text-foreground transition-all duration-150 hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-muted active:scale-98 cursor-pointer shadow-2xs"
                     >
                       <ItemIcon className="size-3.5 text-primary shrink-0" />
                       <span>{item.label}</span>
@@ -222,55 +250,52 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
               </div>
             </div>
           ) : (
-            /* CHAT MESSAGES LIST */
-            <div className="flex flex-col gap-4 pb-4">
+            <div className="flex flex-col gap-4 pb-4 w-full max-w-full overflow-hidden">
               {turns.map((turn) => {
                 const isUser = turn.role === "USER";
                 return (
                   <div
                     key={turn.id}
-                    className={cn("flex w-full gap-2.5 sm:gap-3", isUser ? "justify-end" : "justify-start")}
+                    className={cn("flex w-full min-w-0 gap-2 sm:gap-3 overflow-hidden", isUser ? "justify-end" : "justify-start")}
                   >
                     {!isUser && (
-                      <div className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20 mt-0.5">
+                      <div className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800 text-foreground border border-neutral-200/90 dark:border-neutral-700 mt-0.5">
                         <Bot className="size-4" />
                       </div>
                     )}
 
                     <div
                       className={cn(
-                        "flex max-w-[90%] sm:max-w-[82%] flex-col gap-2 rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-sm shadow-xs",
+                        "flex min-w-0 flex-col gap-2 rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-sm shadow-2xs break-words overflow-hidden",
                         isUser
-                          ? "bg-primary text-primary-foreground rounded-tr-xs"
-                          : "border border-border bg-card text-foreground rounded-tl-xs",
+                          ? "max-w-[85%] sm:max-w-[80%] bg-primary text-primary-foreground rounded-tr-xs"
+                          : "max-w-[88%] sm:max-w-[85%] border border-neutral-200/90 dark:border-neutral-800 bg-card text-foreground rounded-tl-xs",
                       )}
                     >
                       {isUser ? (
-                        <p className="whitespace-pre-wrap leading-relaxed">{turn.content}</p>
+                        <p className="whitespace-pre-wrap leading-relaxed break-words">{turn.content}</p>
                       ) : (
-                        <>
+                        <div className="flex flex-col gap-2 w-full min-w-0 max-w-full overflow-hidden">
                           <MarkdownLite text={turn.content} />
 
-                          {/* INTERACTIVE CARDS RENDERER */}
                           {turn.cards && turn.cards.length > 0 && (
                             <ChatCardList cards={turn.cards} />
                           )}
 
-                          {/* SOURCES TAGS */}
                           {turn.sources && turn.sources.length > 0 && (
-                            <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-border/60 pt-2 text-xs text-muted-foreground">
+                            <div className="mt-2 flex flex-col gap-1.5 w-full min-w-0 max-w-full border-t border-neutral-200/80 dark:border-neutral-800/80 pt-2 text-xs text-muted-foreground">
                               <span className="font-medium text-[11px]">Tautan terkait:</span>
                               {turn.sources.map((s) => (
                                 <SourceLink key={s.path} source={s} onNavigate={() => { }} />
                               ))}
                             </div>
                           )}
-                        </>
+                        </div>
                       )}
                     </div>
 
                     {isUser && (
-                      <div className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground border border-border mt-0.5">
+                      <div className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground border border-neutral-200/90 dark:border-neutral-800 mt-0.5">
                         <User className="size-4" />
                       </div>
                     )}
@@ -278,22 +303,20 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
                 );
               })}
 
-              {/* PENDING INDICATOR */}
               {pending && (
-                <div className="flex w-full items-start gap-2.5 sm:gap-3">
-                  <div className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20 mt-0.5">
+                <div className="flex w-full min-w-0 items-start gap-2 sm:gap-3 overflow-hidden">
+                  <div className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800 text-foreground border border-neutral-200/90 dark:border-neutral-700 mt-0.5">
                     <Bot className="size-4" />
                   </div>
-                  <div className="flex items-center gap-2 rounded-2xl border border-border bg-card px-3.5 py-2.5 text-xs text-muted-foreground shadow-xs rounded-tl-xs">
-                    <Loader2 className="size-3.5 animate-spin text-primary" />
+                  <div className="flex items-center gap-2 rounded-2xl border border-neutral-200/90 dark:border-neutral-800 bg-card px-3.5 py-2.5 text-xs text-muted-foreground shadow-2xs rounded-tl-xs min-w-0 max-w-[88%] break-words">
+                    <Loader2 className="size-3.5 animate-spin text-primary shrink-0" />
                     <span>SobatGovra, mohon tunggu sebentar saya sedang mengecek data...</span>
                   </div>
                 </div>
               )}
 
-              {/* ERROR NOTICE */}
               {errorNotice && (
-                <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-600 dark:text-rose-400">
+                <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-600 dark:text-rose-400 w-full break-words">
                   {errorNotice}
                 </div>
               )}
@@ -304,33 +327,35 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
         </div>
       </main>
 
-      {/* INPUT AREA (STICKY BOTTOM) */}
-      <footer className="shrink-0 border-t border-border bg-card/95 p-3 sm:p-4 backdrop-blur-md z-30">
-        <div className="mx-auto max-w-3xl">
-          <form onSubmit={onSubmit} className="relative flex items-center gap-2">
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              maxLength={MAX_QUESTION_LENGTH}
-              onChange={(e) => setInput(e.target.value)}
-              disabled={pending}
-              placeholder="Ketik pertanyaan atau sapaan, misal: Halo, cek status tiket TLK-..., atau proker jalan..."
-              className="h-11 sm:h-12 w-full rounded-xl border border-border bg-background px-3.5 pr-12 text-sm text-foreground shadow-xs transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
-            />
+      <footer className="shrink-0 border-t border-neutral-200/90 dark:border-neutral-800 bg-card/95 p-3 sm:p-4 backdrop-blur-md z-30 w-full max-w-full overflow-hidden">
+        <div className="mx-auto max-w-3xl w-full">
+          <form onSubmit={onSubmit} className="relative flex items-end gap-2 w-full">
+            <div className="relative flex-1 min-w-0">
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                value={input}
+                maxLength={MAX_QUESTION_LENGTH}
+                onChange={handleInputChange}
+                onKeyDown={onKeyDown}
+                disabled={pending}
+                placeholder="Ketik pertanyaan atau sapaan..."
+                className="w-full min-h-[44px] max-h-32 resize-none rounded-xl border border-neutral-200/90 dark:border-neutral-800 bg-background px-3.5 py-2.5 pr-12 text-sm text-foreground shadow-xs transition-colors placeholder:text-muted-foreground focus:border-neutral-400 dark:focus:border-neutral-600 focus:outline-none focus:ring-0 hover:border-neutral-300 dark:hover:border-neutral-700 disabled:opacity-50 overflow-y-auto leading-relaxed"
+              />
 
-            <button
-              type="submit"
-              disabled={!input.trim() || pending}
-              aria-label="Kirim pesan"
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 flex size-8 sm:size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all duration-150 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer shadow-xs"
-            >
-              {pending ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Send className="size-3.5 sm:size-4" />
-              )}
-            </button>
+              <button
+                type="submit"
+                disabled={!input.trim() || pending}
+                aria-label="Kirim pesan"
+                className="absolute right-1.5 bottom-1.5 flex size-8 sm:size-8.5 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all duration-150 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer shadow-xs"
+              >
+                {pending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Send className="size-3.5 sm:size-4" />
+                )}
+              </button>
+            </div>
           </form>
 
           <p className="mt-1.5 text-center text-[10.5px] text-muted-foreground">

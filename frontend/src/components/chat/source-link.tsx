@@ -9,15 +9,15 @@ function SourceLink({ source, onNavigate }: { source: ChatSource; onNavigate: ()
     <Link
       href={source.path}
       onClick={onNavigate}
-      className="group flex items-center justify-between gap-3 rounded-md border bg-surface px-3 py-2.5 transition-colors duration-150 hover:border-fg-muted"
+      className="group flex w-full min-w-0 max-w-full items-center justify-between gap-2.5 rounded-lg border border-neutral-200/90 dark:border-neutral-800 bg-surface px-3 py-2 text-xs transition-colors duration-150 hover:border-neutral-300 dark:hover:border-neutral-700 overflow-hidden"
     >
-      <span className="flex min-w-0 flex-col">
-        <span className="text-xs font-semibold text-primary">{KIND_LABEL[source.kind]}</span>
-        <span className="line-clamp-2 text-sm font-medium">{source.title}</span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="text-[11px] font-semibold text-primary">{KIND_LABEL[source.kind]}</span>
+        <span className="truncate text-xs font-medium text-foreground">{source.title}</span>
       </span>
       <ArrowRight
         aria-hidden
-        className="size-4 shrink-0 text-fg-muted transition-transform duration-150 group-hover:translate-x-0.5"
+        className="size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 group-hover:translate-x-0.5"
       />
     </Link>
   );
