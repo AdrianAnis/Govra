@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2 } from "lucide-react";
+import { Building2, Sparkles } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Select,
@@ -9,15 +9,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { ReportCluster } from "@/lib/data/triage-cluster";
 import { cn } from "@/lib/utils";
 
 const TOPIC_OPTIONS = [
-  { value: "ALL", label: "Semua Topik" },
+  { value: "ALL", label: "Semua Topik Dinas" },
   { value: "DBM-SDA", label: "Dinas Bina Marga & SDA" },
   { value: "DLHK", label: "Dinas Lingkungan Hidup" },
   { value: "DISHUB", label: "Dinas Perhubungan" },
   { value: "DINKES", label: "Dinas Kesehatan" },
   { value: "PUPR", label: "Dinas PUPR" },
+  { value: "BPBD", label: "BPBD (Bencana Alam)" },
+  { value: "SATPOL-PP", label: "Satpol PP (Ketertiban)" },
   { value: "TIDAK_TERDAFTAR", label: "Tidak Masuk Dinas" },
 ] as const;
 
@@ -25,14 +28,21 @@ const QUEUE_TABS = [
   { kind: null, label: "Semua Status" },
   { kind: "VERIFIKASI", label: "Perlu Verifikasi" },
   { kind: "PENGALIHAN", label: "Pengalihan Dinas" },
+  { kind: "ABSTRAK", label: "⚠️ Abstrak / Kurang Jelas" },
 ] as const;
 
-export function VerificationFilters({ totalCount }: { totalCount: number }) {
+interface VerificationFiltersProps {
+  totalCount: number;
+  clusters?: ReportCluster[];
+}
+
+export function VerificationFilters({ totalCount, clusters = [] }: VerificationFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const currentTopic = searchParams.get("topik") || "ALL";
+  const currentTema = searchParams.get("tema") || "ALL";
   const currentKind = searchParams.get("jenis") || "ALL";
 
   const applyFilter = (key: string, value: string) => {
@@ -47,33 +57,68 @@ export function VerificationFilters({ totalCount }: { totalCount: number }) {
     router.replace(qs ? `${pathname}?${qs}` : pathname);
   };
 
+  const clusterOptions = [
+    { value: "ALL", label: "Semua Tema Laporan (AI)" },
+    ...clusters.map((c) => ({
+      value: c.themeId,
+      label: `${c.themeTitle} (${c.totalCount} lap.${c.themeId !== "ABSTRAK" ? " · ≥90%" : ""})`,
+    })),
+  ];
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Select
-          value={currentTopic}
-          items={TOPIC_OPTIONS}
-          onValueChange={(val) => {
-            if (val) applyFilter("topik", val);
-          }}
-        >
-          <SelectTrigger
-            aria-label="Filter topik dinas"
-            className="h-10 w-64 sm:w-72 rounded-lg border-border-strong bg-surface px-3 text-sm font-medium text-fg shadow-2xs hover:border-fg-muted focus-visible:border-fg"
+        <div className="flex flex-wrap items-center gap-3">
+          <Select
+            value={currentTema}
+            items={clusterOptions}
+            onValueChange={(val) => {
+              if (val) applyFilter("tema", val);
+            }}
           >
-            <div className="flex min-w-0 flex-1 items-center gap-2 truncate">
-              <Building2 className="size-4 shrink-0 text-fg-muted" />
-              <SelectValue placeholder="Semua Topik" className="truncate text-sm" />
-            </div>
-          </SelectTrigger>
-          <SelectContent>
-            {TOPIC_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value} className="text-sm">
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            <SelectTrigger
+              aria-label="Filter tema laporan klaster AI"
+              className="h-10 w-72 sm:w-80 rounded-lg border-border-strong bg-surface px-3 text-sm font-medium text-fg shadow-2xs hover:border-fg-muted focus-visible:border-fg"
+            >
+              <div className="flex min-w-0 flex-1 items-center gap-2 truncate">
+                <Sparkles className="size-4 shrink-0 text-primary" />
+                <SelectValue placeholder="Semua Tema Laporan" className="truncate text-sm" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              {clusterOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value} className="text-sm">
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={currentTopic}
+            items={TOPIC_OPTIONS}
+            onValueChange={(val) => {
+              if (val) applyFilter("topik", val);
+            }}
+          >
+            <SelectTrigger
+              aria-label="Filter topik dinas"
+              className="h-10 w-56 sm:w-64 rounded-lg border-border-strong bg-surface px-3 text-sm font-medium text-fg shadow-2xs hover:border-fg-muted focus-visible:border-fg"
+            >
+              <div className="flex min-w-0 flex-1 items-center gap-2 truncate">
+                <Building2 className="size-4 shrink-0 text-fg-muted" />
+                <SelectValue placeholder="Semua Topik Dinas" className="truncate text-sm" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              {TOPIC_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value} className="text-sm">
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         <span className="text-xs font-medium text-fg-muted tabular-nums">
           Total {totalCount} isu terkumpul

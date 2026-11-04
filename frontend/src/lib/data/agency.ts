@@ -16,6 +16,11 @@ import type { Schema } from "@/lib/schema";
 import { categoryRef, opdRef } from "@/lib/mock/reference";
 import { getSessionUser } from "@/lib/data/session";
 import { directSupabase } from "@/lib/supabase-direct";
+import {
+  buildClustersAndThemes,
+  resolveClusterSiblingReports,
+  type ReportCluster,
+} from "./triage-cluster";
 
 const OPD_LOOKUP: Record<string, { code: string; name: string }> = {
   "e0000000-0000-0000-0000-000000000001": { code: "DBM-SDA", name: "Dinas Bina Marga & SDA" },
@@ -78,9 +83,12 @@ interface EventRow {
   note?: string | null | undefined;
 }
 
-interface AgencyFilters extends PageParams {
+export interface AgencyFilters extends PageParams {
   status?: Status | undefined;
   urgency?: Urgency | undefined;
+  tema?: string | undefined;
+  tab?: string | undefined;
+  isAbstract?: boolean | undefined;
 }
 
 const MS_PER_HOUR = 3_600_000;
@@ -205,17 +213,17 @@ function reportsOf(issue: Issue): AgencyReport[] {
   });
 }
 
-export async function listAgencyIssues(filters: AgencyFilters = {}, opdIdOverride?: string): Promise<Schema<"AgencyIssueList">> {
+export async function listAgencyIssues(filters: AgencyFilters = {}, opdIdOverride?: string): Promise<Schema<"AgencyIssueList"> & { clusters?: ReportCluster[] }> {
   const user = await getSessionUser();
   const targetOpdId = opdIdOverride || user?.opdId;
   const { url: supabaseUrl, key: supabaseKey } = directSupabase();
 
   try {
-    let endpoint = `${supabaseUrl}/rest/v1/reports?order=created_at.desc&limit=100`;
+    let endpoint = `${supabaseUrl}/rest/v1/reports?order=created_at.desc&limit=150`;
     if (targetOpdId) {
-      endpoint = `${supabaseUrl}/rest/v1/reports?opd_id=eq.${encodeURIComponent(targetOpdId)}&order=created_at.desc&limit=100`;
+      endpoint = `${supabaseUrl}/rest/v1/reports?opd_id=eq.${encodeURIComponent(targetOpdId)}&order=created_at.desc&limit=150`;
     }
-    if (filters.status) {
+    if (filters.status && filters.tab !== "abstrak") {
       endpoint += `&status=eq.${encodeURIComponent(filters.status)}`;
     }
     const [reportsRes, attachmentsRes] = await Promise.all([
@@ -245,7 +253,7 @@ export async function listAgencyIssues(filters: AgencyFilters = {}, opdIdOverrid
           const atts = await attachmentsRes.json();
           if (Array.isArray(atts)) {
             for (const a of atts) {
-              if (a.file_url && !photos[a.report_id]) {
+              if (a && a.file_url && a.report_id && !photos[a.report_id]) {
                 photos[a.report_id] = a.file_url;
               }
             }
@@ -259,7 +267,26 @@ export async function listAgencyIssues(filters: AgencyFilters = {}, opdIdOverrid
           defaultCat = { code: "UMUM", name: "Umum" };
         }
 
-        const items: Schema<"AgencyIssueSummary">[] = rows.map((r: ReportRow) => {
+        const { clusters, items: clusteredItems } = buildClustersAndThemes(
+          rows.filter(Boolean).map((r: any) => ({
+            id: r.id,
+            code: r.code || "GVR-2610-0000",
+            title: r.title,
+            summary: r.description,
+            description: r.description,
+            status: r.status,
+            lat: typeof r.lat === "number" ? r.lat : undefined,
+            lng: typeof r.lng === "number" ? r.lng : undefined,
+            district_name: r.address_detail,
+            village_name: r.village_id,
+            opd_code: (r.opd_id && OPD_LOOKUP[r.opd_id]?.code) || opdCode,
+            opd_name: (r.opd_id && OPD_LOOKUP[r.opd_id]?.name) || "Dinas",
+            created_at: r.created_at,
+          }))
+        );
+
+        let mapped = clusteredItems.map((cItem) => {
+          const r = rows.find((raw: any) => raw.id === cItem.id) || cItem;
           const itemOpdId = r.opd_id || targetOpdId;
           const itemOpdCode = (itemOpdId && OPD_LOOKUP[itemOpdId]?.code) || opdCode;
           let rowOpd: Schema<"OpdRef">;
@@ -268,6 +295,7 @@ export async function listAgencyIssues(filters: AgencyFilters = {}, opdIdOverrid
           } catch {
             rowOpd = { code: itemOpdCode, slug: itemOpdCode.toLowerCase(), name: (itemOpdId && OPD_LOOKUP[itemOpdId]?.name) || "Dinas" };
           }
+
           return {
             id: r.id,
             title: r.title,
@@ -286,12 +314,39 @@ export async function listAgencyIssues(filters: AgencyFilters = {}, opdIdOverrid
             cover_photo: photos[r.id] ? { url: String(photos[r.id]), mime: "image/jpeg" as const } : null,
             response_overdue: false,
             sla_due_at: null,
+            cluster_theme: cItem.clusterTheme,
+            cluster_theme_id: cItem.clusterThemeId,
+            cluster_similarity: cItem.clusterSimilarity,
+            is_abstract: cItem.isAbstract,
+            sibling_codes: cItem.clusterSiblingCodes,
+            resolved_via_cluster: cItem.resolvedViaCluster,
           };
         });
-        return paginate(items, filters);
+
+        if (filters.tab === "abstrak" || filters.isAbstract) {
+          mapped = mapped.filter((item) => item.is_abstract);
+        } else if (filters.status) {
+          mapped = mapped.filter((item) => !item.is_abstract && item.status === filters.status);
+        }
+
+        if (filters.tema) {
+          mapped = mapped.filter((item) => item.cluster_theme_id === filters.tema || (filters.tema === "ABSTRAK" && item.is_abstract));
+        }
+
+        if (filters.urgency) {
+          mapped = mapped.filter((item) => item.urgency === filters.urgency);
+        }
+
+        const paged = paginate(mapped, filters);
+        return {
+          ...paged,
+          clusters,
+        };
       }
     }
-  } catch {}
+  } catch (err) {
+    console.error("[AGENCY LIST ISSUES ERROR]", err);
+  }
 
   const items = agencyIssues()
     .filter((issue) => (!filters.status || issue.status === filters.status) && (!filters.urgency || issue.urgency === filters.urgency))

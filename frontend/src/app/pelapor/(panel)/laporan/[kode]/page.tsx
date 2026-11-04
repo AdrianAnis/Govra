@@ -1,4 +1,4 @@
-import { AlertCircle, ArrowLeft, ArrowRight, ExternalLink, MapPin } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, ExternalLink, MapPin, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -101,6 +101,69 @@ export default async function MyReportPage({ params }: PageProps<"/pelapor/lapor
                 <p className="text-sm font-semibold text-zinc-900 mt-1 leading-relaxed whitespace-pre-line break-words">
                   {processEvent.note}
                 </p>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+      {report.status === "SELESAI" && (() => {
+        const selesaiEvent = [...report.timeline].reverse().find((e) => e.to_status === "SELESAI");
+        const isClusterResolved = selesaiEvent?.note?.includes("klaster") || selesaiEvent?.note?.includes("terpadu");
+        return (
+          <div className="flex flex-col gap-4 rounded-xl border border-emerald-300 bg-emerald-50 dark:border-emerald-900/60 dark:bg-emerald-950/30 p-5 sm:p-6 shadow-xs">
+            <div className="flex items-center gap-2.5 text-emerald-950 dark:text-emerald-200 font-bold text-base sm:text-lg">
+              <CheckCircle2 className="size-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>Laporan Telah Selesai Ditangani</span>
+              {isClusterResolved && (
+                <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-emerald-600/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                  <Sparkles className="size-3.5" />
+                  Penyelesaian Terpadu Klaster
+                </span>
+              )}
+            </div>
+            <p className="text-sm font-medium text-emerald-900/90 dark:text-emerald-300/90 leading-relaxed">
+              {isClusterResolved
+                ? "Laporan Anda telah tuntas diselesaikan bersamaan dengan penanganan terpadu klaster aduan serupa di lokasi ini. Bukti hasil penanganan lapangan dapat dilihat di bawah ini."
+                : "Laporan Anda telah selesai ditangani oleh dinas penanggung jawab. Terima kasih atas kepedulian Anda dalam menjaga fasilitas kota."}
+            </p>
+            {selesaiEvent?.note && (
+              <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-card p-4 shadow-2xs">
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                  Catatan & Informasi Penyelesaian:
+                </span>
+                <p className="text-sm font-semibold text-zinc-900 dark:text-foreground mt-1 leading-relaxed whitespace-pre-line break-words">
+                  {selesaiEvent.note}
+                </p>
+              </div>
+            )}
+            {selesaiEvent?.evidence && selesaiEvent.evidence.length > 0 && (
+              <div className="flex flex-col gap-2 pt-1">
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                  Dokumentasi Bukti Hasil Pengerjaan ({selesaiEvent.evidence.length} Foto):
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {selesaiEvent.evidence.map((att: any, idx: number) => (
+                    <a
+                      key={att.id || idx}
+                      href={att.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group relative aspect-4/3 overflow-hidden rounded-lg border border-emerald-200 bg-white shadow-2xs hover:border-emerald-500"
+                    >
+                      <Image
+                        src={att.url}
+                        alt={`Bukti penanganan ${idx + 1}`}
+                        fill
+                        sizes="160px"
+                        className="object-cover transition-transform duration-200 group-hover:scale-105"
+                        unoptimized={att.url.startsWith("data:")}
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 flex items-center justify-center text-white text-xs font-medium">
+                        Lihat Bukti
+                      </div>
+                    </a>
+                  ))}
+                </div>
               </div>
             )}
           </div>

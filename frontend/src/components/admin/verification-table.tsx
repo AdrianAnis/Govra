@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Sparkles } from "lucide-react";
 import { SelectField } from "@/components/select-field";
 import { IssueStatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
@@ -71,6 +71,50 @@ export function VerificationTable({ items: initialItems, opds, now }: Verificati
     setSelectedOpdCode(isUnreg ? null : (item.current_opd?.code || suggestion?.opd?.code || null));
     setSelectedCatCode(isUnreg ? null : (suggestion?.category?.code || null));
     setIsDrawerOpen(true);
+  };
+
+  const handleQuickRoute = async (item: VerificationTableItem) => {
+    const opdCode = item.ai_suggestion?.opd.code || item.current_opd?.code;
+    if (!opdCode || opdCode === "TIDAK_TERDAFTAR") {
+      openDetail(item);
+      return;
+    }
+    const catCode = item.ai_suggestion?.category.code || "UMUM";
+    const opdName = item.ai_suggestion?.opd.name || opdCode;
+
+    try {
+      setIsSubmitting(true);
+      setErrorMsg(null);
+      await adminCall("POST", `/issues/${item.issue_id}/route`, {
+        opd_code: opdCode,
+        category_code: catCode,
+      });
+
+      const updatedOpd = {
+        code: opdCode,
+        name: opdName,
+        slug: opdCode.toLowerCase(),
+      };
+
+      setItems((prev) =>
+        prev.map((it) =>
+          it.issue_id === item.issue_id
+            ? { ...it, status: "DITERUSKAN", current_opd: updatedOpd }
+            : it,
+        ),
+      );
+
+      setSuccessInfo({
+        title: "Laporan Berhasil Diteruskan",
+        message: `Laporan "${item.title}" berhasil diteruskan ke ${opdName} sesuai rekomendasi AI.`,
+        opdName,
+      });
+      router.refresh();
+    } catch (err) {
+      setErrorMsg(getErrorMessage(err, "Gagal meneruskan laporan."));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleRoute = async () => {
@@ -581,7 +625,7 @@ export function VerificationTable({ items: initialItems, opds, now }: Verificati
                         disabled={isSubmitting || !selectedOpdCode}
                         className="flex-1 h-11 text-sm"
                       >
-                        <span>{isSubmitting ? "Meneruskan..." : (showReassignForm ? "Perbarui Dinas" : "Teruskan ke Dinas")}</span>
+                        <span className="flex items-center justify-center gap-1.5"><Sparkles className="size-3.5 shrink-0" /><span>{isSubmitting ? "Meneruskan..." : (showReassignForm ? "Perbarui Dinas" : `Teruskan sesuai Rekomendasi AI (${targetOpd?.name || selectedOpdCode})`)}</span></span>
                       </Button>
 
                       {(!showReassignForm || activeItem.status === "DIAJUKAN" || activeItem.status === "MENUNGGU_VERIFIKASI") && (

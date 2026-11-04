@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, Users } from "lucide-react";
+import { ArrowLeft, Users, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Pagination } from "@/components/pagination";
 import { IssueStatusBadge } from "@/components/status-badge";
@@ -16,6 +16,7 @@ import { agencyIssueHref } from "@/lib/routes";
 import { parseIssueFilters, type RawSearchParams } from "@/lib/search-params";
 import { activeParams } from "@/lib/url";
 import { cn } from "@/lib/utils";
+import { AgencyThemeFilter } from "@/components/agency/agency-theme-filter";
 
 export const metadata: Metadata = { title: "Semua Laporan Dinas" };
 

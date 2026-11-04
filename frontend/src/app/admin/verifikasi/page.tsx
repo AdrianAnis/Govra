@@ -17,19 +17,21 @@ function first(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-function parseKind(value: string | undefined): Schema<"VerificationKind"> | undefined {
-  return value === "VERIFIKASI" || value === "PENGALIHAN" ? value : undefined;
+function parseKind(value: string | undefined): Schema<"VerificationKind"> | "ABSTRAK" | undefined {
+  return value === "VERIFIKASI" || value === "PENGALIHAN" || value === "ABSTRAK" ? value : undefined;
 }
 
 export default async function AdminVerificationPage({ searchParams }: { searchParams: Promise<RawSearchParams> }) {
   const raw = await searchParams;
   const kind = parseKind(first(raw.jenis));
   const topicCode = first(raw.topik) || null;
+  const temaId = first(raw.tema) || null;
 
   const [queue, opds] = await Promise.all([
     listVerification({
       kind,
       opdCode: topicCode ?? undefined,
+      tema: temaId ?? undefined,
       page: parsePage(raw),
       limit: PAGE_SIZE,
     }),
@@ -40,6 +42,7 @@ export default async function AdminVerificationPage({ searchParams }: { searchPa
   const paginationParams: Record<string, string> = {};
   if (kind) paginationParams.jenis = kind;
   if (topicCode) paginationParams.topik = topicCode;
+  if (temaId) paginationParams.tema = temaId;
 
   return (
     <div className="flex flex-col gap-6">
@@ -48,11 +51,14 @@ export default async function AdminVerificationPage({ searchParams }: { searchPa
         description="Hasil klasifikasi AI Gemini berdasarkan topik masalah dan kedekatan wilayah laporan warga."
       />
 
-      <VerificationFilters totalCount={queue.total} />
+      <VerificationFilters
+        totalCount={queue.total}
+        clusters={queue.clusters || []}
+      />
 
       {queue.items.length > 0 ? (
         <VerificationTable
-          key={`${kind || "ALL"}-${topicCode || "ALL"}-${queue.page}`}
+          key={`${kind || "ALL"}-${topicCode || "ALL"}-${temaId || "ALL"}-${queue.page}`}
           items={queue.items}
           opds={opds.items}
           now={now.toISOString()}

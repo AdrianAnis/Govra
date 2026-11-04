@@ -19,6 +19,11 @@ import { adminStore, AUDIT_ACTOR } from "@/lib/mock/admin";
 import { PUBLIC_ISSUES, UNVERIFIED_ISSUES } from "@/lib/mock/issues";
 import type { Schema } from "@/lib/schema";
 import { directSupabase } from "@/lib/supabase-direct";
+import {
+  buildClustersAndThemes,
+  isAbstractText,
+  type ReportCluster,
+} from "./triage-cluster";
 
 type Issue = Schema<"IssueDetail">;
 
@@ -26,7 +31,13 @@ export interface VerificationTableItem {
   issue_id: string;
   code?: string;
   status?: string;
-  kind: Schema<"VerificationKind">;
+  kind: Schema<"VerificationKind"> | "ABSTRAK";
+  cluster_theme?: string;
+  cluster_theme_id?: string;
+  cluster_similarity?: number;
+  is_abstract?: boolean;
+  sibling_codes?: string[];
+  resolved_via_cluster?: boolean | undefined;
   title: string;
   summary?: string | null;
   reporter_count: number;
@@ -44,11 +55,12 @@ export interface VerificationTableItem {
   transfer_note?: string | null;
 }
 
-interface VerificationPage {
+export interface VerificationPage {
   page: number;
   limit: number;
   total: number;
   items: VerificationTableItem[];
+  clusters?: ReportCluster[];
 }
 
 interface RawIssue {
@@ -246,97 +258,155 @@ export async function getAdminOverview(): Promise<Schema<"AdminOverview">> {
 }
 
 export async function listVerification(
-  params: PageParams & { kind?: Schema<"VerificationKind"> | undefined; opdCode?: string | undefined },
+  params: PageParams & {
+    kind?: Schema<"VerificationKind"> | "ABSTRAK" | undefined;
+    opdCode?: string | undefined;
+    tema?: string | undefined;
+  },
 ): Promise<VerificationPage> {
-  const jar = await cookies();
-  const token = jar.get("govra_token")?.value;
-  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  const { url: supabaseUrl, key: supabaseKey } = directSupabase();
+  let reportsFromDb: any[] = [];
+  const attMap: Record<string, string[]> = {};
+
   try {
-    const res = await fetch(`${apiBase}/admin/verification`, {
-      headers: {
-        "X-BFF-Key": BFF_KEY,
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      cache: "no-store",
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const rawItems = Array.isArray(data.items) ? data.items : [];
-      let mapped: VerificationTableItem[] = rawItems.map((iss: RawIssue): VerificationTableItem => {
-        const isTransfer = iss.status === "DIALIHKAN";
-        const isUnregistered = Boolean(iss.is_unregistered_opd) || iss.ai_opd_code === "TIDAK_TERDAFTAR";
-        const opdCode = iss.ai_opd_code || (isUnregistered ? "TIDAK_TERDAFTAR" : "DBM-SDA");
-        const opdName = iss.ai_opd_name || (isUnregistered ? "Tidak Masuk ke Dinas Manapun yang Terdaftar" : "Dinas Bina Marga & SDA");
-        const catCode = iss.ai_category_code || "UMUM";
-        const catName = iss.ai_category_name || "Umum";
+    const [repRes, attRes] = await Promise.all([
+      fetch(`${supabaseUrl}/rest/v1/reports?order=created_at.desc&limit=150`, {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app" },
+        cache: "no-store",
+      }),
+      fetch(`${supabaseUrl}/rest/v1/report_attachments?select=report_id,file_url&limit=300`, {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, "Accept-Profile": "app" },
+        cache: "no-store",
+      }).catch(() => null),
+    ]);
 
-        return {
-          issue_id: iss.id,
-          code: iss.code || "GVR-2610-0000",
-          status: iss.status || "DIAJUKAN",
-          kind: isTransfer ? "PENGALIHAN" : "VERIFIKASI",
-          title: iss.title,
-          summary: iss.summary || null,
-          reporter_count: iss.unique_reporters_count || 1,
-          created_at: iss.created_at,
-          photo_urls: Array.isArray(iss.photo_urls) ? iss.photo_urls : iss.cover_photo_url ? [iss.cover_photo_url] : [],
-          ai_suggestion: {
-            opd: {
-              code: opdCode,
-              name: opdName,
-              slug: opdCode.toLowerCase(),
-            },
-            category: {
-              code: catCode,
-              name: catName,
-            },
-            confidence: typeof iss.ai_confidence === "number" ? iss.ai_confidence : 0.85,
-            is_unregistered_opd: isUnregistered,
-            recommended_action: iss.ai_recommendation || "",
-          },
-          current_opd: iss.opd_name
-            ? {
-                code: iss.opd_code || "",
-                name: iss.opd_name,
-                slug: (iss.opd_code || "").toLowerCase(),
-              }
-            : null,
-          transfer_reason: isTransfer ? "BUKAN_WEWENANG_OPD" : null,
-          transfer_note: iss.summary || null,
-        };
-      });
-
-      if (params.kind === "VERIFIKASI") {
-        mapped = mapped.filter((item) => item.status === "DIAJUKAN" || item.status === "MENUNGGU_VERIFIKASI" || item.kind === "VERIFIKASI");
-      } else if (params.kind === "PENGALIHAN") {
-        mapped = mapped.filter((item) => item.status === "DIALIHKAN" || item.kind === "PENGALIHAN");
+    if (repRes.ok) {
+      const rows = await repRes.json();
+      if (Array.isArray(rows) && rows.length > 0) {
+        reportsFromDb = rows;
       }
-      if (params.opdCode) {
-        mapped = mapped.filter((item) => {
-          if (params.opdCode === "TIDAK_TERDAFTAR") {
-            const sug = item.ai_suggestion;
-            return sug?.is_unregistered_opd || sug?.opd?.code === "TIDAK_TERDAFTAR";
+    }
+    if (attRes && attRes.ok) {
+      const attRows = await attRes.json();
+      if (Array.isArray(attRows)) {
+        for (const a of attRows) {
+          if (a && a.report_id) {
+            if (!attMap[a.report_id]) attMap[a.report_id] = [];
+            if (a.file_url) attMap[a.report_id]!.push(a.file_url);
           }
-          const currentCode = item.current_opd?.code;
-          const aiCode = item.ai_suggestion?.opd.code;
-          return currentCode === params.opdCode || aiCode === params.opdCode;
-        });
+        }
       }
-
-      return paginate(mapped, params);
     }
   } catch (err) {
-    console.error("[ADMIN VERIFICATION FETCH ERROR]", err);
+    console.error("[ADMIN LIST VERIFICATION DB ERROR]", err);
   }
 
-  return paginate(
-    pending().filter(
-      (item) =>
-        (!params.kind || item.kind === params.kind) &&
-        (!params.opdCode || item.ai_suggestion?.opd.code === params.opdCode),
-    ),
-    params,
+  const baseReports = reportsFromDb.length > 0 ? reportsFromDb : pending();
+
+  const { clusters, items: clusteredItems } = buildClustersAndThemes(
+    baseReports.filter(Boolean).map((r: any) => ({
+      id: r.id || r.issue_id,
+      code: r.code || "GVR-2610-0000",
+      title: r.title,
+      summary: r.summary || r.description,
+      description: r.description,
+      status: r.status || "DIAJUKAN",
+      lat: typeof r.lat === "number" ? r.lat : undefined,
+      lng: typeof r.lng === "number" ? r.lng : undefined,
+      district_name: r.district_name || r.address_detail,
+      village_name: r.village_name,
+      photo_urls: (r.id && attMap[r.id]) || (Array.isArray(r.photo_urls) ? r.photo_urls : []),
+      opd_code: r.opd_code,
+      opd_name: r.opd_name,
+      created_at: r.created_at || new Date().toISOString(),
+    }))
   );
+
+  let mapped: VerificationTableItem[] = clusteredItems.map((item) => {
+    const isTransfer = item.status === "DIALIHKAN";
+    const kind: Schema<"VerificationKind"> | "ABSTRAK" = item.isAbstract
+      ? "ABSTRAK"
+      : isTransfer
+        ? "PENGALIHAN"
+        : "VERIFIKASI";
+
+    return {
+      issue_id: item.id,
+      code: item.code,
+      status: item.status,
+      kind,
+      title: item.title || "Laporan Warga",
+      summary: item.summary || item.description || null,
+      reporter_count: 1,
+      created_at: (item as any).created_at || new Date().toISOString(),
+      photo_urls: (item as any).photo_urls || [],
+      ai_suggestion: {
+        opd: {
+          code: item.aiTriage.opdCode,
+          name: item.aiTriage.opdName,
+          slug: item.aiTriage.opdCode.toLowerCase(),
+        },
+        category: {
+          code: item.aiTriage.categoryCode,
+          name: item.aiTriage.categoryName,
+        },
+        confidence: item.aiTriage.confidence,
+        is_unregistered_opd: item.aiTriage.isAbstract || item.aiTriage.opdCode === "TIDAK_TERDAFTAR",
+        recommended_action: item.aiTriage.recommendedAction,
+      },
+      current_opd: item.opd_name
+        ? {
+            code: item.opd_code || "",
+            name: item.opd_name,
+            slug: (item.opd_code || "").toLowerCase(),
+          }
+        : item.aiTriage.opdCode !== "TIDAK_TERDAFTAR"
+          ? {
+              code: item.aiTriage.opdCode,
+              name: item.aiTriage.opdName,
+              slug: item.aiTriage.opdCode.toLowerCase(),
+            }
+          : null,
+      transfer_reason: isTransfer ? "BUKAN_WEWENANG_OPD" : null,
+      transfer_note: item.summary || null,
+      cluster_theme: item.clusterTheme,
+      cluster_theme_id: item.clusterThemeId,
+      cluster_similarity: item.clusterSimilarity,
+      is_abstract: item.isAbstract,
+      sibling_codes: item.clusterSiblingCodes,
+      resolved_via_cluster: item.resolvedViaCluster ?? false,
+    };
+  });
+
+  if (params.kind === "ABSTRAK") {
+    mapped = mapped.filter((item) => item.is_abstract);
+  } else if (params.kind === "VERIFIKASI") {
+    mapped = mapped.filter((item) => !item.is_abstract && (item.status === "DIAJUKAN" || item.status === "MENUNGGU_VERIFIKASI" || item.kind === "VERIFIKASI"));
+  } else if (params.kind === "PENGALIHAN") {
+    mapped = mapped.filter((item) => item.status === "DIALIHKAN" || item.kind === "PENGALIHAN");
+  }
+
+  if (params.tema) {
+    mapped = mapped.filter((item) => item.cluster_theme_id === params.tema || (params.tema === "ABSTRAK" && item.is_abstract));
+  }
+
+  if (params.opdCode) {
+    mapped = mapped.filter((item) => {
+      if (params.opdCode === "TIDAK_TERDAFTAR") {
+        const sug = item.ai_suggestion;
+        return sug?.is_unregistered_opd || sug?.opd?.code === "TIDAK_TERDAFTAR";
+      }
+      const currentCode = item.current_opd?.code;
+      const aiCode = item.ai_suggestion?.opd.code;
+      return currentCode === params.opdCode || aiCode === params.opdCode;
+    });
+  }
+
+  const paged = paginate(mapped, params);
+  return {
+    ...paged,
+    clusters,
+  };
 }
 
 export async function routeIssue(id: string, input: RouteInput): Promise<Outcome<Schema<"IssueStatusResult">>> {

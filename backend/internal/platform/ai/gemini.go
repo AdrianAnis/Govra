@@ -228,39 +228,60 @@ func (c *Client) generateContent(ctx context.Context, reqBody geminiRequest) (st
 	if c.apiKey == "" || c.apiKey == "test-gemini-key" || strings.HasPrefix(c.apiKey, "mock") {
 		return "{}", errors.New("gemini api key not configured")
 	}
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", c.model, c.apiKey)
+
+	candidateModels := []string{c.model, "gemini-3-flash-preview", "gemini-3.5-flash", "gemini-2.5-flash"}
 	data, err := json.Marshal(reqBody)
 	if err != nil {
 		return "", err
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(data))
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
+	var lastErr error
+	for _, m := range candidateModels {
+		if m == "" {
+			continue
+		}
+		url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", m, c.apiKey)
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(data))
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		req.Header.Set("Content-Type", "application/json")
 
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	if resp.StatusCode >= 400 {
-		return "", fmt.Errorf("gemini api error status %d: %s", resp.StatusCode, string(bodyBytes))
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		bodyBytes, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		if resp.StatusCode >= 400 {
+			lastErr = fmt.Errorf("gemini api error on %s status %d: %s", m, resp.StatusCode, string(bodyBytes))
+			continue
+		}
+
+		var gResp geminiResponse
+		if err := json.Unmarshal(bodyBytes, &gResp); err != nil {
+			lastErr = err
+			continue
+		}
+		if len(gResp.Candidates) == 0 || len(gResp.Candidates[0].Content.Parts) == 0 {
+			lastErr = errors.New("empty response from gemini")
+			continue
+		}
+		return gResp.Candidates[0].Content.Parts[0].Text, nil
 	}
 
-	var gResp geminiResponse
-	if err := json.Unmarshal(bodyBytes, &gResp); err != nil {
-		return "", err
+	if lastErr != nil {
+		return "", lastErr
 	}
-	if len(gResp.Candidates) == 0 || len(gResp.Candidates[0].Content.Parts) == 0 {
-		return "", errors.New("empty response from gemini")
-	}
-	return gResp.Candidates[0].Content.Parts[0].Text, nil
+	return "", errors.New("all gemini candidate models failed")
 }
 
 func cleanJSON(s string) string {

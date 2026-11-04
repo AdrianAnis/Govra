@@ -61,7 +61,7 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
   const [errorNotice, setErrorNotice] = useState<string | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     try {
@@ -72,7 +72,13 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
   }, []);
 
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (mainRef.current) {
+      mainRef.current.scrollTo({
+        top: mainRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+      mainRef.current.scrollLeft = 0;
+    }
   }, [turns, pending]);
 
   useEffect(() => {
@@ -217,7 +223,15 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 sm:px-6 w-full max-w-full">
+      <main
+        ref={mainRef}
+        onScroll={(e) => {
+          if (e.currentTarget.scrollLeft !== 0) {
+            e.currentTarget.scrollLeft = 0;
+          }
+        }}
+        className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 sm:px-6 w-full max-w-full"
+      >
         <div className="mx-auto flex w-full max-w-3xl min-w-0 flex-col min-h-full">
           {turns.length === 0 ? (
             <div className="my-auto flex flex-col items-center justify-center py-8 text-center w-full max-w-full overflow-hidden">
@@ -261,12 +275,12 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
                       className={cn(
                         "flex min-w-0 flex-col gap-2 rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 text-sm shadow-2xs break-words overflow-hidden",
                         isUser
-                          ? "max-w-[85%] sm:max-w-[80%] bg-primary text-primary-foreground rounded-tr-xs"
-                          : "max-w-[88%] sm:max-w-[85%] bg-card text-foreground rounded-tl-xs",
+                          ? "max-w-[calc(100%-2.75rem)] sm:max-w-[78%] bg-primary text-primary-foreground rounded-tr-xs"
+                          : "max-w-full sm:max-w-[85%] bg-card text-foreground rounded-tl-xs",
                       )}
                     >
                       {isUser ? (
-                        <p className="whitespace-pre-wrap leading-relaxed break-words">{turn.content}</p>
+                        <p className="whitespace-pre-wrap leading-relaxed break-words [overflow-wrap:anywhere]">{turn.content}</p>
                       ) : (
                         <div className="flex flex-col gap-2 w-full min-w-0 max-w-full overflow-hidden">
                           <MarkdownLite text={turn.content} />
@@ -314,7 +328,7 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
                 </div>
               )}
 
-              <div ref={scrollRef} />
+              
             </div>
           )}
         </div>
@@ -323,7 +337,7 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
       <footer className="shrink-0  p-3 sm:p-4 backdrop-blur-md z-30 w-full max-w-full overflow-hidden">
         <div className="mx-auto max-w-3xl w-full">
           <form onSubmit={onSubmit} className="w-full">
-            <div className="flex items-center gap-2 rounded-2xl border border-border bg-background px-3.5 py-1.5 transition-colors hover:border-border-strong focus-within:border-border-strong focus-within:outline-none shadow-2xs">
+            <div className="flex items-center gap-2 rounded-2xl border border-border bg-background px-3.5 py-1.5 transition-colors hover:border-border-strong focus-within:border-border-strong shadow-2xs">
               <textarea
                 ref={textareaRef}
                 rows={1}
@@ -333,15 +347,15 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
                 onKeyDown={onKeyDown}
                 disabled={pending}
                 placeholder="Ketik pertanyaan atau sapaan..."
-                style={{ outline: "none", boxShadow: "none" }}
-                className="flex-1 min-h-[38px] max-h-32 resize-none bg-transparent py-2 text-sm text-foreground transition-colors placeholder:text-muted-foreground outline-none border-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 [outline:none] focus:[outline:none] disabled:opacity-50 overflow-y-auto leading-relaxed"
+                style={{ outline: "none", boxShadow: "none", border: "none", WebkitTapHighlightColor: "transparent" }}
+                className="flex-1 min-h-[38px] max-h-32 resize-none bg-transparent py-2 text-sm text-foreground placeholder:text-muted-foreground border-none outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus:border-none focus-visible:border-none disabled:opacity-50 overflow-y-auto leading-relaxed"
               />
 
               <button
                 type="submit"
                 disabled={!input.trim() || pending}
                 aria-label="Kirim pesan"
-                className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all duration-150 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer shadow-xs my-auto"
+                className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all duration-150 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer shadow-xs self-center"
               >
                 {pending ? (
                   <Loader2 className="size-4 animate-spin" />
