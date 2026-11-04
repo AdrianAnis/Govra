@@ -18,7 +18,7 @@ import {
 import { MarkdownLite } from "@/components/chat/markdown-lite";
 import { ChatCardList } from "@/components/chat/chat-card";
 import { SourceLink } from "@/components/chat/source-link";
-import { MAX_MESSAGES, MAX_QUESTION_LENGTH, persistedTurnsSchema, type ChatTurn } from "@/lib/chat";
+import { MAX_MESSAGES, MAX_QUESTION_LENGTH, type ChatTurn } from "@/lib/chat";
 import { askAssistant, isRateLimited } from "@/lib/chat-client";
 import { cn } from "@/lib/utils";
 
@@ -26,8 +26,6 @@ export interface AssistantPageViewProps {
   signedIn: boolean;
   userName?: string | undefined;
 }
-
-const STORAGE_KEY = "govra_assistant_turns_v3";
 
 const SUGGESTIONS = [
   {
@@ -53,21 +51,9 @@ const SUGGESTIONS = [
   },
 ];
 
-function loadSavedTurns(): ChatTurn[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = persistedTurnsSchema.safeParse(JSON.parse(raw));
-      if (parsed.success) return parsed.data;
-    }
-  } catch { }
-  return [];
-}
-
 export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
   const router = useRouter();
-  const [turns, setTurns] = useState<ChatTurn[]>(loadSavedTurns);
+  const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
   const [errorNotice, setErrorNotice] = useState<string | null>(null);
@@ -76,10 +62,12 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(turns));
-    }
-  }, [turns]);
+    try {
+      localStorage.removeItem("govra_assistant_turns_v3");
+      localStorage.removeItem("govra_assistant_turns_v2");
+      localStorage.removeItem("govra_assistant_turns_v1");
+    } catch { }
+  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -93,9 +81,6 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
     setTurns([]);
     setInput("");
     setErrorNotice(null);
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(STORAGE_KEY);
-    }
     inputRef.current?.focus();
   };
 
