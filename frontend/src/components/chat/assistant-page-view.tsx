@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Send,
@@ -16,6 +17,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { MarkdownLite } from "@/components/chat/markdown-lite";
+import { Logo } from "@/components/brand/logo";
 import { ChatCardList } from "@/components/chat/chat-card";
 import { SourceLink } from "@/components/chat/source-link";
 import { MAX_MESSAGES, MAX_QUESTION_LENGTH, type ChatTurn } from "@/lib/chat";
@@ -145,33 +147,33 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
 
   return (
     <div className="flex h-dvh w-full flex-col bg-background text-foreground overflow-hidden">
-      {/* NAVBAR: BUTTON KEMBALI DI UJUNG KIRI SEJAJAR DENGAN PERCAKAPAN BARU DI UJUNG KANAN */}
-      <header className="shrink-0 border-b border-border bg-card/90 backdrop-blur-md px-3 sm:px-5 py-2.5 z-30">
-        <div className="flex justify-between w-full">
-          <div className="flex items-center gap-2">
+      <header className="shrink-0 border-b border-border bg-surface px-3 sm:px-6 z-30 h-14 sm:h-16 flex items-center">
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-2.5 sm:gap-3">
             <button
               type="button"
               onClick={handleBack}
               aria-label="Kembali"
-              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-foreground transition-all duration-150 hover:bg-muted active:scale-95 cursor-pointer"
+              className="flex size-9 items-center justify-center rounded-lg border border-border/80 bg-background text-foreground transition-all duration-150 hover:bg-muted active:scale-95 cursor-pointer"
             >
-              <ArrowLeft className="size-4" />
+              <ArrowLeft className="size-4.5" />
             </button>
             <div className="flex items-center gap-2">
-              <h1 className="text-sm font-bold text-foreground">Govra AI</h1>
-              <span className="text-[11px] text-muted-foreground hidden sm:inline">• Asisten Transparansi & Aduan</span>
+              <Link href="/" aria-label="Govra, ke beranda" className="inline-flex items-center">
+                <Logo className="h-7 sm:h-8" />
+              </Link>
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] sm:text-xs font-semibold text-primary">
+                AI
+              </span>
             </div>
           </div>
 
-
-
-          {/* UJUNG KANAN: PERCAKAPAN BARU (SEJAJAR DENGAN BACK BUTTON) */}
           <div className="flex items-center justify-end">
             {turns.length > 0 ? (
               <button
                 type="button"
                 onClick={handleReset}
-                className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-150 hover:text-foreground hover:bg-muted active:scale-95 shadow-xs cursor-pointer"
+                className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-150 hover:text-foreground hover:bg-muted active:scale-95 shadow-xs cursor-pointer"
                 title="Mulai percakapan baru"
               >
                 <RotateCcw className="size-3.5" />
