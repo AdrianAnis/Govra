@@ -13,6 +13,34 @@ export interface AssistantAnswer {
 
 const REPORT_CODE_PATTERN = /TLK-\d{4}-[A-Z0-9]{4}/i;
 
+const GREETING_REGEX =
+  /^(halo+|hai+|helo+|hello+|hei+|hi+|hey+|p+|assalamu\s*['’]?alaikum|selamat\s+(pagi|siang|sore|malam)|pagi|siang|sore|malam|permisi|sampurasun|kulonuwun|tes|test|ping)[\s!.?]*$/i;
+
+const GREETING_PHRASES = new Set([
+  "halo", "hai", "helo", "hello", "hei", "hi", "hey",
+  "halo govra", "halo asisten", "halo min", "hai govra", "hai min",
+  "selamat pagi", "selamat siang", "selamat sore", "selamat malam",
+  "assalamualaikum", "assalamu'alaikum", "assalamualaikum min",
+  "p", "ping", "tes", "test", "permisi", "sampurasun"
+]);
+
+function isGreeting(q: string): boolean {
+  const clean = q.trim().toLowerCase().replace(/[!?.,]+/g, "");
+  return GREETING_REGEX.test(clean) || GREETING_PHRASES.has(clean);
+}
+
+function isIdentityQuery(q: string): boolean {
+  const clean = q.trim().toLowerCase().replace(/[!?.,]+/g, "");
+  return (
+    clean === "siapa kamu" ||
+    clean === "kamu siapa" ||
+    clean === "siapa anda" ||
+    clean === "kamu bisa apa" ||
+    clean === "apa itu govra" ||
+    clean === "bisa bantu apa"
+  );
+}
+
 const OUT_OF_SCOPE_WORDS = [
   "resep", "masak", "koding", "coding", "javascript", "python", "php", "lagu", "lirik",
   "puisi", "pantun", "cerpen", "zodiak", "horoskop", "game", "steam", "pacar", "jodoh",
@@ -88,6 +116,35 @@ export async function answerQuestion(
 ): Promise<AssistantAnswer> {
   const lower = question.toLowerCase().trim();
 
+  // 1. Tangani Sapaan Ramah (Greetings)
+  if (isGreeting(lower)) {
+    return {
+      reply:
+        "Halo, SobatGovra! Senang bisa menyapa Anda.\n\n" +
+        "Saya adalah asisten resmi Govra yang siap membantu Anda seputar:\n" +
+        "1. Pengecekan status & antrean laporan tiket Anda\n" +
+        "2. Progres dan realisasi program kerja (proker) Pemda\n" +
+        "3. Isu darurat yang paling banyak dilaporkan warga\n" +
+        "4. Pengecekan status masalah/fasilitas tertentu di wilayah Anda\n\n" +
+        "Ada yang ingin SobatGovra tanyakan hari ini?",
+      sources: [],
+      cards: [],
+    };
+  }
+
+  // 2. Tangani Pertanyaan Identitas
+  if (isIdentityQuery(lower)) {
+    return {
+      reply:
+        "Halo, SobatGovra! Saya adalah asisten kecerdasan buatan resmi untuk platform Govra.\n\n" +
+        "Tugas utama saya adalah membantu warga memantau transparansi program kerja daerah, realisasi anggaran, serta melacak progres penanganan tiket laporan warga secara akurat dan terbuka.\n\n" +
+        "Ada yang bisa saya bantu seputar proker kota atau laporan Anda, SobatGovra?",
+      sources: [],
+      cards: [],
+    };
+  }
+
+  // 3. Filter Pertanyaan di Luar Lingkup (Strict Guardrail)
   if (isOutOfScope(lower)) {
     return {
       reply:
@@ -102,6 +159,7 @@ export async function answerQuestion(
     };
   }
 
+  // 4. Pengecekan Kode Tiket Laporan Spesifik (TLK-...)
   const codeMatch = REPORT_CODE_PATTERN.exec(question);
   if (codeMatch) {
     const code = codeMatch[0].toUpperCase();
@@ -193,6 +251,7 @@ export async function answerQuestion(
     };
   }
 
+  // 5. Cek Riwayat Laporan Pengguna ("laporan saya")
   const isAskingMyReports =
     lower.includes("laporan saya") ||
     lower.includes("status laporan") ||
@@ -265,6 +324,7 @@ export async function answerQuestion(
     };
   }
 
+  // 6. Cek Masalah Paling Urgent / Laporan Terbanyak
   const isAskingUrgent =
     lower.includes("urgent") ||
     lower.includes("mendesak") ||
@@ -318,6 +378,7 @@ export async function answerQuestion(
     }
   }
 
+  // 7. Cek Proker Pemda & Realisasi Anggaran
   const isAskingProker =
     lower.includes("proker") ||
     lower.includes("program kerja") ||
@@ -388,9 +449,10 @@ export async function answerQuestion(
     };
   }
 
+  // 8. Cek Isu / Keluhan di Wilayah Spesifik (misal: "jalan rusak di bojongsoang")
   const allIssues = await listIssues({ limit: 100 });
   const searchTerms = lower
-    .replace(/(status|laporan|isu|bagaimana|apakah|ada|tentang|tolong|cek|sudah|belum|di|ke|yang)/g, "")
+    .replace(/(halo|hai|tolong|cek|status|laporan|isu|bagaimana|apakah|ada|tentang|sudah|belum|di|ke|yang|min|dong)/g, "")
     .trim()
     .split(/\s+/)
     .filter((w) => w.length >= 3);
@@ -444,6 +506,7 @@ export async function answerQuestion(
     };
   }
 
+  // 9. Jika belum ada laporan sama sekali
   const notFoundReply =
     `Halo SobatGovra! Setelah dicek di sistem, saat ini belum ada laporan atau aduan yang terdaftar mengenai "${question}".\n\n` +
     "Jika fasilitas atau kendala tersebut membutuhkan penanganan dari pemerintah daerah, SobatGovra dapat langsung menjadi orang pertama yang mengajukan laporan agar segera didisposisikan ke dinas terkait!";
