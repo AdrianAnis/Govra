@@ -61,7 +61,7 @@ function loadSavedTurns(): ChatTurn[] {
       const parsed = persistedTurnsSchema.safeParse(JSON.parse(raw));
       if (parsed.success) return parsed.data;
     }
-  } catch {}
+  } catch { }
   return [];
 }
 
@@ -162,28 +162,23 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
     <div className="flex h-dvh w-full flex-col bg-background text-foreground overflow-hidden">
       {/* NAVBAR: BUTTON KEMBALI DI UJUNG KIRI SEJAJAR DENGAN PERCAKAPAN BARU DI UJUNG KANAN */}
       <header className="shrink-0 border-b border-border bg-card/90 backdrop-blur-md px-3 sm:px-5 py-2.5 z-30">
-        <div className="flex items-center justify-between w-full">
-          {/* UJUNG KIRI: BUTTON BACK DENGAN PADDING KECIL */}
-          <button
-            type="button"
-            onClick={handleBack}
-            aria-label="Kembali"
-            className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground transition-all duration-150 hover:bg-muted active:scale-95 shadow-xs cursor-pointer"
-          >
-            <ArrowLeft className="size-4" />
-            <span className="text-xs">Kembali</span>
-          </button>
-
-          {/* TENGAH: IDENTITAS GOVRA AI */}
+        <div className="flex justify-between w-full">
           <div className="flex items-center gap-2">
-            <div className="flex size-7 sm:size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xs shrink-0">
-              <Bot className="size-4 sm:size-4.5" />
-            </div>
-            <div className="text-left">
-              <h1 className="text-xs sm:text-sm font-bold text-foreground leading-tight">Govra AI</h1>
-              <p className="text-[10px] text-muted-foreground hidden sm:block">Asisten Transparansi & Laporan Kota</p>
+            <button
+              type="button"
+              onClick={handleBack}
+              aria-label="Kembali"
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-foreground transition-all duration-150 hover:bg-muted active:scale-95 cursor-pointer"
+            >
+              <ArrowLeft className="size-4" />
+            </button>
+            <div className="flex items-center gap-2">
+              <h1 className="text-sm font-bold text-foreground">Govra AI</h1>
+              <span className="text-[11px] text-muted-foreground hidden sm:inline">• Asisten Transparansi & Aduan</span>
             </div>
           </div>
+
+
 
           {/* UJUNG KANAN: PERCAKAPAN BARU (SEJAJAR DENGAN BACK BUTTON) */}
           <div className="flex items-center justify-end">
@@ -279,7 +274,7 @@ export function AssistantPageView({ signedIn }: AssistantPageViewProps) {
                             <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-border/60 pt-2 text-xs text-muted-foreground">
                               <span className="font-medium text-[11px]">Tautan terkait:</span>
                               {turn.sources.map((s) => (
-                                <SourceLink key={s.path} source={s} onNavigate={() => {}} />
+                                <SourceLink key={s.path} source={s} onNavigate={() => { }} />
                               ))}
                             </div>
                           )}

@@ -2,6 +2,7 @@ import type { ChatCard, ChatSource } from "@/lib/chat";
 import { listIssues } from "@/lib/data/issues";
 import { listPrograms } from "@/lib/data/programs";
 import { getMyReport, listMyReports } from "@/lib/data/reports";
+import type { SessionUser } from "@/lib/data/session";
 import { formatPercent } from "@/lib/format";
 import { ISSUE_STATUS, PROGRAM_STATUS } from "@/lib/status";
 
@@ -11,49 +12,26 @@ export interface AssistantAnswer {
   cards: ChatCard[];
 }
 
+export interface ChatMessage {
+  role: "USER" | "ASSISTANT";
+  content: string;
+}
+
 const REPORT_CODE_PATTERN = /TLK-\d{4}-[A-Z0-9]{4}/i;
 
-const GREETING_REGEX =
-  /^(halo+|hai+|helo+|hello+|hei+|hi+|hey+|p+|assalamu\s*['’]?alaikum|selamat\s+(pagi|siang|sore|malam)|pagi|siang|sore|malam|permisi|sampurasun|kulonuwun|tes|test|ping)[\s!.?]*$/i;
-
-const GREETING_PHRASES = new Set([
-  "halo", "hai", "helo", "hello", "hei", "hi", "hey",
-  "halo govra", "halo asisten", "halo min", "hai govra", "hai min",
-  "selamat pagi", "selamat siang", "selamat sore", "selamat malam",
-  "assalamualaikum", "assalamu'alaikum", "assalamualaikum min",
-  "p", "ping", "tes", "test", "permisi", "sampurasun"
-]);
-
-function isGreeting(q: string): boolean {
-  const clean = q.trim().toLowerCase().replace(/[!?.,]+/g, "");
-  return GREETING_REGEX.test(clean) || GREETING_PHRASES.has(clean);
+function cleanFormatting(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/__(.*?)__/g, "$1")
+    .replace(/\*(.*?)\*/g, "$1")
+    .replace(/_(.*?)_/g, "$1")
+    .trim();
 }
 
-function isIdentityQuery(q: string): boolean {
-  const clean = q.trim().toLowerCase().replace(/[!?.,]+/g, "");
-  return (
-    clean === "siapa kamu" ||
-    clean === "kamu siapa" ||
-    clean === "siapa anda" ||
-    clean === "kamu bisa apa" ||
-    clean === "apa itu govra" ||
-    clean === "bisa bantu apa"
-  );
-}
-
-const OUT_OF_SCOPE_WORDS = [
-  "resep", "masak", "koding", "coding", "javascript", "python", "php", "lagu", "lirik",
-  "puisi", "pantun", "cerpen", "zodiak", "horoskop", "game", "steam", "pacar", "jodoh",
-  "ramalan", "translate", "terjemah", "matematika", "hitung", "presiden", "politik",
-  "pemilu", "pilkada", "capres", "cawapres", "artis", "film", "bioskop"
-];
-
-function isOutOfScope(q: string): boolean {
-  const lower = q.toLowerCase();
-  return OUT_OF_SCOPE_WORDS.some((word) => lower.includes(word));
-}
-
-async function callGeminiAssistant(systemPrompt: string, userPrompt: string): Promise<string | null> {
+async function callGemini(
+  systemInstruction: string,
+  history: Array<{ role: "user" | "model"; parts: Array<{ text: string }> }>,
+): Promise<string | null> {
   const apiKey =
     process.env.GEMINI_API_KEY_ASSISTANT ||
     process.env.GEMINI_API_KEY_TRIAGE ||
@@ -66,19 +44,15 @@ async function callGeminiAssistant(systemPrompt: string, userPrompt: string): Pr
   const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-  const body = {
+  const payload = {
     system_instruction: {
-      parts: [{ text: systemPrompt }],
+      parts: [{ text: systemInstruction }],
     },
-    contents: [
-      {
-        role: "user",
-        parts: [{ text: userPrompt }],
-      },
-    ],
+    contents: history,
     generationConfig: {
-      temperature: 0.2,
-      maxOutputTokens: 800,
+      temperature: 0.3,
+      maxOutputTokens: 1000,
+      thinkingConfig: { thinkingBudget: 0 },
     },
   };
 
@@ -89,7 +63,7 @@ async function callGeminiAssistant(systemPrompt: string, userPrompt: string): Pr
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify(payload),
       signal: controller.signal,
     });
 
@@ -100,9 +74,9 @@ async function callGeminiAssistant(systemPrompt: string, userPrompt: string): Pr
     }
 
     const data = await res.json();
-    const candidate = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (typeof candidate === "string" && candidate.trim()) {
-      return candidate.trim();
+    const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (typeof candidateText === "string" && candidateText.trim()) {
+      return candidateText.trim();
     }
     return null;
   } catch {
@@ -111,418 +85,330 @@ async function callGeminiAssistant(systemPrompt: string, userPrompt: string): Pr
 }
 
 export async function answerQuestion(
-  question: string,
-  signedIn: boolean,
+  input: string | ChatMessage[],
+  userOrSignedIn?: SessionUser | boolean | null,
 ): Promise<AssistantAnswer> {
-  const lower = question.toLowerCase().trim();
+  const messages: ChatMessage[] =
+    typeof input === "string"
+      ? [{ role: "USER", content: input }]
+      : input;
 
-  // 1. Tangani Sapaan Ramah (Greetings)
-  if (isGreeting(lower)) {
+  const lastUserTurn = [...messages].reverse().find((m) => m.role === "USER");
+  const question = lastUserTurn?.content?.trim() || "";
+
+  const sessionUser: SessionUser | null =
+    typeof userOrSignedIn === "object" ? userOrSignedIn : null;
+  const signedIn =
+    typeof userOrSignedIn === "boolean"
+      ? userOrSignedIn
+      : Boolean(sessionUser && sessionUser.role === "pelapor");
+
+  const [programsResult, issuesResult, myReportsResult] = await Promise.all([
+    listPrograms({ limit: 8 }).catch(() => ({ items: [], total: 0 })),
+    listIssues({ limit: 15 }).catch(() => ({ items: [], total: 0 })),
+    signedIn ? listMyReports({ page: 1, limit: 10 }).catch(() => ({ items: [], total: 0 })) : Promise.resolve({ items: [], total: 0 }),
+  ]);
+
+  const codeMatch = REPORT_CODE_PATTERN.exec(question);
+  let specificReport: Awaited<ReturnType<typeof getMyReport>> = null;
+  if (codeMatch && signedIn) {
+    specificReport = await getMyReport(codeMatch[0].toUpperCase()).catch(() => null);
+  }
+
+  const sortedIssues = [...issuesResult.items].sort(
+    (a, b) => (b.reporter_count || 1) - (a.reporter_count || 1),
+  );
+  const urgentIssues = sortedIssues.slice(0, 5);
+
+  const userInfoContext = sessionUser
+    ? `Nama Pengguna: ${sessionUser.name}\nStatus Login: Masuk sebagai Warga / Pelapor (email: ${sessionUser.email})`
+    : `Status Login: Belum Masuk / Anonim (Pengguna Umum)`;
+
+  const myReportsContext =
+    myReportsResult.items.length > 0
+      ? myReportsResult.items
+          .map((r) => {
+            const statusLabel = ISSUE_STATUS[r.status]?.label || r.status;
+            return `- Kode: ${r.code}, Judul: "${r.title || 'Laporan Warga'}", Status: ${statusLabel}, Dibuat: ${r.created_at}`;
+          })
+          .join("\n")
+      : "Belum ada laporan aktif di akun pengguna ini.";
+
+  const specificReportContext = specificReport
+    ? `Detail Tiket ${specificReport.code}:\n` +
+      `- Judul: ${specificReport.title || 'Laporan Warga'}\n` +
+      `- Status: ${ISSUE_STATUS[specificReport.status]?.label || specificReport.status}\n` +
+      `- Wilayah: ${specificReport.location?.district?.name || '-'}, ${specificReport.location?.village?.name || '-'}\n` +
+      `- Catatan Terakhir: ${specificReport.timeline?.[specificReport.timeline.length - 1]?.note || '-'}\n` +
+      `- Alasan Penolakan (jika ada): ${specificReport.rejection_reason || '-'}`
+    : "Tidak ada kode tiket spesifik yang diproses.";
+
+  const programsContext = programsResult.items
+    .map((p) => {
+      const statusLabel = PROGRAM_STATUS[p.status]?.label || p.status;
+      return `- Kode: ${p.code}, Nama: "${p.name}", OPD Penanggung Jawab: ${p.opd.name}, Progres: ${formatPercent(p.progress_percent)} (Target: ${formatPercent(p.expected_percent)}), Status: ${statusLabel}`;
+    })
+    .join("\n");
+
+  const issuesContext = urgentIssues
+    .map((iss) => {
+      const statusLabel = ISSUE_STATUS[iss.status]?.label || iss.status;
+      return `- ID: ${iss.id}, Judul: "${iss.title}", Lokasi: ${iss.location?.district?.name || '-'}, Kategori: ${iss.category?.name || '-'}, Status: ${statusLabel}, Jumlah Pelapor/Pendukung: ${iss.reporter_count} warga, Urgensi: ${iss.urgency || 'MEDIUM'}`;
+    })
+    .join("\n");
+
+  const systemPrompt = `Anda adalah Govra AI, asisten kecerdasan buatan resmi untuk platform transparansi pemerintah daerah Govra.
+Anda bertindak seperti asisten manusia yang sangat ramah, hangat, empatik, cerdas, dan suportif kepada warga.
+
+PANDUAN KOMUNIKASI DAN KEPRIBADIAN:
+1. Selalu sapa pengguna dengan sebutan "SobatGovra" (contoh: "Halo SobatGovra!", "Selamat pagi, SobatGovra!"). Jika nama pengguna diketahui dari info akun, Anda boleh menyapa seperti "Halo SobatGovra [Nama]!".
+2. Gaya bicara harus luwes, alami, dan empatik selayaknya manusia yang benar-benar peduli. Hindari bahasa kaku atau birokrasi berbelit-belit.
+3. JANGAN PERNAH menyertakan karakter format markdown mentah seperti tanda bintang ganda (**) atau garis bawah ganda (__). Gunakan teks bersih tanpa tanda bintang.
+
+ATURAN RUANG LINGKUP & PENANGANAN TOPIK:
+Anda secara ketat hanya beroperasi dalam 4 topik utama Govra, ditambah interaksi percakapan alami (sapaan, identitas, basa-basi):
+
+A. Sapaan & Basa-basi Alami:
+- Jika pengguna menyapa ("halo", "hai", "selamat pagi", "selamat pagii", "pagi", "assalamualaikum", "p", "sampurasun", dll.), sapa balik dengan sangat hangat dan tanyakan hal apa yang ingin diketahui hari ini seputar program kerja daerah, laporan tiket, atau isu prioritas kota.
+- JANGAN PERNAH menganggap sapaan sebagai laporan keluhan atau masalah!
+- JANGAN menyertakan tag kartu apapun untuk sapaan atau obrolan santai.
+
+B. Pertanyaan Identitas Pengguna / Asisten:
+- Jika pengguna bertanya tentang siapa Anda ("kamu siapa?", "apa tugasmu?"): jelaskan peran Anda sebagai asisten AI keterbukaan informasi dan pelaporan kota Govra.
+- Jika pengguna bertanya tentang identitas mereka ("kamu tahu saya siapa?", "siapa aku?"):
+  * Jika pengguna sedang login: sebutkan nama mereka dan jelaskan bahwa mereka terdaftar di Govra.
+  * Jika pengguna belum login / anonim: jelaskan secara santun bahwa mereka belum masuk ke akun Govra sehingga Anda belum mengetahui nama mereka, serta beritahu bahwa mereka bisa masuk untuk melihat laporan pribadi atau tetap bebas memantau proker tanpa login.
+- JANGAN menyertakan tag kartu untuk pertanyaan identitas.
+
+C. Status & Antrean Tiket Laporan Warga:
+- Jika pengguna menanyakan laporan mereka atau kode tiket (misal TLK-...):
+  * Jika belum login, ingatkan untuk masuk terlebih dahulu dan sertakan tag [CARD:ACTION:login].
+  * Jika sudah login, jelaskan status laporan mereka dengan transparan dan empatik.
+  * Jelaskan ALASAN mengapa laporan masih dalam antrean/proses: dinas terkait sedang memvalidasi bukti lokasi di tengah tingginya volume aduan, melakukan tinjauan teknis, atau menjadwalkan tim lapangan.
+  * Jika ada kode laporan yang dibahas, cantumkan tag: [CARD:REPORT:kode_laporan] di baris terakhir.
+
+D. Program Kerja (Proker) Pemda & Anggaran:
+- Jelaskan program kerja pemerintah daerah yang sedang berjalan, dinas (OPD) penanggung jawabnya, capaian progres, dan target waktu.
+- Tunjukkan transparansi capaian kota.
+- Cantumkan tag: [CARD:PROGRAM:kode_proker] di baris terakhir untuk program yang relevan.
+
+E. Isu Darurat / Masalah Prioritas Kota:
+- Jika pengguna menanyakan masalah apa yang paling urgent/darurat atau paling banyak dilaporkan warga:
+  * Jelaskan isu-isu teratas dari data yang tersedia.
+  * Jelaskan MENGAPA masalah tersebut mendesak (misalnya: jalan berlubang membahayakan keselamatan pengendara, sampah menumpuk mengancam kesehatan lingkungan, banjir mengganggu mobilitas).
+  * Sebutkan jumlah warga yang telah mendukung isu tersebut.
+  * Cantumkan tag: [CARD:ISSUE:id_isu] di baris terakhir.
+
+F. Pengecekan Status Masalah / Fasilitas Tertentu di Wilayah (misal: "jalan rusak di bojongsoang apakah sudah dilaporkan?"):
+- Periksa data isu yang ada:
+  * Jika ada masalah yang cocok: jelaskan bahwa aduan sudah tercatat di sistem, sebutkan status penanganannya dan jumlah pendukung, lalu cantumkan tag [CARD:ISSUE:id_isu].
+  * Jika BENAR-BENAR belum ada di data DAN pengguna memang secara spesifik menanyakan status kerusakan fasilitas publik tertentu: jelaskan dengan santun bahwa saat ini belum ada laporan warga yang tercatat mengenai kendala tersebut, dan ajak pengguna untuk menjadi pelapor pertama agar segera didisposisikan ke dinas terkait. Cantumkan tag [CARD:ACTION:create].
+
+G. Pertanyaan di Luar Lingkup (Resep, Koding, Game, Musik, Politik Nasional, Percintaan, dll.):
+- Tolak secara santun, ramah, dan bersahabat.
+- Jelaskan bahwa Anda adalah asisten khusus transparansi daerah dan pengaduan warga Govra.
+- Ajak kembali ke 4 topik utama Govra.
+- JANGAN sertakan tag kartu apapun.
+
+DATA SISTEM SAAT INI UNTUK MENJAWAB:
+[Info Pengguna]
+${userInfoContext}
+
+[Detail Tiket Spesifik Jika Ada]
+${specificReportContext}
+
+[Daftar Laporan Pengguna Terdaftar]
+${myReportsContext}
+
+[Daftar Program Kerja (Proker) Pemda]
+${programsContext}
+
+[Daftar Isu / Aduan Warga Terkini]
+${issuesContext}
+`;
+
+  const conversationHistory = messages.slice(-6).map((m) => ({
+    role: m.role === "USER" ? ("user" as const) : ("model" as const),
+    parts: [{ text: m.content }],
+  }));
+
+  const aiRaw = await callGemini(systemPrompt, conversationHistory);
+
+  if (aiRaw) {
+    const cardTagPattern = /\[CARD:(REPORT|PROGRAM|ISSUE|ACTION):([A-Za-z0-9_-]+)\]/g;
+    const matchedCardTags: Array<{ type: string; idOrCode: string }> = [];
+
+    let match: RegExpExecArray | null;
+    while ((match = cardTagPattern.exec(aiRaw)) !== null) {
+      if (match[1] && match[2]) {
+        matchedCardTags.push({ type: match[1], idOrCode: match[2] });
+      }
+    }
+
+    const cleanedReply = cleanFormatting(aiRaw.replace(cardTagPattern, "").trim());
+
+    const cards: ChatCard[] = [];
+    const sources: ChatSource[] = [];
+
+    for (const tag of matchedCardTags) {
+      if (tag.type === "REPORT") {
+        const found =
+          (specificReport && specificReport.code.toUpperCase() === tag.idOrCode.toUpperCase() ? specificReport : null) ||
+          myReportsResult.items.find((r) => r.code.toUpperCase() === tag.idOrCode.toUpperCase());
+
+        if (found) {
+          const statusLabel = ISSUE_STATUS[found.status]?.label || found.status;
+          const isDone = found.status === "SELESAI";
+          const isProc = found.status === "DIPROSES";
+          cards.push({
+            id: `card-rep-${found.code}`,
+            type: "REPORT",
+            title: found.title || `Laporan ${found.code}`,
+            subtitle: `Kode Tiket: ${found.code}`,
+            status: statusLabel,
+            statusTone: isDone ? "good" : isProc ? "warn" : "neutral",
+            badge: statusLabel,
+            href: `/pelapor/laporan/${found.code}`,
+            actionLabel: "Lihat Linimasa & Bukti Laporan",
+          });
+          sources.push({ kind: "ISSUE", title: found.title || found.code, path: `/pelapor/laporan/${found.code}` });
+        }
+      } else if (tag.type === "PROGRAM") {
+        const prog = programsResult.items.find(
+          (p) => p.code.toLowerCase() === tag.idOrCode.toLowerCase(),
+        );
+        if (prog) {
+          const statusLabel = PROGRAM_STATUS[prog.status]?.label || prog.status;
+          const isDone = prog.status === "SELESAI";
+          const isLate = prog.status === "TERLAMBAT";
+          cards.push({
+            id: `card-prog-${prog.code}`,
+            type: "PROGRAM",
+            title: prog.name,
+            subtitle: prog.opd.name,
+            status: statusLabel,
+            statusTone: isDone ? "good" : isLate ? "bad" : "warn",
+            badge: statusLabel,
+            progress: prog.progress_percent,
+            meta: `Realisasi: ${formatPercent(prog.progress_percent)} • Target: ${formatPercent(prog.expected_percent)}`,
+            href: `/proker/${prog.code}`,
+            actionLabel: "Lihat Detail Program & Realisasi",
+          });
+          sources.push({ kind: "PROGRAM", title: prog.name, path: `/proker/${prog.code}` });
+        }
+      } else if (tag.type === "ISSUE") {
+        const iss = issuesResult.items.find(
+          (i) => i.id.toLowerCase() === tag.idOrCode.toLowerCase(),
+        );
+        if (iss) {
+          const statusLabel = ISSUE_STATUS[iss.status]?.label || iss.status;
+          const isUrgent = iss.urgency === "URGENT" || (iss.reporter_count || 1) >= 15;
+          cards.push({
+            id: `card-iss-${iss.id}`,
+            type: "ISSUE",
+            title: iss.title,
+            subtitle: `${iss.location?.district?.name || 'Kota'}, ${iss.location?.village?.name || ''}`.replace(/,\s*$/, ""),
+            status: statusLabel,
+            statusTone: isUrgent ? "bad" : "warn",
+            badge: isUrgent ? "Mendesak / Prioritas" : "Didukung Warga",
+            meta: `Didukung oleh ${iss.reporter_count} warga sekitar`,
+            href: `/isu/${iss.id}`,
+            actionLabel: "Lihat Isu & Berikan Dukungan",
+          });
+          sources.push({ kind: "ISSUE", title: iss.title, path: `/isu/${iss.id}` });
+        }
+      } else if (tag.type === "ACTION") {
+        if (tag.idOrCode === "create") {
+          cards.push({
+            id: "act-create-report",
+            type: "ACTION",
+            title: "Ajukan Laporan Terkait",
+            subtitle: "Jadilah yang pertama melaporkan kendala ini agar segera ditangani dinas",
+            href: "/pelapor/lapor",
+            actionLabel: "Buat Laporan Baru Sekarang",
+          });
+        } else if (tag.idOrCode === "login") {
+          cards.push({
+            id: "act-login-govra",
+            type: "ACTION",
+            title: "Masuk ke Akun Govra",
+            subtitle: "Masuk dengan akun pelapor untuk melihat status tiket laporan Anda",
+            href: "/masuk",
+            actionLabel: "Masuk Sekarang",
+          });
+        }
+      }
+    }
+
+    return {
+      reply: cleanedReply,
+      sources,
+      cards,
+    };
+  }
+
+  const lower = question.toLowerCase();
+  const isGreetingWord =
+    /^(halo|hai|selamat\s+(pagi|siang|sore|malam)|pagi|siang|sore|malam|assalam|permisi|sampurasun|p|ping)[\s!.?]*$/i.test(
+      lower.replace(/[!?.,]+/g, "").trim(),
+    );
+
+  if (isGreetingWord) {
     return {
       reply:
         "Halo, SobatGovra! Senang bisa menyapa Anda.\n\n" +
-        "Saya adalah asisten resmi Govra yang siap membantu Anda seputar:\n" +
+        "Saya adalah asisten cerdas Govra yang siap membantu Anda seputar:\n" +
         "1. Pengecekan status & antrean laporan tiket Anda\n" +
         "2. Progres dan realisasi program kerja (proker) Pemda\n" +
         "3. Isu darurat yang paling banyak dilaporkan warga\n" +
-        "4. Pengecekan status masalah/fasilitas tertentu di wilayah Anda\n\n" +
+        "4. Pengecekan status masalah/fasilitas publik di wilayah Anda\n\n" +
         "Ada yang ingin SobatGovra tanyakan hari ini?",
       sources: [],
       cards: [],
     };
   }
 
-  // 2. Tangani Pertanyaan Identitas
-  if (isIdentityQuery(lower)) {
-    return {
-      reply:
-        "Halo, SobatGovra! Saya adalah asisten kecerdasan buatan resmi untuk platform Govra.\n\n" +
-        "Tugas utama saya adalah membantu warga memantau transparansi program kerja daerah, realisasi anggaran, serta melacak progres penanganan tiket laporan warga secara akurat dan terbuka.\n\n" +
-        "Ada yang bisa saya bantu seputar proker kota atau laporan Anda, SobatGovra?",
-      sources: [],
-      cards: [],
-    };
-  }
+  const isWhoAmI =
+    lower.includes("kamu tahu saya siapa") ||
+    lower.includes("saya siapa") ||
+    lower.includes("siapa saya");
 
-  // 3. Filter Pertanyaan di Luar Lingkup (Strict Guardrail)
-  if (isOutOfScope(lower)) {
-    return {
-      reply:
-        "Halo SobatGovra! Maaf sekali, saya adalah asisten resmi Govra yang dirancang khusus untuk 4 topik utama:\n\n" +
-        "1. Cek status dan penjelasan tiket laporan aduan Anda\n" +
-        "2. Informasi dan progres program kerja (proker) Pemda\n" +
-        "3. Informasi isu darurat / paling mendesak di kota\n" +
-        "4. Pengecekan apakah suatu masalah fasilitas publik sudah dilaporkan atau belum\n\n" +
-        "Silakan tanyakan hal-hal yang berkaitan dengan 4 topik di atas ya, SobatGovra!",
-      sources: [],
-      cards: [],
-    };
-  }
-
-  // 4. Pengecekan Kode Tiket Laporan Spesifik (TLK-...)
-  const codeMatch = REPORT_CODE_PATTERN.exec(question);
-  if (codeMatch) {
-    const code = codeMatch[0].toUpperCase();
-    if (!signedIn) {
+  if (isWhoAmI) {
+    if (sessionUser) {
       return {
-        reply: `Halo SobatGovra! Untuk melihat rincian dan status laporan ${code}, silakan masuk ke akun Anda terlebih dahulu.`,
-        sources: [],
-        cards: [
-          {
-            id: `auth-${code}`,
-            type: "ACTION",
-            title: "Masuk untuk Cek Laporan",
-            subtitle: "Masuk dengan akun pelapor untuk mengakses riwayat tiket Anda",
-            href: "/masuk",
-            actionLabel: "Masuk ke Akun Govra",
-          },
-        ],
-      };
-    }
-
-    const report = await getMyReport(code);
-    if (!report) {
-      return {
-        reply: `Halo SobatGovra, laporan dengan kode tiket ${code} tidak ditemukan di akun Anda. Mohon pastikan kode yang dimasukkan sudah benar ya!`,
+        reply: `Tentu saja, SobatGovra! Anda adalah ${sessionUser.name}, warga yang terdaftar di platform Govra. Anda dapat mengecek status laporan aktif Anda atau memantau progres transparansi proker kota.`,
         sources: [],
         cards: [],
       };
     }
-
-    let statusExplanation = "";
-    let statusTone: "good" | "warn" | "bad" | "neutral" = "neutral";
-    const statusLabel = ISSUE_STATUS[report.status]?.label || report.status;
-
-    if (report.status === "DIAJUKAN" || report.status === "MENUNGGU_VERIFIKASI") {
-      statusTone = "warn";
-      statusExplanation =
-        "Laporan Anda saat ini sedang dalam antrean verifikasi oleh dinas terkait. " +
-        "Proses ini memerlukan waktu karena dinas melakukan pengecekan validitas dan bukti lokasi di tengah tingginya volume laporan yang masuk.";
-    } else if (report.status === "DIPROSES") {
-      statusTone = "warn";
-      statusExplanation =
-        "Kabar baik, laporan Anda sudah diverifikasi dan saat ini sedang dalam penanganan aktif oleh tim teknis dinas terkait di lapangan.";
-    } else if (report.status === "SELESAI") {
-      statusTone = "good";
-      statusExplanation =
-        "Pengerjaan atau perbaikan untuk laporan ini telah dinyatakan selesai oleh dinas dengan dokumentasi lapangan terlampir. " +
-        "SobatGovra dapat memeriksa hasil pengerjaannya dan memberikan konfirmasi kepuasan atau sanggahan jika belum tuntas.";
-    } else if (report.status === "DITOLAK") {
-      statusTone = "bad";
-      statusExplanation = report.rejection_reason
-        ? `Laporan ditolak oleh dinas dengan alasan: "${report.rejection_reason}".`
-        : "Laporan belum dapat ditindaklanjuti karena tidak memenuhi kriteria pelaporan dinas.";
-    }
-
-    const lastEvent = report.timeline?.[report.timeline.length - 1];
-    const lastNote = lastEvent?.note ? ` Catatan terakhir petugas: "${lastEvent.note}".` : "";
-
-    const rawReply =
-      `Halo SobatGovra! Laporan tiket ${report.code} Anda saat ini berstatus ${statusLabel}.\n\n` +
-      `${statusExplanation}${lastNote}\n\n` +
-      "SobatGovra dapat memantau linimasa lengkap dan bukti penanganannya melalui kartu di bawah ini:";
-
-    const sysPrompt =
-      "Anda adalah Govra AI, asisten transparansi kota yang sangat ramah, personal, dan empatik. " +
-      "Selalu sapa pengguna dengan sebutan SobatGovra. " +
-      "Jelaskan status laporan ini dengan santun, berikan alasan mengapa statusnya demikian, dan dorong mereka untuk mengecek linimasa. " +
-      "JANGAN gunakan simbol bintang ganda (**) atau garis bawah ganda (__) dalam jawaban Anda.";
-
-    const userPrompt = `Data laporan: Kode ${report.code}, Judul "${report.title || 'Laporan Warga'}", Status: ${statusLabel}, Penjelasan: ${statusExplanation}, Catatan: ${lastNote}.`;
-    const aiText = await callGeminiAssistant(sysPrompt, userPrompt);
-
     return {
-      reply: aiText || rawReply,
-      sources: [{ kind: "ISSUE", title: report.title || report.code, path: `/pelapor/laporan/${report.code}` }],
+      reply:
+        "Saat ini SobatGovra belum masuk (login) ke akun Govra, sehingga saya belum mengetahui nama lengkap Anda.\n\n" +
+        "Silakan masuk ke akun Govra Anda untuk melacak tiket aduan pribadi, atau Anda tetap bisa menanyakan informasi program kerja dan isu prioritas kota secara bebas!",
+      sources: [],
       cards: [
         {
-          id: `rep-${report.code}`,
-          type: "REPORT",
-          title: report.title || `Laporan ${report.code}`,
-          subtitle: `${report.location?.district?.name || 'Kecamatan'}, ${report.location?.village?.name || 'Kelurahan'}`,
-          status: statusLabel,
-          statusTone,
-          badge: statusLabel,
-          meta: lastEvent?.note || statusExplanation,
-          href: `/pelapor/laporan/${report.code}`,
-          actionLabel: "Lihat Linimasa & Bukti Laporan",
+          id: "act-login-fallback",
+          type: "ACTION",
+          title: "Masuk ke Akun Govra",
+          subtitle: "Akses riwayat tiket aduan pribadi Anda",
+          href: "/masuk",
+          actionLabel: "Masuk ke Akun",
         },
       ],
     };
   }
 
-  // 5. Cek Riwayat Laporan Pengguna ("laporan saya")
-  const isAskingMyReports =
-    lower.includes("laporan saya") ||
-    lower.includes("status laporan") ||
-    lower.includes("laporanku") ||
-    lower.includes("tiket saya");
-
-  if (isAskingMyReports) {
-    if (!signedIn) {
-      return {
-        reply: "Halo SobatGovra! Untuk melihat daftar laporan dan tiket pengaduan aktif Anda, silakan masuk ke akun Govra Anda terlebih dahulu ya.",
-        sources: [],
-        cards: [
-          {
-            id: "auth-my-reports",
-            type: "ACTION",
-            title: "Masuk ke Akun Govra",
-            subtitle: "Masuk untuk melihat semua riwayat aduan dan progres perbaikannya",
-            href: "/masuk",
-            actionLabel: "Masuk Sekarang",
-          },
-        ],
-      };
-    }
-
-    const myReps = await listMyReports({ page: 1, limit: 5 });
-    if (myReps.total === 0) {
-      return {
-        reply:
-          "Halo SobatGovra! Saat ini Anda belum memiliki laporan aduan yang diajukan. " +
-          "Jika menemukan fasilitas publik yang rusak atau kendala di lingkungan sekitar, SobatGovra dapat langsung membuat laporan baru!",
-        sources: [],
-        cards: [
-          {
-            id: "new-report-act",
-            type: "ACTION",
-            title: "Buat Laporan Aduan Baru",
-            subtitle: "Laporkan masalah fasilitas atau lingkungan di sekitar Anda",
-            href: "/pelapor/lapor",
-            actionLabel: "Mulai Buat Laporan",
-          },
-        ],
-      };
-    }
-
-    const cards: ChatCard[] = myReps.items.map((r) => {
-      const statusLabel = ISSUE_STATUS[r.status]?.label || r.status;
-      const isDone = r.status === "SELESAI";
-      const isProc = r.status === "DIPROSES";
-      return {
-        id: `my-${r.code}`,
-        type: "REPORT",
-        title: r.title || `Laporan ${r.code}`,
-        subtitle: `Kode Tiket: ${r.code}`,
-        status: statusLabel,
-        statusTone: isDone ? "good" : isProc ? "warn" : "neutral",
-        badge: statusLabel,
-        href: `/pelapor/laporan/${r.code}`,
-        actionLabel: "Cek Progres Laporan",
-      };
-    });
-
-    const reply =
-      `Halo SobatGovra! Anda memiliki ${myReps.total} laporan yang terdaftar di sistem. ` +
-      "Berikut adalah daftar laporan terbaru Anda beserta status penanganannya:";
-
-    return {
-      reply,
-      sources: [],
-      cards,
-    };
-  }
-
-  // 6. Cek Masalah Paling Urgent / Laporan Terbanyak
-  const isAskingUrgent =
-    lower.includes("urgent") ||
-    lower.includes("mendesak") ||
-    lower.includes("paling banyak") ||
-    lower.includes("banyak lapor") ||
-    lower.includes("isu darurat") ||
-    lower.includes("prioritas");
-
-  if (isAskingUrgent) {
-    const issuesData = await listIssues({ limit: 50 });
-    const sorted = [...issuesData.items].sort((a, b) => (b.reporter_count || 1) - (a.reporter_count || 1));
-    const topIssues = sorted.slice(0, 3);
-
-    if (topIssues.length > 0) {
-      const cards: ChatCard[] = topIssues.map((issue) => {
-        const isUrgent = issue.urgency === "URGENT" || (issue.reporter_count || 1) > 20;
-        return {
-          id: `urg-${issue.id}`,
-          type: "ISSUE",
-          title: issue.title,
-          subtitle: `${issue.location?.district?.name || 'Kecamatan'}, ${issue.location?.village?.name || 'Kelurahan'}`,
-          status: ISSUE_STATUS[issue.status]?.label || issue.status,
-          statusTone: isUrgent ? "bad" : "warn",
-          badge: isUrgent ? "Mendesak / Prioritas" : "Banyak Didukung",
-          meta: `Telah didukung oleh ${issue.reporter_count} warga sekitar. Permasalahan ini sangat mendesak karena berdampak langsung pada aktivitas publik.`,
-          href: `/isu/${issue.id}`,
-          actionLabel: "Lihat Isu & Berikan Dukungan",
-        };
-      });
-
-      const issueSummaries = topIssues
-        .map((iss, i) => `${i + 1}. ${iss.title} di ${iss.location?.district?.name || 'Kota'} (${iss.reporter_count} pelapor)`)
-        .join("\n");
-
-      const sysPrompt =
-        "Anda adalah Govra AI. Selalu sapa pengguna dengan sebutan SobatGovra. " +
-        "Jelaskan masalah-masalah yang paling mendesak/urgent di kota saat ini berdasarkan data laporan warga terbanyak, " +
-        "dan jelaskan mengapa masalah tersebut urgent bagi warga. " +
-        "Gunakan bahasa Indonesia santun dan JANGAN gunakan format bintang ganda (**) atau garis bawah ganda (__).";
-
-      const userPrompt = `Isu paling urgent saat ini:\n${issueSummaries}`;
-      const aiReply = await callGeminiAssistant(sysPrompt, userPrompt);
-
-      return {
-        reply:
-          aiReply ||
-          "Halo SobatGovra! Berdasarkan data laporan masyarakat terkini, berikut adalah isu-isu yang paling mendesak dan paling banyak dilaporkan warga:",
-        sources: topIssues.map((iss) => ({ kind: "ISSUE", title: iss.title, path: `/isu/${iss.id}` })),
-        cards,
-      };
-    }
-  }
-
-  // 7. Cek Proker Pemda & Realisasi Anggaran
-  const isAskingProker =
-    lower.includes("proker") ||
-    lower.includes("program kerja") ||
-    lower.includes("proyek") ||
-    lower.includes("anggaran pemda") ||
-    lower.includes("kinerja pemda");
-
-  if (isAskingProker) {
-    const progs = await listPrograms({ limit: 100 });
-    let matched = progs.items;
-
-    const terms = lower
-      .replace(/(proker|program|kerja|pemda|pemerintah|kota|daerah|sedang|berjalan|apa|saja|tolong|update|status)/g, "")
-      .trim()
-      .split(/\s+/)
-      .filter((w) => w.length >= 3);
-
-    if (terms.length > 0) {
-      matched = progs.items.filter((p) => {
-        const text = `${p.name} ${p.opd?.name || ''} ${p.district?.name || ''}`.toLowerCase();
-        return terms.some((t) => text.includes(t));
-      });
-      if (matched.length === 0) matched = progs.items;
-    }
-
-    const topProgs = matched.slice(0, 3);
-    const cards: ChatCard[] = topProgs.map((p) => {
-      const isDone = p.status === "SELESAI";
-      const isLate = p.status === "TERLAMBAT";
-      const statusLabel = PROGRAM_STATUS[p.status]?.label || p.status;
-      return {
-        id: `prog-${p.code}`,
-        type: "PROGRAM",
-        title: p.name,
-        subtitle: p.opd?.name || "Pemerintah Daerah",
-        status: statusLabel,
-        statusTone: isDone ? "good" : isLate ? "bad" : "warn",
-        badge: statusLabel,
-        progress: p.progress_percent,
-        meta: `Realisasi: ${formatPercent(p.progress_percent)} • Target Waktu: ${formatPercent(p.expected_percent)}`,
-        href: `/proker/${p.code}`,
-        actionLabel: "Lihat Detail Program & Realisasi",
-      };
-    });
-
-    const progSummary = topProgs
-      .map(
-        (p) =>
-          `- ${p.name} (${p.opd?.name}): Progres ${formatPercent(p.progress_percent)}, status ${PROGRAM_STATUS[p.status]?.label}. Target ${formatPercent(p.expected_percent)}.`
-      )
-      .join("\n");
-
-    const sysPrompt =
-      "Anda adalah Govra AI. Selalu sapa pengguna dengan sebutan SobatGovra. " +
-      "Jelaskan program kerja pemda yang sedang berjalan ini dengan transparan dan informatif. " +
-      "Sebutkan dinas penanggung jawab dan progresnya. " +
-      "JANGAN gunakan tanda bintang ganda (**) atau garis bawah ganda (__).";
-
-    const userPrompt = `Program kerja pemda:\n${progSummary}`;
-    const aiReply = await callGeminiAssistant(sysPrompt, userPrompt);
-
-    return {
-      reply:
-        aiReply ||
-        "Halo SobatGovra! Berikut adalah pembaruan program kerja pemerintah daerah yang sedang berjalan beserta persentase progres dan target capaiannya:",
-      sources: topProgs.map((p) => ({ kind: "PROGRAM", title: p.name, path: `/proker/${p.code}` })),
-      cards,
-    };
-  }
-
-  // 8. Cek Isu / Keluhan di Wilayah Spesifik (misal: "jalan rusak di bojongsoang")
-  const allIssues = await listIssues({ limit: 100 });
-  const searchTerms = lower
-    .replace(/(halo|hai|tolong|cek|status|laporan|isu|bagaimana|apakah|ada|tentang|sudah|belum|di|ke|yang|min|dong)/g, "")
-    .trim()
-    .split(/\s+/)
-    .filter((w) => w.length >= 3);
-
-  let matchedIssues = allIssues.items.filter((iss) => {
-    const text = `${iss.title} ${iss.category?.name || ''} ${iss.location?.district?.name || ''} ${iss.location?.village?.name || ''}`.toLowerCase();
-    return searchTerms.some((t) => text.includes(t));
-  });
-
-  if (matchedIssues.length > 0) {
-    const topMatch = matchedIssues.slice(0, 3);
-    const cards: ChatCard[] = topMatch.map((iss) => {
-      const statusLabel = ISSUE_STATUS[iss.status]?.label || iss.status;
-      const isDone = iss.status === "SELESAI";
-      const isProc = iss.status === "DIPROSES";
-      return {
-        id: `iss-match-${iss.id}`,
-        type: "ISSUE",
-        title: iss.title,
-        subtitle: `${iss.location?.district?.name || 'Kecamatan'}, ${iss.location?.village?.name || 'Kelurahan'}`,
-        status: statusLabel,
-        statusTone: isDone ? "good" : isProc ? "warn" : "neutral",
-        badge: statusLabel,
-        meta: `Status saat ini: ${statusLabel}. Didukung oleh ${iss.reporter_count} warga sekitar.`,
-        href: `/isu/${iss.id}`,
-        actionLabel: "Buka Isu & Cek Riwayat Penanganan",
-      };
-    });
-
-    const issueText = topMatch
-      .map(
-        (iss) =>
-          `Isu: "${iss.title}" di ${iss.location?.district?.name}, Status: ${ISSUE_STATUS[iss.status]?.label}, Pelapor: ${iss.reporter_count} orang.`
-      )
-      .join("\n");
-
-    const sysPrompt =
-      "Anda adalah Govra AI. Selalu sapa pengguna dengan sebutan SobatGovra. " +
-      "Jelaskan status dari masalah/laporan yang ditanyakan pengguna secara spesifik: apakah sudah selesai, sedang diproses, atau masih menunggu. " +
-      "JANGAN gunakan tanda bintang ganda (**) atau garis bawah ganda (__).";
-
-    const userPrompt = `Pertanyaan pengguna: "${question}". Data isu terkait yang ditemukan:\n${issueText}`;
-    const aiReply = await callGeminiAssistant(sysPrompt, userPrompt);
-
-    return {
-      reply:
-        aiReply ||
-        `Halo SobatGovra! Mengenai ${question}, laporan terkait masalah tersebut sudah terdaftar di sistem Govra. Berikut adalah rincian status penanganannya:`,
-      sources: topMatch.map((iss) => ({ kind: "ISSUE", title: iss.title, path: `/isu/${iss.id}` })),
-      cards,
-    };
-  }
-
-  // 9. Jika belum ada laporan sama sekali
-  const notFoundReply =
-    `Halo SobatGovra! Setelah dicek di sistem, saat ini belum ada laporan atau aduan yang terdaftar mengenai "${question}".\n\n` +
-    "Jika fasilitas atau kendala tersebut membutuhkan penanganan dari pemerintah daerah, SobatGovra dapat langsung menjadi orang pertama yang mengajukan laporan agar segera didisposisikan ke dinas terkait!";
-
   return {
-    reply: notFoundReply,
+    reply:
+      "Halo SobatGovra! Saya adalah asisten resmi Govra untuk transparansi kota dan pengaduan warga.\n\n" +
+      "Saya siap membantu Anda untuk:\n" +
+      "1. Mengecek status tiket aduan dan penjelasan antreannya\n" +
+      "2. Memantau progres program kerja (proker) Pemda dan anggaran\n" +
+      "3. Mengetahui isu paling mendesak yang dilaporkan warga\n" +
+      "4. Mengecek apakah suatu masalah fasilitas di wilayah Anda sudah dilaporkan\n\n" +
+      "Silakan tanyakan topik yang ingin Anda ketahui seputar hal di atas ya, SobatGovra!",
     sources: [],
-    cards: [
-      {
-        id: "act-new-report-query",
-        type: "ACTION",
-        title: "Ajukan Laporan Terkait",
-        subtitle: `Laporkan keluhan "${question}" agar segera ditangani dinas terkait`,
-        href: "/pelapor/lapor",
-        actionLabel: "Buat Laporan Baru Sekarang",
-      },
-    ],
+    cards: [],
   };
 }
