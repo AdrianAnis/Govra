@@ -39,6 +39,9 @@ const nextConfig: NextConfig = {
       { source: "/terms", destination: "/syarat-ketentuan", permanent: true },
       { source: "/syarat", destination: "/syarat-ketentuan", permanent: true },
       { source: "/terms-of-service", destination: "/syarat-ketentuan", permanent: true },
+      { source: "/ai", destination: "/asisten", permanent: false },
+      { source: "/chat", destination: "/asisten", permanent: false },
+      { source: "/chatbot", destination: "/asisten", permanent: false },
     ];
   },
   turbopack: {

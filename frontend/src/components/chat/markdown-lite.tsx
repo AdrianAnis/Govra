@@ -1,72 +1,171 @@
 import Link from "next/link";
-import { Fragment, type ReactNode } from "react";
+import React, { Fragment, type ReactNode } from "react";
 
 interface MarkdownLiteProps {
   text: string;
   onNavigate?: () => void;
 }
 
-const TOKEN = /(\*\*[^*]+\*\*|\[[^\]]+\]\(\/[^)\s]*\))/g;
-const LINK = /^\[([^\]]+)\]\((\/[^)\s]*)\)$/;
-const BULLET = /^[-*]\s+/;
-const BOLD_MARK = 2;
+function parseFormattedText(text: string, onNavigate?: () => void): ReactNode[] {
+  const clean = text.replace(/[*_]{3,}/g, "");
+  const pattern = /(!?\[[^\]]+\]\([^\)]+\)|\*\*[^*]+\*\*|__[^_]+__|\*[^*]+\*|_[^_]+_|`[^`]+`)/g;
+  const parts = clean.split(pattern);
 
-function inline(text: string, onNavigate: (() => void) | undefined): ReactNode[] {
-  return text.split(TOKEN).map((part, index) => {
-    const link = LINK.exec(part);
-    if (link?.[1] && link[2] && !link[2].startsWith("//")) {
+  return parts.map((part, index) => {
+    if (!part) return null;
+
+    const linkMatch = /^\[([^\]]+)\]\(([^)\s]+)\)$/.exec(part);
+    if (linkMatch && linkMatch[1] && linkMatch[2]) {
+      const label = linkMatch[1];
+      const href = linkMatch[2];
+      const isInternal = href.startsWith("/");
+      if (isInternal) {
+        return (
+          <Link
+            key={index}
+            href={href}
+            {...(onNavigate ? { onClick: onNavigate } : {})}
+            className="font-medium text-primary underline underline-offset-4 hover:text-primary/80 transition-colors"
+          >
+            {label}
+          </Link>
+        );
+      }
       return (
-        <Link
+        <a
           key={index}
-          href={link[2]}
-          {...(onNavigate ? { onClick: onNavigate } : {})}
-          className="font-semibold text-primary underline underline-offset-4"
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-primary underline underline-offset-4 hover:text-primary/80 transition-colors"
         >
-          {link[1]}
-        </Link>
+          {label}
+        </a>
       );
     }
-    if (part.length > BOLD_MARK * 2 && part.startsWith("**") && part.endsWith("**")) {
+
+    if ((part.startsWith("**") && part.endsWith("**")) || (part.startsWith("__") && part.endsWith("__"))) {
+      const inner = part.slice(2, -2);
       return (
-        <strong key={index} className="font-semibold">
-          {part.slice(BOLD_MARK, -BOLD_MARK)}
+        <strong key={index} className="font-semibold text-foreground">
+          {inner}
         </strong>
       );
     }
-    return <Fragment key={index}>{part}</Fragment>;
+
+    if ((part.startsWith("*") && part.endsWith("*")) || (part.startsWith("_") && part.endsWith("_"))) {
+      const inner = part.slice(1, -1);
+      return (
+        <em key={index} className="italic text-foreground/90">
+          {inner}
+        </em>
+      );
+    }
+
+    if (part.startsWith("`") && part.endsWith("`")) {
+      const inner = part.slice(1, -1);
+      return (
+        <code key={index} className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11.5px] text-primary">
+          {inner}
+        </code>
+      );
+    }
+
+    const sanitizedPart = part.replace(/[*_]/g, "");
+    return <Fragment key={index}>{sanitizedPart}</Fragment>;
   });
 }
 
 function MarkdownLite({ text, onNavigate }: MarkdownLiteProps) {
-  const blocks: ReactNode[] = [];
-  let items: string[] = [];
+  if (!text) return null;
 
-  const flush = () => {
-    if (items.length === 0) {
-      return;
+  const lines = text.split("\n");
+  const blocks: ReactNode[] = [];
+  let currentList: { type: "ul" | "ol"; items: string[] } | null = null;
+
+  const flushList = () => {
+    if (!currentList) return;
+    if (currentList.type === "ul") {
+      blocks.push(
+        <ul key={`list-${blocks.length}`} className="my-1.5 flex list-disc flex-col gap-1 pl-5 text-sm marker:text-primary">
+          {currentList.items.map((item, idx) => (
+            <li key={idx} className="leading-relaxed">
+              {parseFormattedText(item, onNavigate)}
+            </li>
+          ))}
+        </ul>,
+      );
+    } else {
+      blocks.push(
+        <ol key={`list-${blocks.length}`} className="my-1.5 flex list-decimal flex-col gap-1 pl-5 text-sm marker:text-primary font-medium">
+          {currentList.items.map((item, idx) => (
+            <li key={idx} className="leading-relaxed font-normal">
+              {parseFormattedText(item, onNavigate)}
+            </li>
+          ))}
+        </ol>,
+      );
     }
-    const current = items;
-    items = [];
-    blocks.push(
-      <ul key={blocks.length} className="flex list-disc flex-col gap-1.5 pl-5 marker:text-primary">
-        {current.map((item, index) => (
-          <li key={index}>{inline(item, onNavigate)}</li>
-        ))}
-      </ul>,
-    );
+    currentList = null;
   };
 
-  for (const line of text.split("\n")) {
-    if (BULLET.test(line)) {
-      items.push(line.replace(BULLET, ""));
-    } else {
-      flush();
-      if (line.trim()) {
-        blocks.push(<p key={blocks.length}>{inline(line, onNavigate)}</p>);
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i] ?? "";
+    const line = rawLine.trim();
+
+    if (!line) {
+      flushList();
+      continue;
+    }
+
+    const bulletMatch = /^[-*•]\s+(.*)$/.exec(line);
+    if (bulletMatch && bulletMatch[1]) {
+      if (currentList && currentList.type !== "ul") {
+        flushList();
       }
+      if (!currentList) {
+        currentList = { type: "ul", items: [] };
+      }
+      currentList.items.push(bulletMatch[1]);
+      continue;
+    }
+
+    const numberMatch = /^\d+[.)]\s+(.*)$/.exec(line);
+    if (numberMatch && numberMatch[1]) {
+      if (currentList && currentList.type !== "ol") {
+        flushList();
+      }
+      if (!currentList) {
+        currentList = { type: "ol", items: [] };
+      }
+      currentList.items.push(numberMatch[1]);
+      continue;
+    }
+
+    flushList();
+
+    if (line.startsWith("### ")) {
+      blocks.push(
+        <h4 key={`h-${blocks.length}`} className="mt-2 text-sm font-bold text-foreground">
+          {parseFormattedText(line.slice(4), onNavigate)}
+        </h4>,
+      );
+    } else if (line.startsWith("## ")) {
+      blocks.push(
+        <h3 key={`h-${blocks.length}`} className="mt-2.5 text-base font-bold text-foreground">
+          {parseFormattedText(line.slice(3), onNavigate)}
+        </h3>,
+      );
+    } else {
+      blocks.push(
+        <p key={`p-${blocks.length}`} className="text-sm leading-relaxed text-foreground/90">
+          {parseFormattedText(line, onNavigate)}
+        </p>,
+      );
     }
   }
-  flush();
+
+  flushList();
 
   return <div className="flex flex-col gap-2">{blocks}</div>;
 }
