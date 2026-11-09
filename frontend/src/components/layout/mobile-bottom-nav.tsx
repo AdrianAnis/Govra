@@ -15,7 +15,6 @@ import {
   MessageSquareText,
   Plus,
   ShieldCheck,
-  Sparkles,
   Target,
   User,
   UserPlus,
@@ -244,15 +243,6 @@ export function MobileBottomNav({ user, notifications = [] }: MobileBottomNavPro
                 >
                   <BarChart3 className="size-4.5 text-primary" />
                   <span>Rapor Kinerja OPD</span>
-                </Link>
-
-                <Link
-                  href="/asisten"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted active:scale-[0.98] transition-all"
-                >
-                  <Sparkles className="size-4.5 text-primary" />
-                  <span>Govra AI (Tanya Asisten)</span>
                 </Link>
               </div>
 

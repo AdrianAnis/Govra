@@ -16,7 +16,6 @@ export const MAIN_NAV: readonly NavLink[] = [
   { href: "/proker", label: "Proker" },
   { href: "/rapor", label: "Rapor" },
   { href: "/isu", label: "Isu Terkini" },
-  { href: "/asisten", label: "Tanya AI" },
 ];
 
 export const MEMBER_NAV: readonly NavLink[] = [
