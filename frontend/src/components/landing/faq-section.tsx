@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Reveal } from "@/components/bits/reveal";
-import { LandingSection } from "@/components/landing/landing-section";
+import { Container } from "@/components/layout/container";
 import { Accordion, AccordionItem, AccordionPanel, AccordionTrigger } from "@/components/ui/accordion";
 
 interface Faq {
@@ -53,20 +53,21 @@ const FAQS: readonly Faq[] = [
 
 function FaqSection() {
   return (
-    <LandingSection id="faq" eyebrow="Pertanyaan umum" title="Hal yang sering ditanyakan" tone="muted">
-      <div className="grid gap-10 lg:grid-cols-5 lg:gap-16">
-        <Reveal className="flex flex-col gap-4 lg:col-span-2">
-          <p className="max-w-sm text-fg-muted">
-            Jawaban singkat tentang cara kerja Govra, keamanan data, dan cara memantau laporan Anda.
+    <section id="faq" className="scroll-mt-16 bg-surface-muted py-20 lg:py-28">
+      <Container className="flex flex-col gap-12">
+        <Reveal variant="clip" className="mx-auto flex max-w-2xl flex-col items-center gap-4 text-center">
+          <h2 className="text-3xl font-bold tracking-tight lg:text-4xl">
+            Pertanyaan yang <span className="text-primary-hover">sering ditanyakan</span>
+          </h2>
+          <p className="text-fg-muted">
+            Belum menemukan jawabannya?{" "}
+            <Link href="/metodologi" className="font-semibold text-primary-hover underline-offset-4 hover:underline">
+              Pelajari metodologi penilaian kami
+            </Link>
+            .
           </p>
-          <Link
-            href="/metodologi"
-            className="inline-flex min-h-11 w-fit items-center font-semibold text-primary-hover underline-offset-4 hover:underline"
-          >
-            Pelajari metodologi penilaian
-          </Link>
         </Reveal>
-        <Reveal variant="blur" className="lg:col-span-3">
+        <Reveal variant="blur" className="mx-auto w-full max-w-3xl">
           <Accordion>
             {FAQS.map((faq) => (
               <AccordionItem key={faq.question}>
@@ -78,8 +79,8 @@ function FaqSection() {
             ))}
           </Accordion>
         </Reveal>
-      </div>
-    </LandingSection>
+      </Container>
+    </section>
   );
 }
 
