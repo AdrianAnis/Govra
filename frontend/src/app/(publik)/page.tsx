@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { FaqSection } from "@/components/landing/faq-section";
 import { Hero } from "@/components/landing/hero";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { LatestIssues } from "@/components/landing/latest-issues";
@@ -42,6 +43,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <ProgramsSection programs={programs.items} />
       <LatestIssues issues={latest.items} now={currentTime()} />
       <HowItWorks />
+      <FaqSection />
       <ReportCta />
     </>
   );

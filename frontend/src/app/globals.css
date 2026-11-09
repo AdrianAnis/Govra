@@ -165,6 +165,21 @@
   }
 }
 
+@utility accordion-panel {
+  height: var(--accordion-panel-height);
+  overflow: hidden;
+  transition: height 200ms var(--ease-ui);
+
+  &[data-starting-style],
+  &[data-ending-style] {
+    height: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
 @utility bg-google {
   background-image: url("/google.svg");
   background-size: contain;
