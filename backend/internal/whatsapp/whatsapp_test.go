@@ -121,6 +121,19 @@ func TestWebhook_RepliesWithTemplate(t *testing.T) {
 	}
 }
 
+func TestWebhook_AcceptsBooleanAndNullFields(t *testing.T) {
+	app, sender := newWebhookApp("kunci")
+	url := WebhookPath + "?secret=kunci"
+	post(t, app, url, `{"sender":"6281234567890","message":"halo","isgroup":false,"member":null,"device":"6289999999999"}`)
+	if sender.count() != 1 {
+		t.Fatalf("payload dengan boolean dan null harus dibalas, terkirim=%d", sender.count())
+	}
+	post(t, app, url, `{"sender":"6281200000000","message":"halo","isgroup":true}`)
+	if sender.count() != 1 {
+		t.Errorf("isgroup boolean true harus diabaikan, terkirim=%d", sender.count())
+	}
+}
+
 func TestWebhook_RejectsWithoutSecret(t *testing.T) {
 	app, sender := newWebhookApp("kunci")
 	if status := post(t, app, WebhookPath, `{"sender":"081234567890","message":"hai"}`); status != fiber.StatusUnauthorized {

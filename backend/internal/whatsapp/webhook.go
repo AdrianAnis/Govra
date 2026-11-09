@@ -3,6 +3,7 @@ package whatsapp
 import (
 	"context"
 	"crypto/subtle"
+	"encoding/json"
 	"log"
 	"strings"
 	"sync"
@@ -21,11 +22,54 @@ const (
 )
 
 type incoming struct {
-	Sender  string `json:"sender" form:"sender"`
-	Message string `json:"message" form:"message"`
-	Device  string `json:"device" form:"device"`
-	Member  string `json:"member" form:"member"`
-	IsGroup string `json:"isgroup" form:"isgroup"`
+	Sender  string
+	Message string
+	Device  string
+	Member  string
+	IsGroup string
+}
+
+func rawText(raw json.RawMessage) string {
+	var text string
+	if err := json.Unmarshal(raw, &text); err == nil {
+		return strings.TrimSpace(text)
+	}
+	value := strings.TrimSpace(string(raw))
+	if value == "null" {
+		return ""
+	}
+	return value
+}
+
+func parseIncoming(c *fiber.Ctx) incoming {
+	if strings.Contains(strings.ToLower(c.Get(fiber.HeaderContentType)), "json") {
+		var fields map[string]json.RawMessage
+		if err := json.Unmarshal(c.Body(), &fields); err != nil {
+			return incoming{}
+		}
+		return incoming{
+			Sender:  rawText(fields["sender"]),
+			Message: rawText(fields["message"]),
+			Device:  rawText(fields["device"]),
+			Member:  rawText(fields["member"]),
+			IsGroup: rawText(fields["isgroup"]),
+		}
+	}
+	return incoming{
+		Sender:  strings.TrimSpace(c.FormValue("sender")),
+		Message: strings.TrimSpace(c.FormValue("message")),
+		Device:  strings.TrimSpace(c.FormValue("device")),
+		Member:  strings.TrimSpace(c.FormValue("member")),
+		IsGroup: strings.TrimSpace(c.FormValue("isgroup")),
+	}
+}
+
+func isMember(value string) bool {
+	switch strings.ToLower(value) {
+	case "", "false", "null", "0":
+		return false
+	}
+	return true
 }
 
 type Webhook struct {
@@ -85,15 +129,13 @@ func (w *Webhook) Handle(c *fiber.Ctx) error {
 	if !w.authorized(c) {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "unauthorized"})
 	}
-	var msg incoming
-	if err := c.BodyParser(&msg); err != nil {
-		return c.JSON(fiber.Map{"status": "ignored"})
-	}
+	msg := parseIncoming(c)
 	target, ok := phone.Normalize(msg.Sender)
-	if !ok || strings.TrimSpace(msg.Message) == "" {
+	if !ok || msg.Message == "" {
+		log.Printf("whatsapp: webhook diabaikan, pengirim atau pesan tidak terbaca (%s)", c.Get(fiber.HeaderContentType))
 		return c.JSON(fiber.Map{"status": "ignored"})
 	}
-	if msg.Member != "" || strings.EqualFold(msg.IsGroup, "true") {
+	if isMember(msg.Member) || strings.EqualFold(msg.IsGroup, "true") {
 		return c.JSON(fiber.Map{"status": "ignored"})
 	}
 	if device, deviceOK := phone.Normalize(msg.Device); deviceOK && device == target {
