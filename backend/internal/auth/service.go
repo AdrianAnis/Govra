@@ -8,12 +8,14 @@ import (
 	"fmt"
 	"math/big"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"govra/internal/platform/auth"
 	"govra/internal/platform/email"
+	"govra/internal/platform/phone"
 )
 
 type Service interface {
@@ -55,6 +57,11 @@ func (s *service) Register(ctx context.Context, req RegisterRequest) (map[string
 	if len(req.Password) < 8 {
 		return nil, errors.New("kata sandi minimal 8 karakter")
 	}
+	normalizedPhone, validPhone := phone.Normalize(req.Phone)
+	if !validPhone {
+		return nil, ErrInvalidPhone
+	}
+	req.Phone = normalizedPhone
 
 	if existing, _ := s.repo.GetUserByEmail(ctx, req.Email); existing != nil {
 		return nil, errors.New("email sudah terdaftar dalam sistem Govra. Silakan masuk atau gunakan email lain.")
@@ -357,6 +364,13 @@ func (s *service) OAuthLogin(ctx context.Context, req OAuthLoginRequest) (*AuthR
 		if userExists {
 			return nil, errors.New("email sudah terdaftar dalam sistem Govra. Silakan masuk menggunakan akun Anda.")
 		}
+		if strings.TrimSpace(req.Phone) == "" {
+			return nil, ErrPhoneRequired
+		}
+		normalizedPhone, validPhone := phone.Normalize(req.Phone)
+		if !validPhone {
+			return nil, ErrInvalidPhone
+		}
 		displayName := req.DisplayName
 		if displayName == "" {
 			displayName = "Pengguna"
@@ -367,6 +381,7 @@ func (s *service) OAuthLogin(ctx context.Context, req OAuthLoginRequest) (*AuthR
 			DisplayName: displayName,
 			Role:        RolePelapor,
 			Status:      "ACTIVE",
+			Phone:       normalizedPhone,
 			AvatarURL:   req.AvatarURL,
 		}
 		if err := s.repo.CreateUser(ctx, u); err != nil {

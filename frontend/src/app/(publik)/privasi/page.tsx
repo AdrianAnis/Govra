@@ -15,8 +15,9 @@ const QUESTIONS: readonly Question[] = [
     question: "Data apa saja yang kami kumpulkan?",
     answers: [
       "Email dan nama lengkap Anda saat mendaftar, atau dari profil akun Google jika Anda masuk dengan Google.",
+      "Nomor telepon (WhatsApp) yang Anda isi saat mendaftar. Nomor ini hanya dipakai untuk mengirim notifikasi perkembangan laporan Anda, tidak ditampilkan ke publik, dan Govra tidak menerima pesan balasan di nomor tersebut.",
       "Isi laporan, lokasi kejadian, dan foto yang Anda unggah.",
-      "Kami tidak meminta NIK, nomor telepon, atau alamat rumah Anda.",
+      "Kami tidak meminta NIK atau alamat rumah Anda.",
     ],
   },
   {
@@ -32,7 +33,8 @@ const QUESTIONS: readonly Question[] = [
     question: "Layanan pihak ketiga apa yang dipakai?",
     answers: [
       "Isi laporan dikirim ke layanan AI Google Gemini untuk membantu mengelompokkan dan mengarahkan laporan ke dinas yang tepat.",
-      "Google dipakai sebagai pilihan masuk. Kami hanya meminta email dan nama dari profil Anda.",
+      "Google dipakai sebagai pilihan masuk. Kami hanya mengambil email dan nama dari profil Anda; nomor telepon Anda isi sendiri.",
+      "Notifikasi WhatsApp dikirim melalui layanan Fonnte, yang menerima nomor tujuan dan isi pesan notifikasi.",
       "Data akun dan laporan disimpan pada layanan Supabase.",
     ],
   },

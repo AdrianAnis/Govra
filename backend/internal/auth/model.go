@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 )
 
@@ -94,8 +95,14 @@ type AuthResponse struct {
 	Profile User   `json:"profile"`
 }
 
+var (
+	ErrInvalidPhone  = errors.New("nomor telepon tidak valid. Gunakan nomor WhatsApp aktif, contoh 081234567890")
+	ErrPhoneRequired = errors.New("nomor telepon wajib diisi untuk menyelesaikan pendaftaran")
+)
+
 type OAuthLoginRequest struct {
 	Email       string `json:"email"`
+	Phone       string `json:"phone,omitempty"`
 	DisplayName string `json:"display_name"`
 	AvatarURL   string `json:"avatar_url,omitempty"`
 	Provider    string `json:"provider"`

@@ -17,12 +17,27 @@ type Service interface {
 	GetMapDistribution(ctx context.Context, role, userOpdID string) ([]MapPoint, error)
 }
 
+type StatusNotifier interface {
+	NotifyIssueStatus(ctx context.Context, issueID, status, note string)
+}
+
 type service struct {
-	repo Repository
+	repo     Repository
+	notifier StatusNotifier
 }
 
 func NewService(repo Repository) Service {
 	return &service{repo: repo}
+}
+
+func NewServiceWithNotifier(repo Repository, notifier StatusNotifier) Service {
+	return &service{repo: repo, notifier: notifier}
+}
+
+func (s *service) notify(ctx context.Context, issueID string, status IssueStatus, note string) {
+	if s.notifier != nil {
+		s.notifier.NotifyIssueStatus(ctx, issueID, string(status), note)
+	}
 }
 
 func (s *service) ListIssues(ctx context.Context, opdID, status, q string) ([]Issue, error) {
@@ -86,7 +101,15 @@ func (s *service) Transition(ctx context.Context, issueID string, req Transition
 	if err := s.repo.AddEvent(ctx, issueID, evt); err != nil {
 		return err
 	}
-	return s.repo.UpdateStatus(ctx, issueID, req.TargetStatus, "")
+	if err := s.repo.UpdateStatus(ctx, issueID, req.TargetStatus, ""); err != nil {
+		return err
+	}
+	notice := req.Response
+	if req.TargetStatus == StatusDitolak && req.RejectionReason != "" {
+		notice = req.RejectionReason
+	}
+	s.notify(ctx, issueID, req.TargetStatus, notice)
+	return nil
 }
 
 func (s *service) validateTransition(current, target IssueStatus) bool {
@@ -114,14 +137,22 @@ func (s *service) RouteIssue(ctx context.Context, issueID string, req RouteIssue
 	if cat == "" {
 		cat = req.CategoryCode
 	}
-	return s.repo.RouteIssue(ctx, issueID, opd, cat, req.Note)
+	if err := s.repo.RouteIssue(ctx, issueID, opd, cat, req.Note); err != nil {
+		return err
+	}
+	s.notify(ctx, issueID, StatusDiteruskan, "")
+	return nil
 }
 
 func (s *service) RejectIssue(ctx context.Context, issueID string, req RejectIssueRequest) error {
 	if req.Reason == "" {
 		return errors.New("alasan penolakan wajib diisi")
 	}
-	return s.repo.RejectIssue(ctx, issueID, req)
+	if err := s.repo.RejectIssue(ctx, issueID, req); err != nil {
+		return err
+	}
+	s.notify(ctx, issueID, StatusDitolak, req.Reason)
+	return nil
 }
 
 func (s *service) ListVerificationQueue(ctx context.Context) ([]Issue, error) {

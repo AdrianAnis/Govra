@@ -23,6 +23,7 @@ function RegisterForm() {
     const parsed = signupSchema.safeParse({
       nama: form.get("nama"),
       email: form.get("email"),
+      telepon: form.get("telepon"),
       password: form.get("password"),
       setuju: form.get("setuju") === "on",
     });
@@ -32,10 +33,6 @@ function RegisterForm() {
         found[String(issue.path[0])] ??= issue.message;
       }
       setErrors(found);
-      return;
-    }
-    if (form.get("konfirmasi") !== parsed.data.password) {
-      setErrors({ konfirmasi: "Konfirmasi kata sandi tidak cocok." });
       return;
     }
     setErrors({});
@@ -73,6 +70,19 @@ function RegisterForm() {
         <FieldError message={errors.email} />
       </div>
       <div className="flex flex-col gap-2">
+        <FormField
+          id="telepon"
+          name="telepon"
+          type="tel"
+          inputMode="tel"
+          label="Nomor Telepon"
+          autoComplete="tel"
+          hint="Nomor WhatsApp aktif untuk menerima notifikasi progres laporan."
+          aria-invalid={errors.telepon ? true : undefined}
+        />
+        <FieldError message={errors.telepon} />
+      </div>
+      <div className="flex flex-col gap-2">
         <PasswordField
           id="password"
           name="password"
@@ -82,16 +92,6 @@ function RegisterForm() {
           aria-invalid={errors.password ? true : undefined}
         />
         <FieldError message={errors.password} />
-      </div>
-      <div className="flex flex-col gap-2">
-        <PasswordField
-          id="konfirmasi"
-          name="konfirmasi"
-          label="Ulangi Kata Sandi"
-          autoComplete="new-password"
-          aria-invalid={errors.konfirmasi ? true : undefined}
-        />
-        <FieldError message={errors.konfirmasi} />
       </div>
       <div className="flex flex-col gap-2">
         <label className="flex items-start gap-3 text-sm text-fg-muted">

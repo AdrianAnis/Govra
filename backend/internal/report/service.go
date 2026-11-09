@@ -22,15 +22,28 @@ type Service interface {
 	CheckContent(ctx context.Context, text string) (*ai.ModerationResult, error)
 }
 
+type ReceivedNotifier interface {
+	NotifyReportReceived(ctx context.Context, reporterID, code, title string)
+}
+
 type service struct {
 	repo     Repository
 	aiClient *ai.Client
+	notifier ReceivedNotifier
 }
 
 func NewService(repo Repository, aiClient *ai.Client) Service {
 	return &service{
 		repo:     repo,
 		aiClient: aiClient,
+	}
+}
+
+func NewServiceWithNotifier(repo Repository, aiClient *ai.Client, notifier ReceivedNotifier) Service {
+	return &service{
+		repo:     repo,
+		aiClient: aiClient,
+		notifier: notifier,
 	}
 }
 
@@ -126,6 +139,9 @@ func (s *service) CreateReport(ctx context.Context, req CreateReportRequest, rep
 
 	if err := s.repo.SaveReport(ctx, rep); err != nil {
 		return nil, err
+	}
+	if s.notifier != nil && reporterID != "" {
+		s.notifier.NotifyReportReceived(ctx, reporterID, rep.Code, rep.Title)
 	}
 	return rep, nil
 }

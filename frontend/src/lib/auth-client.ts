@@ -8,12 +8,17 @@ const nextSchema = z.object({ next: z.string() });
 interface SignupInput {
   nama: string;
   email: string;
+  telepon: string;
   password: string;
   setuju: true;
 }
 
 export function signUp(input: SignupInput) {
   return request("/api/auth/daftar", jsonInit(input), okSchema);
+}
+
+export function submitGooglePhone(telepon: string) {
+  return request("/api/auth/google/telepon", jsonInit({ telepon }), nextSchema);
 }
 
 export function requestReset(email: string) {

@@ -1,4 +1,9 @@
 import { cookies } from "next/headers";
+import {
+  createGooglePending,
+  GOOGLE_PENDING_COOKIE,
+  GOOGLE_PENDING_MAX_AGE_SECONDS,
+} from "@/lib/google-pending";
 import { getSafeRedirect, safeNext, SESSION_COOKIE } from "@/lib/session";
 import { SECURE_FLAG } from "@/lib/cookie-flags";
 import { signProfile, signValue } from "@/lib/session-sign";
@@ -172,6 +177,17 @@ export async function GET(request: Request) {
     if (!backendRes.ok) {
       const errData = await backendRes.json().catch(() => ({}));
       const msg = String(errData.message || "").toLowerCase();
+
+      if (mode === "daftar" && errData.code === "PHONE_REQUIRED") {
+        const pending = await createGooglePending({ email, name: displayName, avatar: avatarUrl, lanjut });
+        const headers = new Headers({ Location: new URL("/daftar/telepon", request.url).toString() });
+        headers.append(
+          "Set-Cookie",
+          `${GOOGLE_PENDING_COOKIE}=${pending}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${GOOGLE_PENDING_MAX_AGE_SECONDS}${SECURE_FLAG}`,
+        );
+        headers.append("Set-Cookie", `govra_oauth_flow=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${SECURE_FLAG}`);
+        return new Response(null, { status: 302, headers });
+      }
 
       if (mode === "daftar" && (msg.includes("sudah terdaftar") || backendRes.status === 400)) {
         return Response.redirect(new URL("/masuk?error=email_sudah_terdaftar", request.url).toString(), 302);

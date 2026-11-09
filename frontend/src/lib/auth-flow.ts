@@ -1,5 +1,6 @@
 import "@/lib/zod-config";
 import { z } from "zod";
+import { normalizePhone, PHONE_ERROR } from "@/lib/phone";
 
 export const CODE_LENGTH = 6;
 export const CODE_MINUTES = 10;
@@ -36,9 +37,18 @@ const passwordField = z
   .min(PASSWORD_MIN, `Kata sandi minimal ${PASSWORD_MIN} karakter.`)
   .max(128, "Kata sandi terlalu panjang.");
 
+const phoneField = z
+  .string()
+  .trim()
+  .min(1, "Isi nomor telepon Anda.")
+  .refine((value) => normalizePhone(value) !== null, PHONE_ERROR);
+
+export const teleponSchema = z.object({ telepon: phoneField });
+
 export const signupSchema = z.object({
   nama: z.string().trim().min(2, "Isi nama lengkap Anda.").max(100, "Nama terlalu panjang."),
   email: emailField,
+  telepon: phoneField,
   password: passwordField,
   setuju: z.literal(true, "Setujui Kebijakan Privasi untuk melanjutkan."),
 });

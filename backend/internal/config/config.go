@@ -19,6 +19,9 @@ type Config struct {
 	GeminiAPIKeyAsst   string
 	GeminiModel        string
 	CORSOrigins        string
+	FonnteToken        string
+	FonnteWebhookKey   string
+	PublicWebURL       string
 }
 
 func loadDotEnv() {
@@ -73,5 +76,8 @@ func Load() *Config {
 		GeminiAPIKeyAsst:   getEnv("GEMINI_API_KEY_ASSISTANT", ""),
 		GeminiModel:        getEnv("GEMINI_MODEL", "gemini-2.5-flash"),
 		CORSOrigins:        getEnv("CORS_ORIGINS", "*"),
+		FonnteToken:        getEnv("FONNTE_TOKEN", ""),
+		FonnteWebhookKey:   getEnv("FONNTE_WEBHOOK_SECRET", ""),
+		PublicWebURL:       getEnv("PUBLIC_WEB_URL", "https://govra.web.id"),
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -250,9 +251,31 @@ func TestOAuthLogin(t *testing.T) {
 		t.Fatal("expected login of non-existent email to be rejected")
 	}
 
+	_, err = svc.OAuthLogin(ctx, auth.OAuthLoginRequest{
+		Email:       "baru.warga@gmail.com",
+		DisplayName: "Warga Baru",
+		Provider:    "google",
+		Mode:        "daftar",
+	})
+	if !errors.Is(err, auth.ErrPhoneRequired) {
+		t.Fatalf("expected ErrPhoneRequired without phone, got: %v", err)
+	}
+
+	_, err = svc.OAuthLogin(ctx, auth.OAuthLoginRequest{
+		Email:       "baru.warga@gmail.com",
+		DisplayName: "Warga Baru",
+		Phone:       "12345",
+		Provider:    "google",
+		Mode:        "daftar",
+	})
+	if !errors.Is(err, auth.ErrInvalidPhone) {
+		t.Fatalf("expected ErrInvalidPhone for malformed phone, got: %v", err)
+	}
+
 	resReg, err := svc.OAuthLogin(ctx, auth.OAuthLoginRequest{
 		Email:       "baru.warga@gmail.com",
 		DisplayName: "Warga Baru",
+		Phone:       "0812-3456-7890",
 		AvatarURL:   "https://lh3.googleusercontent.com/photo.jpg",
 		Provider:    "google",
 		Mode:        "daftar",
@@ -262,6 +285,9 @@ func TestOAuthLogin(t *testing.T) {
 	}
 	if resReg.Profile.Role != auth.RolePelapor {
 		t.Fatalf("expected role pelapor, got: %s", resReg.Profile.Role)
+	}
+	if resReg.Profile.Phone != "6281234567890" {
+		t.Fatalf("expected normalized phone 6281234567890, got: %s", resReg.Profile.Phone)
 	}
 
 	_, err = svc.OAuthLogin(ctx, auth.OAuthLoginRequest{

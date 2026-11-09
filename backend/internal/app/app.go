@@ -17,9 +17,10 @@ import (
 	"govra/internal/platform/db"
 	"govra/internal/platform/email"
 	"govra/internal/platform/httpx"
-	"strings"
 	"govra/internal/program"
 	"govra/internal/report"
+	"govra/internal/whatsapp"
+	"strings"
 )
 
 type Application struct {
@@ -50,12 +51,12 @@ func New(cfg *config.Config) (*Application, error) {
 	}))
 	fiberApp.Use(httpx.RequestIDMiddleware())
 	fiberApp.Use(func(c *fiber.Ctx) error {
-    // Allow public auth endpoints without BFF key
-    if strings.HasPrefix(c.Path(), "/auth") && c.Path() != "/auth/oauth-login" {
-        return c.Next()
-    }
-    return httpx.RequireBFFKey(cfg.BFFSharedKey)(c)
-})
+		// Allow public auth endpoints without BFF key
+		if (strings.HasPrefix(c.Path(), "/auth") && c.Path() != "/auth/oauth-login") || c.Path() == whatsapp.WebhookPath {
+			return c.Next()
+		}
+		return httpx.RequireBFFKey(cfg.BFFSharedKey)(c)
+	})
 
 	tokenManager := pauth.NewTokenManager(cfg.SupabaseJWTSecret)
 	fiberApp.Use(pauth.AuthMiddleware(tokenManager))
@@ -74,12 +75,16 @@ func New(cfg *config.Config) (*Application, error) {
 	progHandler.RegisterRoutes(fiberApp)
 
 	repRepo := report.NewRepository(database)
-	repSvc := report.NewService(repRepo, aiClient)
+	waClient := whatsapp.NewClient(cfg.FonnteToken)
+	waNotifier := whatsapp.NewNotifier(waClient, whatsapp.NewDBRecipients(database), cfg.PublicWebURL)
+	whatsapp.NewWebhook(waClient, cfg.FonnteWebhookKey, cfg.PublicWebURL).RegisterRoutes(fiberApp)
+
+	repSvc := report.NewServiceWithNotifier(repRepo, aiClient, waNotifier)
 	repHandler := report.NewHandler(repSvc)
 	repHandler.RegisterRoutes(fiberApp)
 
 	issRepo := issue.NewRepository(database)
-	issSvc := issue.NewService(issRepo)
+	issSvc := issue.NewServiceWithNotifier(issRepo, waNotifier)
 	issHandler := issue.NewHandler(issSvc)
 	issHandler.RegisterRoutes(fiberApp)
 

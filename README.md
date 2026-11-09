@@ -264,7 +264,13 @@ GEMINI_API_KEY_ASSISTANT=
 
 GEMINI_MODEL=gemini-2.5-flash
 API_BASE_URL=http://localhost:8080
+
+FONNTE_TOKEN=
+FONNTE_WEBHOOK_SECRET=
+PUBLIC_WEB_URL=https://govra.web.id
 ```
+
+> Notifikasi WhatsApp: `FONNTE_TOKEN` adalah token perangkat dari dashboard Fonnte (kosong = notifikasi nonaktif). Atur webhook pesan masuk di Fonnte ke `https://<domain-api>/webhooks/fonnte?secret=<FONNTE_WEBHOOK_SECRET>`; tanpa rahasia yang cocok, webhook menolak semua permintaan. Pesan masuk apa pun dibalas template "nomor ini tidak menerima pesan".
 
 #### 2. Frontend (`frontend/.env.local`)
 Salin atau buat berkas `frontend/.env.local`:

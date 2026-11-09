@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"errors"
+
 	"github.com/gofiber/fiber/v2"
 	"govra/internal/platform/auth"
 	"govra/internal/platform/httpx"
@@ -139,6 +141,12 @@ func (h *Handler) OAuthLogin(c *fiber.Ctx) error {
 	}
 	res, err := h.service.OAuthLogin(c.Context(), req)
 	if err != nil {
+		if errors.Is(err, ErrPhoneRequired) {
+			return httpx.NewAppError(fiber.StatusUnprocessableEntity, "PHONE_REQUIRED", err.Error())
+		}
+		if errors.Is(err, ErrInvalidPhone) {
+			return httpx.NewAppError(fiber.StatusUnprocessableEntity, "INVALID_PHONE", err.Error())
+		}
 		return httpx.NewAppError(fiber.StatusForbidden, "OAUTH_LOGIN_FAILED", err.Error())
 	}
 	return c.JSON(res)

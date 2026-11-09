@@ -22,6 +22,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         display_name: parsed.data.nama,
         email: parsed.data.email,
+        phone: parsed.data.telepon,
         password: parsed.data.password,
       }),
     });
