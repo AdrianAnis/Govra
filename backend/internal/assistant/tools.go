@@ -62,6 +62,28 @@ func getToolDeclarations() []ai.ChatToolDeclaration {
 			},
 		},
 		{
+			Name:        "get_urgent_issues",
+			Description: "Mendapatkan daftar isu atau aduan warga yang paling banyak didukung dan paling mendesak di kota. Gunakan saat pengguna menanyakan masalah paling darurat, paling prioritas, atau paling banyak dilaporkan warga.",
+			Parameters: ai.ChatToolParameters{
+				Type:       "OBJECT",
+				Properties: map[string]ai.ChatToolProperty{},
+			},
+		},
+		{
+			Name:        "search_issues",
+			Description: "Mencari isu atau aduan warga berdasarkan kata kunci masalah atau wilayah. Gunakan saat pengguna menanyakan apakah suatu masalah fasilitas publik di wilayah tertentu sudah dilaporkan (contoh: jalan rusak di Bojongsoang).",
+			Parameters: ai.ChatToolParameters{
+				Type: "OBJECT",
+				Properties: map[string]ai.ChatToolProperty{
+					"query": {
+						Type:        "STRING",
+						Description: "Kata kunci masalah dan wilayah, contoh: jalan rusak bojongsoang",
+					},
+				},
+				Required: []string{"query"},
+			},
+		},
+		{
 			Name:        "get_opd_scorecard",
 			Description: "Mendapatkan rapor kinerja instansi dinas (OPD), tingkat ketuntasan program kerja, dan kepatuhan penyelesaian aduan warga.",
 			Parameters: ai.ChatToolParameters{

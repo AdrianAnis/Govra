@@ -93,7 +93,7 @@ func New(cfg *config.Config) (*Application, error) {
 	adminHandler.RegisterRoutes(fiberApp)
 
 	asstClient := ai.NewAssistantClient(cfg.GeminiAPIKeyAsst, cfg.GeminiModel)
-	asstRepo := assistant.NewRepository(database, progRepo, repRepo)
+	asstRepo := assistant.NewRepository(database, progRepo, repRepo, issRepo)
 	asstSvc := assistant.NewService(asstRepo, asstClient)
 	asstHandler := assistant.NewHandler(asstSvc)
 	asstHandler.RegisterRoutes(fiberApp)

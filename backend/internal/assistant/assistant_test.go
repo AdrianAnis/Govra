@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"govra/internal/issue"
 	"govra/internal/platform/ai"
 	"govra/internal/platform/httpx"
 	"govra/internal/program"
@@ -36,7 +37,7 @@ func setupTestService() (Service, Repository) {
 		ReporterID:  "user-999",
 		IssueID:     "issue-111",
 	})
-	repo := NewRepository(nil, progRepo, repRepo)
+	repo := NewRepository(nil, progRepo, repRepo, issue.NewRepository(nil))
 	svc := NewService(repo, ai.NewAssistantClient("", ""))
 	return svc, repo
 }

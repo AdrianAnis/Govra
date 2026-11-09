@@ -43,9 +43,17 @@ func (h *Handler) SendMessage(c *fiber.Ctx) error {
 	}
 	userID := extractUserID(c)
 	ip := extractClientIP(c)
-	res, err := h.service.AnswerQuestion(c.Context(), &req, userID, ip)
+	name, _ := c.Locals("display_name").(string)
+	ctx := WithUserName(c.Context(), name)
+	res, err := h.service.AnswerQuestion(ctx, &req, userID, ip)
 	if err != nil {
 		return mapServiceError(err)
+	}
+	if res.Sources == nil {
+		res.Sources = []ChatSource{}
+	}
+	if res.Cards == nil {
+		res.Cards = []ChatCard{}
 	}
 	return c.JSON(res)
 }

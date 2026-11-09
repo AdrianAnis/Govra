@@ -193,7 +193,7 @@ func (c *AssistantClient) GenerateChatCompletion(ctx context.Context, systemProm
 		SystemInstruction: &geminiSystemInstruction{Parts: []geminiTextPart{{Text: systemPrompt}}},
 		Contents:          buildInitialContents(messages),
 		Tools:             buildGeminiTools(tools),
-		GenerationConfig:  geminiGenConfig{Temperature: 0.2, MaxOutputTokens: 1000},
+		GenerationConfig:  geminiGenConfig{Temperature: 0.3, MaxOutputTokens: 2048},
 	}
 	return c.executeChatLoop(ctx, req, executor)
 }
@@ -255,7 +255,49 @@ func extractText(parts []geminiChatPart) string {
 	return sb.String()
 }
 
+type geminiHTTPError struct {
+	status int
+	body   string
+}
+
+func (e *geminiHTTPError) Error() string {
+	return fmt.Sprintf("gemini api error %d: %s", e.status, e.body)
+}
+
+func isRetryableGeminiError(err error) bool {
+	var httpErr *geminiHTTPError
+	if errors.As(err, &httpErr) {
+		switch httpErr.status {
+		case http.StatusTooManyRequests, http.StatusInternalServerError, http.StatusBadGateway, http.StatusServiceUnavailable, http.StatusGatewayTimeout:
+			return true
+		}
+		return false
+	}
+	return !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded)
+}
+
 func (c *AssistantClient) postGeminiChat(ctx context.Context, req geminiChatReq) (*geminiChatResp, error) {
+	backoffs := []time.Duration{700 * time.Millisecond, 1800 * time.Millisecond}
+	var lastErr error
+	for attempt := 0; attempt <= len(backoffs); attempt++ {
+		resp, err := c.postGeminiChatOnce(ctx, req)
+		if err == nil {
+			return resp, nil
+		}
+		lastErr = err
+		if !isRetryableGeminiError(err) || attempt == len(backoffs) {
+			break
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(backoffs[attempt]):
+		}
+	}
+	return nil, lastErr
+}
+
+func (c *AssistantClient) postGeminiChatOnce(ctx context.Context, req geminiChatReq) (*geminiChatResp, error) {
 	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", c.model, c.apiKey)
 	data, err := json.Marshal(req)
 	if err != nil {
@@ -276,7 +318,7 @@ func (c *AssistantClient) postGeminiChat(ctx context.Context, req geminiChatReq)
 		return nil, err
 	}
 	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("gemini api error %d: %s", resp.StatusCode, string(bodyBytes))
+		return nil, &geminiHTTPError{status: resp.StatusCode, body: string(bodyBytes)}
 	}
 	var gResp geminiChatResp
 	if err := json.Unmarshal(bodyBytes, &gResp); err != nil {

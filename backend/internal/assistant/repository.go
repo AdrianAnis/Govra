@@ -2,10 +2,12 @@ package assistant
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"sync"
 	"time"
 
+	"govra/internal/issue"
 	"govra/internal/platform/db"
 	"govra/internal/program"
 	"govra/internal/report"
@@ -17,6 +19,7 @@ type Repository interface {
 	SearchPrograms(ctx context.Context, query, opd, status string) ([]ProgramItem, error)
 	GetProgramByCode(ctx context.Context, code string) (*ProgramDetailItem, error)
 	GetOpdScorecard(ctx context.Context, opdCode string) (*OpdScorecardItem, error)
+	SearchIssues(ctx context.Context, query string, limit int) ([]IssueItem, error)
 	AllowRateLimit(key string, limit int, window time.Duration) bool
 }
 
@@ -24,17 +27,90 @@ type repository struct {
 	db         *db.Database
 	progRepo   program.Repository
 	repRepo    report.Repository
+	issRepo    issue.Repository
 	mu         sync.Mutex
 	rateLimits map[string][]time.Time
 }
 
-func NewRepository(database *db.Database, progRepo program.Repository, repRepo report.Repository) Repository {
+func NewRepository(database *db.Database, progRepo program.Repository, repRepo report.Repository, issRepo issue.Repository) Repository {
 	return &repository{
 		db:         database,
 		progRepo:   progRepo,
 		repRepo:    repRepo,
+		issRepo:    issRepo,
 		rateLimits: make(map[string][]time.Time),
 	}
+}
+
+func (r *repository) SearchIssues(ctx context.Context, query string, limit int) ([]IssueItem, error) {
+	all, err := r.issRepo.ListIssues(ctx, "", "", "")
+	if err != nil {
+		return nil, err
+	}
+	terms := extractQueryTerms(query)
+	type scoredIssue struct {
+		item  issue.Issue
+		score int
+	}
+	var matched []scoredIssue
+	for _, iss := range all {
+		if string(iss.Status) == "DITOLAK" {
+			continue
+		}
+		score := 0
+		if len(terms) > 0 {
+			haystack := strings.ToLower(strings.Join([]string{iss.Title, iss.Summary, iss.AddressDetail, iss.DistrictName, iss.VillageName, iss.CategoryName}, " "))
+			for _, term := range terms {
+				if strings.Contains(haystack, term) {
+					score++
+				}
+			}
+			if score == 0 {
+				continue
+			}
+		}
+		matched = append(matched, scoredIssue{item: iss, score: score})
+	}
+	sort.SliceStable(matched, func(i, j int) bool {
+		if matched[i].score != matched[j].score {
+			return matched[i].score > matched[j].score
+		}
+		if matched[i].item.UniqueReportersCount != matched[j].item.UniqueReportersCount {
+			return matched[i].item.UniqueReportersCount > matched[j].item.UniqueReportersCount
+		}
+		return matched[i].item.CreatedAt.After(matched[j].item.CreatedAt)
+	})
+	if limit > 0 && len(matched) > limit {
+		matched = matched[:limit]
+	}
+	items := make([]IssueItem, 0, len(matched))
+	for _, entry := range matched {
+		iss := entry.item
+		area := strings.TrimSpace(strings.Join(nonEmpty(iss.DistrictName, iss.VillageName), ", "))
+		if area == "" {
+			area = iss.AddressDetail
+		}
+		items = append(items, IssueItem{
+			ID:             iss.ID,
+			Code:           iss.Code,
+			Title:          iss.Title,
+			Status:         string(iss.Status),
+			Urgency:        string(iss.Urgency),
+			SupporterCount: iss.UniqueReportersCount,
+			Area:           area,
+		})
+	}
+	return items, nil
+}
+
+func nonEmpty(values ...string) []string {
+	var out []string
+	for _, v := range values {
+		if strings.TrimSpace(v) != "" {
+			out = append(out, v)
+		}
+	}
+	return out
 }
 
 func (r *repository) ListMyReports(ctx context.Context, reporterID string) ([]MyReportItem, error) {
@@ -109,6 +185,7 @@ func (r *repository) SearchPrograms(ctx context.Context, query, opd, status stri
 			OpdName:         p.OpdName,
 			Status:          string(p.Status),
 			ProgressPercent: p.Progress,
+			ExpectedPercent: p.Expected,
 			TargetOutput:    p.Description,
 		})
 	}
@@ -133,6 +210,7 @@ func (r *repository) GetProgramByCode(ctx context.Context, code string) (*Progra
 		OpdName:         p.OpdName,
 		Status:          string(p.Status),
 		ProgressPercent: p.Progress,
+		ExpectedPercent: p.Expected,
 		TargetOutput:    p.Description,
 		TargetBudget:    int64(p.Budget.Pagu),
 		RealizedBudget:  int64(p.Budget.Realization),

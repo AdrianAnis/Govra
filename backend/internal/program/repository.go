@@ -312,6 +312,11 @@ func (r *repository) ListPrograms(ctx context.Context, opdSlug, status, district
 			return list, nil
 		}
 	}
+	if r.db != nil && r.db.HasREST() {
+		if list, ok := r.restListPrograms(ctx, opdSlug, status, districtID, q); ok {
+			return list, nil
+		}
+	}
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	var list []Program
@@ -366,6 +371,11 @@ func (r *repository) GetProgramByCode(ctx context.Context, code string) (*Progra
 				uRows.Close()
 			}
 			return &p, nil
+		}
+	}
+	if r.db != nil && r.db.HasREST() {
+		if p, ok := r.restGetProgram(ctx, code); ok {
+			return p, nil
 		}
 	}
 	r.mu.RLock()
