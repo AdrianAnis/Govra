@@ -61,7 +61,7 @@ export async function GET(request: Request) {
   let avatarUrl = "";
 
   if (flowType === "google") {
-    if (savedState && stateParam && savedState !== stateParam) {
+    if (!savedState || !stateParam || savedState !== stateParam) {
       return Response.redirect(new URL(`/${mode}?error=google_gagal`, request.url).toString(), 302);
     }
 

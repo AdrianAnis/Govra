@@ -51,7 +51,7 @@ func New(cfg *config.Config) (*Application, error) {
 	fiberApp.Use(httpx.RequestIDMiddleware())
 	fiberApp.Use(func(c *fiber.Ctx) error {
     // Allow public auth endpoints without BFF key
-    if strings.HasPrefix(c.Path(), "/auth") {
+    if strings.HasPrefix(c.Path(), "/auth") && c.Path() != "/auth/oauth-login" {
         return c.Next()
     }
     return httpx.RequireBFFKey(cfg.BFFSharedKey)(c)
