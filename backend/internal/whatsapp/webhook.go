@@ -127,6 +127,7 @@ func (w *Webhook) allowReply(sender string) bool {
 
 func (w *Webhook) Handle(c *fiber.Ctx) error {
 	if !w.authorized(c) {
+		log.Printf("whatsapp: webhook ditolak, secret tidak cocok")
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "unauthorized"})
 	}
 	msg := parseIncoming(c)
@@ -136,12 +137,15 @@ func (w *Webhook) Handle(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"status": "ignored"})
 	}
 	if isMember(msg.Member) || strings.EqualFold(msg.IsGroup, "true") {
+		log.Printf("whatsapp: webhook dari %s diabaikan (grup)", phone.Mask(target))
 		return c.JSON(fiber.Map{"status": "ignored"})
 	}
 	if device, deviceOK := phone.Normalize(msg.Device); deviceOK && device == target {
+		log.Printf("whatsapp: webhook dari %s diabaikan (pesan dari nomor sendiri)", phone.Mask(target))
 		return c.JSON(fiber.Map{"status": "ignored"})
 	}
 	if !w.allowReply(target) {
+		log.Printf("whatsapp: webhook dari %s dibatasi (terlalu sering)", phone.Mask(target))
 		return c.JSON(fiber.Map{"status": "limited"})
 	}
 
@@ -151,5 +155,6 @@ func (w *Webhook) Handle(c *fiber.Ctx) error {
 		log.Printf("whatsapp: gagal membalas %s: %v", phone.Mask(target), err)
 		return c.JSON(fiber.Map{"status": "failed"})
 	}
+	log.Printf("whatsapp: membalas %s", phone.Mask(target))
 	return c.JSON(fiber.Map{"status": "replied"})
 }
