@@ -156,6 +156,17 @@ Sistem Govra memiliki 3 (*tiga*) peran kanonikal dengan hak akses terisolasi ket
 ### 5. Notifikasi & Indikator Pintar Terisolasi
 - Indikator lonceng notifikasi dan titik oranye (*unread badge*) yang spesifik untuk masing-masing peran, memastikan warga dan petugas dinas selalu mendapatkan kabar terbaru tanpa tercampur data internal.
 
+### 6. Notifikasi Progres Laporan via WhatsApp
+- **Nomor Telepon Saat Mendaftar**: Pendaftaran email meminta nomor WhatsApp aktif. Pada pendaftaran dengan Google, warga diarahkan ke langkah "Satu Langkah Lagi" untuk mengisi nomor sebelum akun dibuat.
+- **Kabar Otomatis ke Pelapor**: Warga menerima pesan WhatsApp saat laporan diterima dan setiap kali statusnya berubah (diteruskan, diproses, selesai, ditolak, dialihkan, dibuka ulang), lengkap dengan catatan dinas dan tautan linimasa laporan.
+- **Balasan Otomatis untuk Pesan Masuk**: Pesan WhatsApp apa pun yang masuk dibalas template yang menjelaskan bahwa kanal ini hanya untuk notifikasi dan mengarahkan warga ke situs. Pesan grup diabaikan, dan setiap pengirim dibatasi 3 balasan per jam.
+- **Tidak Mengganggu Alur Utama**: Pengiriman berjalan di latar belakang, sehingga tindakan petugas tidak melambat dan kegagalan pengiriman tidak membatalkan proses.
+
+### 7. Aplikasi Web Progresif (PWA)
+- **Bisa Dipasang di Layar Utama**: Govra dapat dipasang seperti aplikasi di Android, iPhone, dan komputer. Tampil layar penuh tanpa bilah browser, lengkap dengan ikon dan pintasan "Buat Laporan" serta "Laporan Saya".
+- **Tombol "Pasang Aplikasi"**: Muncul di footer pada browser yang mendukung pemasangan langsung.
+- **Halaman Offline**: Saat tidak ada koneksi, pengguna melihat halaman penjelasan alih-alih galat browser. Data tidak disimpan di perangkat, sehingga status laporan selalu yang terbaru.
+
 ---
 
 ## 🛡️ Arsitektur Sistem & Keamanan
@@ -215,6 +226,8 @@ Sistem Govra dibangun dengan mengedepankan keamanan komprehensif, arsitektur *Ba
 ### Basis Data, AI & Infrastruktur
 - **Database & Storage**: [Supabase](https://supabase.com/) (PostgreSQL 15 dengan ekstensi PostGIS & Row Level Security)
 - **Model Kecerdasan Buatan**: [Google Gemini 2.5 Flash](https://ai.google.dev/) via official Google GenAI SDK
+- **Notifikasi WhatsApp**: [Fonnte](https://fonnte.com/) (kirim notifikasi dan terima pesan masuk lewat webhook)
+- **PWA**: Web App Manifest dan Service Worker (halaman offline), tanpa pustaka tambahan
 
 ---
 
@@ -270,7 +283,7 @@ FONNTE_WEBHOOK_SECRET=
 PUBLIC_WEB_URL=https://govra.web.id
 ```
 
-> Notifikasi WhatsApp: `FONNTE_TOKEN` adalah token perangkat dari dashboard Fonnte (kosong = notifikasi nonaktif). Atur webhook pesan masuk di Fonnte ke `https://<domain-api>/webhooks/fonnte?secret=<FONNTE_WEBHOOK_SECRET>`; tanpa rahasia yang cocok, webhook menolak semua permintaan. Pesan masuk apa pun dibalas template "nomor ini tidak menerima pesan".
+> Notifikasi WhatsApp: `FONNTE_TOKEN` adalah token perangkat dari dashboard Fonnte (kosong = notifikasi nonaktif). Atur webhook pesan masuk di Fonnte ke `https://<domain-api>/webhooks/fonnte?secret=<FONNTE_WEBHOOK_SECRET>`; tanpa rahasia yang cocok, webhook menolak semua permintaan. Pesan masuk apa pun dibalas template bahwa kanal ini tidak menerima pesan. `PUBLIC_WEB_URL` adalah alamat situs yang dipakai untuk tautan di dalam pesan. Di pengaturan perangkat Fonnte, aktifkan **Autoread**, ubah **Response Source** menjadi **Webhook**, dan matikan auto-reply bawaan.
 
 #### 2. Frontend (`frontend/.env.local`)
 Salin atau buat berkas `frontend/.env.local`:
@@ -343,11 +356,14 @@ Govra/
 │   │   ├── issue/                 # Pengelolaan siklus hidup isu & verifikasi
 │   │   ├── platform/              # Driver database, AI Gemini, & utilitas HTTP
 │   │   ├── program/               # Transparansi program kerja & progres dinas
-│   │   └── report/                # Penanganan pelaporan awal masyarakat
+│   │   ├── report/                # Penanganan pelaporan awal masyarakat
+│   │   └── whatsapp/              # Notifikasi progres laporan & webhook Fonnte
 │   └── supabase/migrations/       # Skema DDL & migrasi SQL database
 │
 ├── frontend/                      # Aplikasi Web Frontend (Next.js 16)
 │   ├── public/                    # Aset statis, ikon, dan berkas logo
+│   │   ├── icons/                 # Ikon aplikasi PWA
+│   │   ├── sw.js                  # Service worker (halaman offline)
 │   │   ├── screenshots/           # Tempat tangkapan layar tampilan sistem
 │   │   └── logo.svg               # Logo resmi Govra
 │   └── src/
