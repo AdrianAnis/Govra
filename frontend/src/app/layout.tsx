@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { SkipLink } from "@/components/layout/skip-link";
+import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { NotificationsProvider } from "@/lib/notifications-context";
 import "./globals.css";
 
@@ -11,8 +12,14 @@ const inter = Inter({
 
 export const dynamic = "force-dynamic";
 
+export const viewport: Viewport = {
+  themeColor: "#136cfc",
+};
+
 export const metadata: Metadata = {
   title: "Govra",
+  applicationName: "Govra",
+  appleWebApp: { capable: true, title: "Govra", statusBarStyle: "default" },
   description:
     "Platform transparansi program kerja pemerintah daerah dan pelaporan warga berbasis AI.",
   verification: {
@@ -25,6 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="id" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col max-w-full overflow-x-clip">
         <SkipLink />
+        <ServiceWorkerRegister />
         <NotificationsProvider>{children}</NotificationsProvider>
       </body>
     </html>

@@ -29,6 +29,18 @@ const nextConfig: NextConfig = {
     authInterrupts: true,
     cpus: 2,
   },
+  async headers() {
+    return [
+      {
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       { source: "/laporan-saya", destination: "/pelapor", permanent: false },

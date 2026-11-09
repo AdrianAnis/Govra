@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { Container } from "@/components/layout/container";
+import { InstallButton } from "@/components/pwa/install-button";
 import { buttonVariants } from "@/components/ui/button";
 import { currentTime } from "@/lib/clock";
 import { FOOTER_GROUPS } from "@/lib/navigation";
@@ -21,9 +22,12 @@ function SiteFooter() {
               Platform transparansi program kerja pemerintah daerah dan pelaporan warga berbasis AI.
               Pantau proker, laporkan masalah, dan lacak penanganannya sampai selesai.
             </p>
-            <Link href={REPORT_NEW} className={cn(buttonVariants({ variant: "accent" }))}>
-              Lapor Sekarang
-            </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link href={REPORT_NEW} className={cn(buttonVariants({ variant: "accent" }))}>
+                Lapor Sekarang
+              </Link>
+              <InstallButton />
+            </div>
           </div>
           <nav aria-label="Tautan footer" className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:col-span-7">
             {FOOTER_GROUPS.map((group) => (
