@@ -11,6 +11,7 @@ var (
 	reportCodeRegex = regexp.MustCompile(`(?i)(GVR|TLK)-\d{4}-[A-Z0-9]{4}`)
 	myReportsRegex  = regexp.MustCompile(`(?i)laporan\s*(saya|ku)|status\s+laporan`)
 	guideRegex      = regexp.MustCompile(`(?i)cara\s+(lapor|melapor|membuat)|panduan|bagaimana\s+(cara\s+)?(lapor|melapor)`)
+	programIntent   = regexp.MustCompile(`(?i)proker|program|progres|anggaran|berjalan|kegiatan`)
 )
 
 func generateFallbackAnswer(ctx context.Context, repo Repository, question, reporterID string) (*ChatReply, error) {
@@ -96,6 +97,9 @@ func handleFallbackPrograms(ctx context.Context, repo Repository, question strin
 	terms := extractQueryTerms(question)
 	q := strings.Join(terms, " ")
 	progs, err := repo.SearchPrograms(ctx, q, "", "")
+	if (err != nil || len(progs) == 0) && programIntent.MatchString(question) {
+		progs, err = repo.SearchPrograms(ctx, "", "", "")
+	}
 	if err != nil || len(progs) == 0 {
 		return &ChatReply{
 			Reply:   "Saya hanya dapat membantu menjawab pertanyaan seputar program kerja, isu warga, rapor kinerja, dan status laporan di Govra.",

@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -53,10 +54,16 @@ type ChatToolResponse struct {
 
 type ChatToolExecutor func(ctx context.Context, call ChatToolCall) (ChatToolResponse, error)
 
+var fallbackModels = []string{"gemini-3.5-flash", "gemini-3-flash-preview", "gemini-3.1-flash-lite"}
+
+const quotaCooldown = 15 * time.Minute
+
 type AssistantClient struct {
 	apiKey     string
 	model      string
 	httpClient *http.Client
+	mu         sync.Mutex
+	exhausted  map[string]time.Time
 }
 
 type geminiChatReq struct {
@@ -81,6 +88,7 @@ type geminiChatContent struct {
 
 type geminiChatPart struct {
 	Text             string                    `json:"text,omitempty"`
+	ThoughtSignature string                    `json:"thoughtSignature,omitempty"`
 	FunctionCall     *geminiFunctionCallPart   `json:"functionCall,omitempty"`
 	FunctionResponse *geminiFunctionReturnPart `json:"functionResponse,omitempty"`
 }
@@ -140,7 +148,33 @@ func NewAssistantClient(apiKey, model string) *AssistantClient {
 		httpClient: &http.Client{
 			Timeout: 45 * time.Second,
 		},
+		exhausted: make(map[string]time.Time),
 	}
+}
+
+func (c *AssistantClient) candidateModels() []string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	now := time.Now()
+	seen := make(map[string]bool)
+	var models []string
+	for _, m := range append([]string{c.model}, fallbackModels...) {
+		if m == "" || seen[m] {
+			continue
+		}
+		seen[m] = true
+		if until, blocked := c.exhausted[m]; blocked && now.Before(until) {
+			continue
+		}
+		models = append(models, m)
+	}
+	return models
+}
+
+func (c *AssistantClient) markExhausted(model string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.exhausted[model] = time.Now().Add(quotaCooldown)
 }
 
 func (c *AssistantClient) HasKey() bool {
@@ -195,13 +229,37 @@ func (c *AssistantClient) GenerateChatCompletion(ctx context.Context, systemProm
 		Tools:             buildGeminiTools(tools),
 		GenerationConfig:  geminiGenConfig{Temperature: 0.3, MaxOutputTokens: 2048},
 	}
-	return c.executeChatLoop(ctx, req, executor)
+	models := c.candidateModels()
+	if len(models) == 0 {
+		models = []string{c.model}
+	}
+	var lastErr error
+	for _, model := range models {
+		attempt := req
+		attempt.Contents = append([]geminiChatContent(nil), req.Contents...)
+		text, err := c.executeChatLoop(ctx, model, attempt, executor)
+		if err == nil && strings.TrimSpace(text) != "" {
+			return text, nil
+		}
+		if err == nil {
+			err = errors.New("balasan kosong dari model " + model)
+		}
+		lastErr = err
+		if ctx.Err() != nil {
+			return "", ctx.Err()
+		}
+		var httpErr *geminiHTTPError
+		if errors.As(err, &httpErr) && httpErr.status == http.StatusTooManyRequests {
+			c.markExhausted(model)
+		}
+	}
+	return "", lastErr
 }
 
-func (c *AssistantClient) executeChatLoop(ctx context.Context, req geminiChatReq, executor ChatToolExecutor) (string, error) {
+func (c *AssistantClient) executeChatLoop(ctx context.Context, model string, req geminiChatReq, executor ChatToolExecutor) (string, error) {
 	const maxIterations = 5
 	for iter := 0; iter < maxIterations; iter++ {
-		resp, err := c.postGeminiChat(ctx, req)
+		resp, err := c.postGeminiChat(ctx, model, req)
 		if err != nil {
 			return "", err
 		}
@@ -268,7 +326,7 @@ func isRetryableGeminiError(err error) bool {
 	var httpErr *geminiHTTPError
 	if errors.As(err, &httpErr) {
 		switch httpErr.status {
-		case http.StatusTooManyRequests, http.StatusInternalServerError, http.StatusBadGateway, http.StatusServiceUnavailable, http.StatusGatewayTimeout:
+		case http.StatusInternalServerError, http.StatusBadGateway, http.StatusServiceUnavailable, http.StatusGatewayTimeout:
 			return true
 		}
 		return false
@@ -276,11 +334,11 @@ func isRetryableGeminiError(err error) bool {
 	return !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded)
 }
 
-func (c *AssistantClient) postGeminiChat(ctx context.Context, req geminiChatReq) (*geminiChatResp, error) {
+func (c *AssistantClient) postGeminiChat(ctx context.Context, model string, req geminiChatReq) (*geminiChatResp, error) {
 	backoffs := []time.Duration{700 * time.Millisecond, 1800 * time.Millisecond}
 	var lastErr error
 	for attempt := 0; attempt <= len(backoffs); attempt++ {
-		resp, err := c.postGeminiChatOnce(ctx, req)
+		resp, err := c.postGeminiChatOnce(ctx, model, req)
 		if err == nil {
 			return resp, nil
 		}
@@ -297,8 +355,8 @@ func (c *AssistantClient) postGeminiChat(ctx context.Context, req geminiChatReq)
 	return nil, lastErr
 }
 
-func (c *AssistantClient) postGeminiChatOnce(ctx context.Context, req geminiChatReq) (*geminiChatResp, error) {
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", c.model, c.apiKey)
+func (c *AssistantClient) postGeminiChatOnce(ctx context.Context, model string, req geminiChatReq) (*geminiChatResp, error) {
+	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", model, c.apiKey)
 	data, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
