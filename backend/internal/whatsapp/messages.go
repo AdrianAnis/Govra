@@ -61,13 +61,13 @@ func ReceivedMessage(webURL, code, title string) string {
 	if strings.TrimSpace(title) != "" {
 		b.WriteString("Laporan: " + truncate(title, 100) + "\n")
 	}
-	b.WriteString("\nKami akan mengabari Anda di nomor ini setiap ada perkembangan. Pantau juga di:\n" + reportURL(webURL, code))
+	b.WriteString("\nKami akan mengabari Anda di sini setiap ada perkembangan. Pantau juga di:\n" + reportURL(webURL, code))
 	b.WriteString("\n\nPesan otomatis dari Govra.")
 	return b.String()
 }
 
 func AutoReply(webURL string) string {
-	return "*Govra*\n\nNomor ini hanya digunakan untuk mengirim notifikasi perkembangan laporan Anda. " +
+	return "*Govra*\n\nDi sini kami hanya mengirim notifikasi perkembangan laporan Anda. " +
 		"Kami tidak menerima pesan, pertanyaan, maupun laporan melalui WhatsApp, sehingga pesan Anda tidak akan dibaca.\n\n" +
 		"Untuk membuat laporan atau memantau progresnya, buka:\n" + strings.TrimRight(webURL, "/")
 }
