@@ -17,6 +17,8 @@
   --secondary-fg: #ffffff;
   --accent: #c3f84a;
   --accent-fg: #152641;
+  --danger: #b42318;
+  --danger-soft: #fee4e2;
   color-scheme: light;
 }
 
@@ -37,6 +39,8 @@
   --color-secondary-fg: var(--secondary-fg);
   --color-accent: var(--accent);
   --color-accent-fg: var(--accent-fg);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
   --color-background: var(--bg);
   --color-foreground: var(--fg);
   --color-card: var(--surface);

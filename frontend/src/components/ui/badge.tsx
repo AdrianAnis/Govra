@@ -12,6 +12,7 @@ const badgeVariants = cva(
         perhatian: "border-2 border-secondary text-secondary",
         serius: "bg-secondary text-secondary-fg",
         selesai: "bg-accent text-accent-fg",
+        ditolak: "bg-danger-soft text-danger",
       },
     },
     defaultVariants: { weight: "netral" },

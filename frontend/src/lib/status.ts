@@ -22,7 +22,8 @@ export type StatusWeight =
   | "berjalan"
   | "perhatian"
   | "serius"
-  | "selesai";
+  | "selesai"
+  | "ditolak";
 
 export interface StatusMeta {
   label: string;
@@ -45,7 +46,7 @@ export const ISSUE_STATUS: Record<IssueStatus, StatusMeta> = {
   DIPROSES: { label: "Diproses", weight: "berjalan", icon: Loader },
   DIALIHKAN: { label: "Dialihkan", weight: "perhatian", icon: Undo2 },
   DIBUKA_ULANG: { label: "Dibuka Ulang", weight: "perhatian", icon: Undo2 },
-  DITOLAK: { label: "Ditolak", weight: "serius", icon: Ban },
+  DITOLAK: { label: "Ditolak", weight: "ditolak", icon: Ban },
   SELESAI: { label: "Selesai", weight: "selesai", icon: BadgeCheck },
 };
 

@@ -38,7 +38,7 @@ function renderStatusBadge(status?: string) {
       );
     case "DITOLAK":
       return (
-        <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] sm:text-xs font-semibold bg-red-100 text-red-800 border border-red-300">
+        <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] sm:text-xs font-semibold bg-danger-soft text-danger border border-danger">
           Ditolak
         </span>
       );

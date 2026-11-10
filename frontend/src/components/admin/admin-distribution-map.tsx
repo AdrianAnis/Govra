@@ -64,7 +64,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; badgeCls: st
   DITOLAK: {
     label: "Ditolak",
     color: "#EF4444",
-    badgeCls: "bg-red-100 text-red-800 border-red-300",
+    badgeCls: "bg-danger-soft text-danger border-danger",
   },
 };
 
