@@ -13,11 +13,18 @@ function StatCard({ label, value, hint, href }: StatCardProps) {
   const body = (
     <>
       <span className="text-sm font-semibold text-fg-muted">{label}</span>
-      <span className="text-4xl leading-none font-bold tracking-tight tabular-nums">{value}</span>
-      {hint && <span className="text-sm text-fg-muted">{hint}</span>}
+      <span
+        className={cn(
+          "leading-none font-bold tracking-tight tabular-nums break-words",
+          typeof value === "string" && value.length > 8 ? "text-2xl" : "text-4xl",
+        )}
+      >
+        {value}
+      </span>
+      {hint && <span className="text-sm text-fg-muted break-words">{hint}</span>}
     </>
   );
-  const shape = "flex h-full min-h-36 flex-col gap-3 rounded-lg border bg-surface p-6";
+  const shape = "flex h-full min-h-36 min-w-0 flex-col gap-3 overflow-hidden rounded-lg border bg-surface p-6";
 
   return href ? (
     <Link href={href} className={cn(shape, "transition-colors duration-200 ease-ui hover:bg-surface-muted")}>

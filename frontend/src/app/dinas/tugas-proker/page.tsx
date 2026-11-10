@@ -6,7 +6,7 @@ import { DinasTugasProkerManager } from "@/components/agency/dinas-tugas-proker-
 import { getDinasAssignedPrograms } from "@/lib/data/pemerintah";
 import { getSessionUser } from "@/lib/data/session";
 import { AGENCY_HOME } from "@/lib/routes";
-import { formatRupiah } from "@/lib/format";
+import { formatRupiahCompact } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Tugas Program Kerja Dinas" };
 
@@ -46,7 +46,7 @@ export default async function DinasTugasProkerPage() {
         <StatCard label="Total Tugas Amanah" value={programs.length} hint="Program kerja instansi" />
         <StatCard label="Sesuai Jadwal" value={onSchedule} hint="Progres on track" />
         <StatCard label="Dalam Percepatan" value={delayed} hint="Perlu atensi pelaksanaan" />
-        <StatCard label="Realisasi Anggaran" value={formatRupiah(totalRealization)} hint={`Pagu: ${formatRupiah(totalPagu)}`} />
+        <StatCard label="Realisasi Anggaran" value={formatRupiahCompact(totalRealization)} hint={`Pagu: ${formatRupiahCompact(totalPagu)}`} />
       </StatGrid>
 
       <DinasTugasProkerManager

@@ -171,7 +171,7 @@ function SummaryAside({ program }: { program: Program }) {
         <Reveal variant="blur" delay={100}>
           <AsideCard title="Anggaran">
             <p className="flex flex-col gap-1">
-              <span className="text-3xl leading-none font-bold tracking-tight tabular-nums">
+              <span className="text-3xl leading-none font-bold tracking-tight tabular-nums break-words">
                 {formatRupiah(program.budget.realized)}
               </span>
               <span className="text-sm text-fg-muted tabular-nums">

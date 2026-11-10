@@ -93,6 +93,20 @@ export function formatRupiah(value: number): string {
   return rupiahFormat.format(value);
 }
 
+const COMPACT_UNITS = [
+  { limit: 1e12, label: "T" },
+  { limit: 1e9, label: "M" },
+  { limit: 1e6, label: "jt" },
+] as const;
+
+const compactNumber = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 1 });
+
+export function formatRupiahCompact(value: number): string {
+  const unit = COMPACT_UNITS.find((item) => Math.abs(value) >= item.limit);
+  if (!unit) return formatRupiah(value);
+  return `Rp ${compactNumber.format(value / unit.limit)} ${unit.label}`;
+}
+
 export function formatRelativeTime(iso: string, now: Date = new Date()): string {
   if (!iso) return "-";
   try {

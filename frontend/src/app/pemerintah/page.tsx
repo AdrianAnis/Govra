@@ -8,7 +8,7 @@ import {
   getPemerintahUrgentIssues,
 } from "@/lib/data/pemerintah";
 import { getDistributionPoints } from "@/lib/data/map";
-import { formatNumber, formatRupiah } from "@/lib/format";
+import { formatNumber, formatRupiah, formatRupiahCompact } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Ringkasan Eksekutif" };
 
@@ -48,7 +48,7 @@ export default async function PemerintahOverviewPage() {
     {
       label: "Realisasi Anggaran Proker",
       value: `${overview.budgetRealizationRate}%`,
-      sublabel: `${formatRupiah(overview.totalBudgetRealization)} dari ${formatRupiah(overview.totalBudgetPagu)}`,
+      sublabel: `${formatRupiahCompact(overview.totalBudgetRealization)} dari ${formatRupiahCompact(overview.totalBudgetPagu)}`,
       href: "/pemerintah/proker",
     },
   ];
