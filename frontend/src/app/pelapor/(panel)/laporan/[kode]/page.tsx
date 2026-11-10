@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AsideCard } from "@/components/aside-card";
 import { IssueTimeline } from "@/components/issue-timeline";
 import { Container } from "@/components/layout/container";
 import { ResolutionFeedback } from "@/components/report/resolution-feedback";
@@ -142,7 +141,7 @@ export default async function MyReportPage({ params }: PageProps<"/pelapor/lapor
                   Dokumentasi Bukti Hasil Pengerjaan ({selesaiEvent.evidence.length} Foto):
                 </span>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {selesaiEvent.evidence.map((att: any, idx: number) => (
+                  {selesaiEvent.evidence.map((att, idx) => (
                     <a
                       key={att.id || idx}
                       href={att.url}
@@ -262,35 +261,6 @@ export default async function MyReportPage({ params }: PageProps<"/pelapor/lapor
               />
             </Link>
           )}
-          <AsideCard title="Foto lampiran">
-            {report.attachments.length > 0 ? (
-              <div className="flex flex-col gap-3">
-                <div className="grid grid-cols-3 gap-2">
-                  {report.attachments.map((att, i) => (
-                    <a
-                      key={att.id}
-                      href={att.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group relative aspect-square overflow-hidden rounded-md border border-border-strong bg-surface-muted"
-                    >
-                      <Image
-                        src={att.url}
-                        alt={`Thumbnail ${i + 1}`}
-                        fill
-                        sizes="80px"
-                        className="object-cover transition-transform duration-200 group-hover:scale-105"
-                        unoptimized={att.url.startsWith("data:")}
-                      />
-                    </a>
-                  ))}
-                </div>
-                <p className="text-xs text-fg-muted">{report.attachments.length} foto terlampir.</p>
-              </div>
-            ) : (
-              <p className="text-sm text-fg-muted">Tidak ada foto.</p>
-            )}
-          </AsideCard>
         </aside>
       </div>
     </Container>
