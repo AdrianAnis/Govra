@@ -31,6 +31,7 @@ func (h *Handler) RegisterRoutes(app fiber.Router) {
 	app.Post("/programs/:code/updates", auth.RequireRole("dinas", "admin"), h.AddUpdate)
 
 	app.Get("/scorecard", h.GetScorecard)
+	app.Get("/scorecard/indicators/:code/items", h.GetIndicatorItems)
 	app.Get("/methodology", h.GetMethodology)
 }
 
@@ -156,10 +157,21 @@ func (h *Handler) GetOpdAnalytics(c *fiber.Ctx) error {
 	return c.JSON(res)
 }
 
+func (h *Handler) GetIndicatorItems(c *fiber.Ctx) error {
+	res, err := h.service.GetIndicatorItems(c.Context(), c.Params("code"), c.Query("opd"), c.QueryInt("page", 1), c.QueryInt("limit", 0))
+	if err != nil {
+		if errors.Is(err, ErrUnknownIndicator) {
+			return httpx.NewAppError(fiber.StatusNotFound, "NOT_FOUND", err.Error())
+		}
+		return httpx.NewAppError(fiber.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+	}
+	return c.JSON(res)
+}
+
 func (h *Handler) GetMethodology(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{
-		"title":       "Metodologi Rapor Kinerja Kepala Daerah Govra",
-		"version":     "1.0.0",
-		"description": "Perhitungan indikator transparansi berbasis tanggal pelaksanaan dan konfirmasi penyelesaian warga.",
-	})
+	res, err := h.service.GetMethodology(c.Context())
+	if err != nil {
+		return httpx.NewAppError(fiber.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+	}
+	return c.JSON(res)
 }

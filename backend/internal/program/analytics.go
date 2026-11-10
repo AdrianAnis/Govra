@@ -28,6 +28,8 @@ type OpdInfo struct {
 
 type ProgramFact struct {
 	ID          string
+	Code        string
+	Name        string
 	OpdCode     string
 	Start       time.Time
 	End         time.Time
@@ -43,6 +45,8 @@ type UpdateFact struct {
 }
 
 type IssueFact struct {
+	ID          string
+	Title       string
 	OpdCode     string
 	CreatedAt   time.Time
 	RespondedAt *time.Time

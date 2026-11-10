@@ -171,3 +171,58 @@ func TestOpdAnalytics_UsesProgramOwnProgress(t *testing.T) {
 		t.Errorf("bulan lalu tanpa riwayat harus 0, dapat %v", first.ProkerAvgProgress)
 	}
 }
+
+func TestIndicatorItems_Programs(t *testing.T) {
+	facts := sampleFacts()
+	facts.Programs[0].Code, facts.Programs[0].Name = "PRK-1", "Perbaikan Jalan"
+	facts.Programs[1].Code, facts.Programs[1].Name = "PRK-2", "Drainase Baru"
+	svc := newAnalyticsService(at(2026, 11, 10, 9), facts)
+	res, err := svc.GetIndicatorItems(context.Background(), "PENYERAPAN_ANGGARAN", "bina-marga", 1, 10)
+	if err != nil {
+		t.Fatalf("drill: %v", err)
+	}
+	if res.Total != 2 || len(res.Items) != 2 || res.Items[0].Kind != "PROGRAM" || res.Items[0].Opd.Slug != "bina-marga" {
+		t.Fatalf("data penyusun salah: %+v", res)
+	}
+	if res.Items[0].Note != "Realisasi Rp 400 dari pagu Rp 1.000." && res.Items[0].Note != "Realisasi Rp 600 dari pagu Rp 1.000." {
+		t.Errorf("catatan anggaran salah: %q", res.Items[0].Note)
+	}
+}
+
+func TestIndicatorItems_IssuesAndPaging(t *testing.T) {
+	facts := sampleFacts()
+	for i := range facts.Issues {
+		facts.Issues[i].ID = "isu-" + string(rune('a'+i))
+		facts.Issues[i].Title = "Isu " + string(rune('A'+i))
+	}
+	svc := newAnalyticsService(at(2026, 11, 10, 9), facts)
+	res, err := svc.GetIndicatorItems(context.Background(), "RESPONSIVITAS", "", 1, 2)
+	if err != nil {
+		t.Fatalf("drill: %v", err)
+	}
+	if res.Total != 3 || len(res.Items) != 2 || !res.Items[0].Counted || res.Items[1].Counted == false {
+		t.Fatalf("yang ikut dihitung harus di depan dan halaman dipotong: %+v", res)
+	}
+	last, _ := svc.GetIndicatorItems(context.Background(), "RESPONSIVITAS", "", 2, 2)
+	if len(last.Items) != 1 || last.Items[0].Counted || last.Items[0].Note != "Belum ada tanggapan pertama dari Dinas." {
+		t.Errorf("halaman terakhir salah: %+v", last)
+	}
+}
+
+func TestIndicatorItems_UnknownIndicatorAndOpd(t *testing.T) {
+	svc := newAnalyticsService(at(2026, 11, 10, 9), sampleFacts())
+	if _, err := svc.GetIndicatorItems(context.Background(), "NGAWUR", "", 1, 10); err != ErrUnknownIndicator {
+		t.Errorf("err = %v, want ErrUnknownIndicator", err)
+	}
+	res, err := svc.GetIndicatorItems(context.Background(), "PENYELESAIAN_ISU", "tidak-ada", 1, 10)
+	if err != nil || res.Total != 0 || res.Items == nil {
+		t.Errorf("OPD tak dikenal harus daftar kosong: %+v %v", res, err)
+	}
+}
+
+func TestMethodology_HasEveryIndicator(t *testing.T) {
+	doc, _ := newAnalyticsService(at(2026, 11, 10, 9), sampleFacts()).GetMethodology(context.Background())
+	if len(doc.Indicators) != 5 || len(doc.Thresholds) == 0 {
+		t.Errorf("metodologi tidak lengkap: %+v", doc)
+	}
+}

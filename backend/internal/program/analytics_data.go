@@ -25,6 +25,8 @@ type restCategoryFact struct {
 
 type restProgramFact struct {
 	ID          string   `json:"id"`
+	Code        string   `json:"code"`
+	Name        string   `json:"name"`
 	OpdID       *string  `json:"opd_id"`
 	StartDate   *string  `json:"start_date"`
 	EndDate     *string  `json:"end_date"`
@@ -41,6 +43,8 @@ type restUpdateFact struct {
 }
 
 type restIssueFact struct {
+	ID          string     `json:"id"`
+	Title       string     `json:"title"`
 	OpdID       *string    `json:"opd_id"`
 	CreatedAt   time.Time  `json:"created_at"`
 	RespondedAt *time.Time `json:"first_responded_at"`
@@ -122,7 +126,7 @@ func (r *repository) loadFactsSQL(ctx context.Context) (*AnalyticsFacts, error) 
 	}
 
 	programRows, err := r.db.Pool.Query(ctx, `
-		SELECT p.id::text, o.code, COALESCE(p.start_date::text, ''), COALESCE(p.end_date::text, ''),
+		SELECT p.id::text, p.code, p.name, o.code, COALESCE(p.start_date::text, ''), COALESCE(p.end_date::text, ''),
 		       COALESCE(p.budget_pagu, 0)::float8, COALESCE(p.budget_realization, 0)::float8,
 		       p.target_output::text, p.realization_output::float8
 		FROM app.programs p JOIN app.opds o ON o.id = p.opd_id
@@ -136,7 +140,7 @@ func (r *repository) loadFactsSQL(ctx context.Context) (*AnalyticsFacts, error) 
 		var start, end string
 		var target *string
 		var output *float64
-		if err := programRows.Scan(&fact.ID, &fact.OpdCode, &start, &end, &fact.Pagu, &fact.Realization, &target, &output); err != nil {
+		if err := programRows.Scan(&fact.ID, &fact.Code, &fact.Name, &fact.OpdCode, &start, &end, &fact.Pagu, &fact.Realization, &target, &output); err != nil {
 			programRows.Close()
 			return nil, err
 		}
@@ -162,14 +166,14 @@ func (r *repository) loadFactsSQL(ctx context.Context) (*AnalyticsFacts, error) 
 	updateRows.Close()
 
 	issueRows, err := r.db.Pool.Query(ctx, `
-		SELECT o.code, i.created_at, i.first_responded_at, i.resolved_at
+		SELECT i.id::text, i.title, o.code, i.created_at, i.first_responded_at, i.resolved_at
 		FROM app.issues i JOIN app.opds o ON o.id = i.opd_id`)
 	if err != nil {
 		return nil, err
 	}
 	for issueRows.Next() {
 		var fact IssueFact
-		if err := issueRows.Scan(&fact.OpdCode, &fact.CreatedAt, &fact.RespondedAt, &fact.ResolvedAt); err != nil {
+		if err := issueRows.Scan(&fact.ID, &fact.Title, &fact.OpdCode, &fact.CreatedAt, &fact.RespondedAt, &fact.ResolvedAt); err != nil {
 			issueRows.Close()
 			return nil, err
 		}
@@ -187,7 +191,7 @@ func (r *repository) loadFactsREST(ctx context.Context) (*AnalyticsFacts, error)
 		return nil, err
 	}
 	var programs []restProgramFact
-	if err := r.db.PostgRESTGet(ctx, "programs?select=id,opd_id,start_date,end_date,budget_pagu,budget_realization,target_output,realization_output&approval_status=eq.APPROVED", &programs); err != nil {
+	if err := r.db.PostgRESTGet(ctx, "programs?select=id,code,name,opd_id,start_date,end_date,budget_pagu,budget_realization,target_output,realization_output&approval_status=eq.APPROVED", &programs); err != nil {
 		return nil, err
 	}
 	var updates []restUpdateFact
@@ -195,7 +199,7 @@ func (r *repository) loadFactsREST(ctx context.Context) (*AnalyticsFacts, error)
 		return nil, err
 	}
 	var issues []restIssueFact
-	if err := r.db.PostgRESTGet(ctx, "issues?select=opd_id,created_at,first_responded_at,resolved_at", &issues); err != nil {
+	if err := r.db.PostgRESTGet(ctx, "issues?select=id,title,opd_id,created_at,first_responded_at,resolved_at", &issues); err != nil {
 		return nil, err
 	}
 	var categories []restCategoryFact
@@ -228,6 +232,8 @@ func (r *repository) loadFactsREST(ctx context.Context) (*AnalyticsFacts, error)
 		}
 		facts.Programs = append(facts.Programs, ProgramFact{
 			ID:          program.ID,
+			Code:        program.Code,
+			Name:        program.Name,
 			OpdCode:     code,
 			Start:       parseDate(program.StartDate, now),
 			End:         parseDate(program.EndDate, now),
@@ -247,7 +253,7 @@ func (r *repository) loadFactsREST(ctx context.Context) (*AnalyticsFacts, error)
 		if !ok {
 			continue
 		}
-		facts.Issues = append(facts.Issues, IssueFact{OpdCode: code, CreatedAt: issue.CreatedAt, RespondedAt: issue.RespondedAt, ResolvedAt: issue.ResolvedAt})
+		facts.Issues = append(facts.Issues, IssueFact{ID: issue.ID, Title: issue.Title, OpdCode: code, CreatedAt: issue.CreatedAt, RespondedAt: issue.RespondedAt, ResolvedAt: issue.ResolvedAt})
 	}
 	sortOpds(facts.Opds)
 	return facts, nil
@@ -263,7 +269,7 @@ func (r *repository) loadFactsMemory() *AnalyticsFacts {
 	now := time.Now()
 	for _, program := range r.programs {
 		start := parseDate(&program.StartDate, now)
-		facts.Programs = append(facts.Programs, ProgramFact{ID: program.ID, OpdCode: program.OpdCode, Start: start, End: parseDate(&program.EndDate, now), Current: program.Progress})
+		facts.Programs = append(facts.Programs, ProgramFact{ID: program.ID, Code: program.Code, Name: program.Name, OpdCode: program.OpdCode, Start: start, End: parseDate(&program.EndDate, now), Current: program.Progress})
 	}
 	sortOpds(facts.Opds)
 	return facts

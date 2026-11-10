@@ -47,6 +47,23 @@ export async function getIndicatorItems(
   code: Schema<"IndicatorCode">,
   filters: IndicatorItemFilters = {},
 ): Promise<Schema<"DrillList">> {
+  const apiBase = process.env.API_BASE_URL || "http://localhost:8080";
+  const query = new URLSearchParams();
+  if (filters.opd) query.set("opd", filters.opd);
+  if (filters.page) query.set("page", String(filters.page));
+  if (filters.limit) query.set("limit", String(filters.limit));
+  try {
+    const res = await fetch(`${apiBase}/scorecard/indicators/${code}/items?${query.toString()}`, {
+      headers: { "X-BFF-Key": BFF_KEY },
+      next: { revalidate: 60 },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && Array.isArray(data.items) && typeof data.total === "number") {
+        return data;
+      }
+    }
+  } catch {}
   const opdCode = OPDS.find((opd) => opd.ref.slug === filters.opd)?.ref.code;
   const unknownOpd = filters.opd !== undefined && opdCode === undefined;
   const items = unknownOpd ? [] : drillItems(code, opdCode);

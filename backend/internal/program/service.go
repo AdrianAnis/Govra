@@ -53,6 +53,8 @@ type Service interface {
 	AddUpdate(ctx context.Context, code string, req CreateUpdateRequest, author string) error
 	GetScorecard(ctx context.Context) (*Scorecard, error)
 	GetOpdAnalytics(ctx context.Context, slug string) (*OpdAnalytics, error)
+	GetIndicatorItems(ctx context.Context, code, opdSlug string, page, limit int) (*DrillList, error)
+	GetMethodology(ctx context.Context) (*MethodologyDoc, error)
 }
 
 type service struct {
