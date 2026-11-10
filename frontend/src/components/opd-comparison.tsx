@@ -14,7 +14,7 @@ function ValueLink({ indicator, opd }: { indicator: Indicator; opd: string }) {
   }
   return (
     <Link
-      href={`/rapor/${indicatorSlug(indicator.code)}?opd=${opd}`}
+      href={`/opd/${opd}`}
       className="text-lg font-semibold tabular-nums underline-offset-4 hover:text-primary hover:underline"
     >
       {formatIndicator(indicator.value, indicator.unit)}

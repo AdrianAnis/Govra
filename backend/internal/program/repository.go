@@ -23,6 +23,7 @@ type Repository interface {
 	CreateProgram(ctx context.Context, p *Program) error
 	ApproveProgram(ctx context.Context, code string) error
 	AddUpdate(ctx context.Context, code string, u *ProgramUpdate) error
+	LoadAnalyticsFacts(ctx context.Context) (*AnalyticsFacts, error)
 }
 
 type repository struct {

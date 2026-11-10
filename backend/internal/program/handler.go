@@ -1,6 +1,8 @@
 package program
 
 import (
+	"errors"
+
 	"github.com/gofiber/fiber/v2"
 	"govra/internal/platform/auth"
 	"govra/internal/platform/httpx"
@@ -20,6 +22,7 @@ func (h *Handler) RegisterRoutes(app fiber.Router) {
 	app.Get("/goals", h.ListGoals)
 	app.Get("/opds", h.ListOpds)
 	app.Get("/opds/:slug", h.GetOpdBySlug)
+	app.Get("/opds/:slug/analytics", h.GetOpdAnalytics)
 
 	app.Get("/programs", h.ListPrograms)
 	app.Get("/programs/:code", h.GetProgramByCode)
@@ -137,6 +140,17 @@ func (h *Handler) AddUpdate(c *fiber.Ctx) error {
 func (h *Handler) GetScorecard(c *fiber.Ctx) error {
 	res, err := h.service.GetScorecard(c.Context())
 	if err != nil {
+		return httpx.NewAppError(fiber.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
+	}
+	return c.JSON(res)
+}
+
+func (h *Handler) GetOpdAnalytics(c *fiber.Ctx) error {
+	res, err := h.service.GetOpdAnalytics(c.Context(), c.Params("slug"))
+	if err != nil {
+		if errors.Is(err, ErrOpdNotFound) {
+			return httpx.NewAppError(fiber.StatusNotFound, "NOT_FOUND", err.Error())
+		}
 		return httpx.NewAppError(fiber.StatusInternalServerError, "INTERNAL_ERROR", err.Error())
 	}
 	return c.JSON(res)

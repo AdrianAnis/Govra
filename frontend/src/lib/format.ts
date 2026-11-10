@@ -116,6 +116,13 @@ export function formatNumber(value: number): string {
   return numberFormat.format(value);
 }
 
+const monthFormat = new Intl.DateTimeFormat(LOCALE, { timeZone: TIME_ZONE, month: "long", year: "numeric" });
+
+export function formatMonth(yearMonth: string): string {
+  const date = new Date(`${yearMonth}-15T12:00:00+07:00`);
+  return Number.isNaN(date.getTime()) ? yearMonth : monthFormat.format(date);
+}
+
 const decimalFormat = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 1 });
 
 export function formatIndicator(value: number | null, unit: "PERCENT" | "HOURS"): string {

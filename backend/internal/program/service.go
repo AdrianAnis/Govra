@@ -52,14 +52,16 @@ type Service interface {
 	ApproveProgram(ctx context.Context, code string) error
 	AddUpdate(ctx context.Context, code string, req CreateUpdateRequest, author string) error
 	GetScorecard(ctx context.Context) (*Scorecard, error)
+	GetOpdAnalytics(ctx context.Context, slug string) (*OpdAnalytics, error)
 }
 
 type service struct {
 	repo Repository
+	now  func() time.Time
 }
 
 func NewService(repo Repository) Service {
-	return &service{repo: repo}
+	return &service{repo: repo, now: time.Now}
 }
 
 func (s *service) GetRegion(ctx context.Context) (*Region, error) {
@@ -172,44 +174,4 @@ func (s *service) AddUpdate(ctx context.Context, code string, req CreateUpdateRe
 		CreatedBy:           author,
 	}
 	return s.repo.AddUpdate(ctx, code, u)
-}
-
-func (s *service) GetScorecard(ctx context.Context) (*Scorecard, error) {
-	v1, v2, v3, v4, v5 := 85.5, 88.0, 18.5, 82.0, 79.4
-	indicators := []IndicatorValue{
-		{Code: "KETUNTASAN_PROKER", Label: "Ketuntasan proker", Unit: "PERCENT", Value: &v1, SampleSize: 12},
-		{Code: "KETEPATAN_JADWAL", Label: "Ketepatan jadwal", Unit: "PERCENT", Value: &v2, SampleSize: 25},
-		{Code: "RESPONSIVITAS", Label: "Responsivitas", Unit: "HOURS", Value: &v3, SampleSize: 45},
-		{Code: "PENYELESAIAN_ISU", Label: "Penyelesaian isu", Unit: "PERCENT", Value: &v4, SampleSize: 38},
-		{Code: "PENYERAPAN_ANGGARAN", Label: "Penyerapan anggaran", Unit: "PERCENT", Value: &v5, SampleSize: 18},
-	}
-	opds := []OpdScorecard{
-		{
-			Opd:        OpdRef{Code: "BMSDA", Slug: "dinas-bina-marga-sda", Name: "Dinas Bina Marga dan Sumber Daya Air"},
-			Indicators: indicators,
-		},
-		{
-			Opd:        OpdRef{Code: "DLHK", Slug: "dinas-lingkungan-hidup-kebersihan", Name: "Dinas Lingkungan Hidup dan Kebersihan"},
-			Indicators: indicators,
-		},
-		{
-			Opd:        OpdRef{Code: "DISHUB", Slug: "dinas-perhubungan", Name: "Dinas Perhubungan"},
-			Indicators: indicators,
-		},
-		{
-			Opd:        OpdRef{Code: "DINKES", Slug: "dinas-kesehatan", Name: "Dinas Kesehatan"},
-			Indicators: indicators,
-		},
-		{
-			Opd:        OpdRef{Code: "DISDIK", Slug: "dinas-pendidikan", Name: "Dinas Pendidikan"},
-			Indicators: indicators,
-		},
-	}
-	return &Scorecard{
-		Period:       ScorecardPeriod{StartYear: 2025, EndYear: 2030},
-		HeadLabel:    "Wali Kota Bandung (data simulasi)",
-		IsSimulation: true,
-		Indicators:   indicators,
-		ByOpd:        opds,
-	}, nil
 }
