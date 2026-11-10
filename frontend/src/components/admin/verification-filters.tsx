@@ -28,7 +28,7 @@ const QUEUE_TABS = [
   { kind: null, label: "Semua Status" },
   { kind: "VERIFIKASI", label: "Perlu Verifikasi" },
   { kind: "PENGALIHAN", label: "Pengalihan Dinas" },
-  { kind: "ABSTRAK", label: "⚠️ Abstrak / Kurang Jelas" },
+  { kind: "ABSTRAK", label: "Abstrak / Kurang Jelas" },
 ] as const;
 
 interface VerificationFiltersProps {
