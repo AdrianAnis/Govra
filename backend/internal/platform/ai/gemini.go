@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"govra/internal/platform/catalog"
 )
 
 type Client struct {
@@ -90,52 +92,44 @@ func NewClient(apiKey, model string) *Client {
 	}
 }
 
+func unregisteredResult(title, action string) *TriageResult {
+	return &TriageResult{
+		OpdCode:           catalog.Unregistered,
+		OpdName:           "Belum Ditentukan",
+		CategoryName:      "Belum Ditentukan",
+		SafetyRisk:        "NONE",
+		IsUnregisteredOpd: true,
+		Summary:           title,
+		RecommendedAction: action,
+	}
+}
+
 func (c *Client) ClassifyReport(ctx context.Context, title, description, district, village string) (*TriageResult, error) {
 	prompt := fmt.Sprintf(`Anda adalah AI Triage Pengaduan Pemerintah Daerah Kota.
-Tugas Anda adalah membaca dan menganalisis teks pengaduan warga khususnya field "Ceritakan apa yang terjadi" (Deskripsi Masalah) dan judul laporan, lalu memetakan dinas penanggung jawab yang terdaftar.
+Baca judul dan deskripsi pengaduan warga, lalu pilih SATU kategori yang paling tepat dari daftar resmi berikut. Dinas penanggung jawab otomatis mengikuti kategori yang dipilih.
 
-Dinas resmi yang terdaftar dan didukung sistem:
-1. DBM-SDA: Dinas Bina Marga & SDA (Jalan berlubang, aspal amblas, jembatan rusak, drainase banjir, gorong-gorong tersumbat, tanggul sungai jebol)
-2. DLHK: Dinas Lingkungan Hidup & Kebersihan (Tumpukan sampah liar, limbah industri beracun, pencemaran lingkungan, bau busuk sampah tak diangkut)
-3. DISHUB: Dinas Perhubungan (Lampu penerangan jalan padam, rambu lalu lintas roboh, lampu merah traffic light mati/error, parkir liar sembarangan)
-4. DINKES: Dinas Kesehatan (Pelayanan puskesmas/posyandu, wabah penyakit seperti DBD/kolera, ketiadaan sanitasi air bersih, ambulans darurat)
-5. PUPR: Dinas PUPR (Kerusakan infrastruktur gedung pelayanan publik pemerintah daerah, tata ruang wilayah, fasilitas umum fisik bangunan)
-
-ATURAN WAJIB DAN KETAT:
-Jika pengaduan yang disampaikan warga TIDAK MASUK ke dalam wewenang dari 5 dinas terdaftar di atas (misalnya: sengketa tanah antarwarga, pembuatan KTP/Akta, urusan perpajakan/pajak daerah, masalah ketenagakerjaan/gaji, izin usaha mikro, urusan tindak kriminal/pencurian, perselisihan sekolah/guru), maka Anda WAJIB menetapkan:
-- "is_unregistered_opd": true
-- "opd_code": "TIDAK_TERDAFTAR"
-- "opd_name": "Tidak Masuk ke Dinas Manapun yang Terdaftar"
-- "recommended_action": "Laporan ini tidak masuk ke dinas manapun yang terdaftar. Mohon tentukan dinas tujuan secara manual oleh Admin Pusat."
+Daftar dinas dan kategori resmi:
+%s
+Panduan memilih:
+- Pilih berdasarkan masalah utama yang dialami warga, bukan lokasinya.
+- Banjir yang disebabkan saluran tersumbat masuk DRAINASE-TERSUMBAT; banjir besar, longsor, atau kondisi darurat masuk BENCANA-ALAM.
+- Jika ada nyawa terancam atau korban, tetapkan safety_risk "HIGH" dan is_sensitive true.
+- Jika pengaduan TIDAK masuk wewenang satu pun kategori di atas (misalnya sengketa tanah antarwarga, KTP/akta, pajak, gaji, izin usaha, tindak kriminal, urusan sekolah), isi category_code "%s" dan is_unregistered_opd true.
 
 Judul: %s
-Deskripsi Masalah (Ceritakan apa yang terjadi): %s
+Deskripsi Masalah: %s
 Lokasi: Kecamatan %s, Kelurahan %s
 
 Keluarkan HANYA JSON tanpa markdown:
 {
-  "opd_code": "DBM-SDA",
-  "opd_name": "Dinas Bina Marga & SDA",
-  "category_code": "JALAN-RUSAK",
-  "category_name": "Jalan Rusak & Berlubang",
-  "confidence": 0.95,
-  "safety_risk": "NONE",
+  "category_code": "salah satu kode kategori di atas atau %s",
+  "confidence": 0.0 sampai 1.0,
+  "safety_risk": "NONE" atau "LOW" atau "MEDIUM" atau "HIGH",
   "is_sensitive": false,
   "is_unregistered_opd": false,
   "summary": "Ringkasan padat laporan maksimal 150 karakter",
-  "recommended_action": "Rekomendasi tindakan untuk Admin Pusat"
-}`, title, description, district, village)
-
-	fallbackRes := &TriageResult{
-		OpdCode:           "DBM-SDA",
-		OpdName:           "Dinas Bina Marga & SDA",
-		CategoryCode:      "JALAN-RUSAK",
-		CategoryName:      "Jalan Rusak & Berlubang",
-		Confidence:        0.75,
-		SafetyRisk:        "NONE",
-		Summary:           title,
-		RecommendedAction: "Perlu verifikasi manual oleh Administrator Pusat",
-	}
+  "recommended_action": "Rekomendasi tindakan singkat untuk Admin Pusat"
+}`, catalog.Prompt(), catalog.Unregistered, title, description, district, village, catalog.Unregistered)
 
 	raw, err := c.generateContent(ctx, geminiRequest{
 		Contents: []geminiContent{
@@ -143,54 +137,46 @@ Keluarkan HANYA JSON tanpa markdown:
 		},
 	})
 	if err != nil {
-		return fallbackRes, nil
+		return unregisteredResult(title, "Klasifikasi AI belum tersedia. Mohon tentukan dinas tujuan secara manual."), nil
 	}
 
-	cleaned := cleanJSON(raw)
 	var res TriageResult
-	if err := json.Unmarshal([]byte(cleaned), &res); err != nil {
-		return fallbackRes, nil
+	if err := json.Unmarshal([]byte(cleanJSON(raw)), &res); err != nil {
+		return unregisteredResult(title, "Klasifikasi AI belum tersedia. Mohon tentukan dinas tujuan secara manual."), nil
 	}
 
-	supportedOpds := map[string]string{
-		"DBM-SDA": "Dinas Bina Marga & SDA",
-		"DLHK":    "Dinas Lingkungan Hidup & Kebersihan",
-		"DISHUB":  "Dinas Perhubungan",
-		"DINKES":  "Dinas Kesehatan",
-		"PUPR":    "Dinas PUPR",
-	}
-
-	name, isSupported := supportedOpds[res.OpdCode]
-	if !isSupported || res.IsUnregisteredOpd || res.OpdCode == "TIDAK_TERDAFTAR" {
-		res.IsUnregisteredOpd = true
-		res.OpdCode = "TIDAK_TERDAFTAR"
-		res.OpdName = "Tidak Masuk ke Dinas Manapun yang Terdaftar"
-		if res.RecommendedAction == "" || !strings.Contains(res.RecommendedAction, "tidak masuk") {
-			res.RecommendedAction = "Laporan ini tidak masuk ke dinas manapun yang terdaftar. Mohon tentukan dinas tujuan secara manual oleh Admin Pusat."
+	category, known := catalog.FindCategory(res.CategoryCode)
+	if !known || res.IsUnregisteredOpd {
+		result := unregisteredResult(res.Summary, "Laporan ini tidak masuk ke dinas manapun yang terdaftar. Mohon tentukan dinas tujuan secara manual oleh Admin Pusat.")
+		result.Confidence = res.Confidence
+		result.SafetyRisk = normalizeRisk(res.SafetyRisk)
+		result.IsSensitive = res.IsSensitive
+		if result.Summary == "" {
+			result.Summary = title
 		}
-	} else {
-		res.OpdName = name
-		res.IsUnregisteredOpd = false
+		return result, nil
 	}
 
-	if res.CategoryName == "" {
-		categoryNames := map[string]string{
-			"JALAN-RUSAK":          "Jalan Rusak & Berlubang",
-			"DRAINASE-TERSUMBAT":   "Saluran Air & Drainase Tersumbat",
-			"SAMPAH-LIAR":          "Tumpukan Sampah Liar",
-			"LAMPU-JALAN":          "Lampu Penerangan Jalan Padam",
-			"RAMBU-RUSAK":          "Rambu & Traffic Light Rusak",
-			"FASILITAS-KESEHATAN":  "Layanan Kesehatan & Faskes",
-			"INFRASTRUKTUR-GEDUNG": "Infrastruktur & Gedung",
-		}
-		if cName, exists := categoryNames[res.CategoryCode]; exists {
-			res.CategoryName = cName
-		} else {
-			res.CategoryName = res.CategoryCode
-		}
+	opd, _ := catalog.FindOpd(category.OpdCode)
+	res.OpdCode = opd.Code
+	res.OpdName = opd.Name
+	res.CategoryCode = category.Code
+	res.CategoryName = category.Name
+	res.IsUnregisteredOpd = false
+	res.SafetyRisk = normalizeRisk(res.SafetyRisk)
+	res.Confidence = math.Min(1, math.Max(0, res.Confidence))
+	if res.Summary == "" {
+		res.Summary = title
 	}
-
 	return &res, nil
+}
+
+func normalizeRisk(risk string) string {
+	switch strings.ToUpper(strings.TrimSpace(risk)) {
+	case "LOW", "MEDIUM", "HIGH":
+		return strings.ToUpper(strings.TrimSpace(risk))
+	}
+	return "NONE"
 }
 
 func (c *Client) TranscribeAudio(ctx context.Context, audioBase64, mimeType string) (string, error) {

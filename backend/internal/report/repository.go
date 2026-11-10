@@ -1,6 +1,7 @@
 package report
 
 import (
+	"govra/internal/platform/catalog"
 	"context"
 	"errors"
 	"fmt"
@@ -93,26 +94,10 @@ func (r *repository) SaveReport(ctx context.Context, report *Report) error {
 		if _, err := uuid.Parse(report.VillageID); err == nil {
 			rr.VillageID = &report.VillageID
 		}
-		opdUUIDs := map[string]string{
-			"DBM-SDA": "e0000000-0000-0000-0000-000000000001",
-			"DLHK":    "e0000000-0000-0000-0000-000000000002",
-			"DISHUB":  "e0000000-0000-0000-0000-000000000003",
-			"DINKES":  "e0000000-0000-0000-0000-000000000004",
-			"PUPR":    "e0000000-0000-0000-0000-000000000007",
-		}
-		if u, ok := opdUUIDs[report.OpdID]; ok {
+		if u, ok := catalog.OpdUUID(report.OpdID); ok {
 			report.OpdID = u
 		}
-		catUUIDs := map[string]string{
-			"JALAN-RUSAK":          "f0000000-0000-0000-0000-000000000001",
-			"DRAINASE-TERSUMBAT":   "f0000000-0000-0000-0000-000000000002",
-			"SAMPAH-LIAR":          "f0000000-0000-0000-0000-000000000003",
-			"LAMPU-JALAN":          "f0000000-0000-0000-0000-000000000004",
-			"RAMBU-RUSAK":          "f0000000-0000-0000-0000-000000000005",
-			"INFRASTRUKTUR-GEDUNG": "f0000000-0000-0000-0000-000000000006",
-			"FASILITAS-KESEHATAN":  "f0000000-0000-0000-0000-000000000007",
-		}
-		if u, ok := catUUIDs[report.CategoryID]; ok {
+		if u, ok := catalog.CategoryUUID(report.CategoryID); ok {
 			report.CategoryID = u
 		}
 		if _, err := uuid.Parse(report.OpdID); err == nil {
@@ -129,11 +114,11 @@ func (r *repository) SaveReport(ctx context.Context, report *Report) error {
 
 		if report.AiOpdCode != "" {
 			var predOpdID *string
-			if u, ok := opdUUIDs[report.AiOpdCode]; ok {
+			if u, ok := catalog.OpdUUID(report.AiOpdCode); ok {
 				predOpdID = &u
 			}
 			var predCatID *string
-			if u, ok := catUUIDs[report.AiCategoryCode]; ok {
+			if u, ok := catalog.CategoryUUID(report.AiCategoryCode); ok {
 				predCatID = &u
 			}
 			type restClassification struct {
@@ -287,26 +272,10 @@ func (r *repository) FindMatchingIssueOrCluster(ctx context.Context, title, desc
 			UpdatedAt            time.Time `json:"updated_at"`
 		}
 
-		opdUUIDs := map[string]string{
-			"DBM-SDA": "e0000000-0000-0000-0000-000000000001",
-			"DLHK":    "e0000000-0000-0000-0000-000000000002",
-			"DISHUB":  "e0000000-0000-0000-0000-000000000003",
-			"DINKES":  "e0000000-0000-0000-0000-000000000004",
-			"PUPR":    "e0000000-0000-0000-0000-000000000007",
-		}
-		if u, ok := opdUUIDs[opdID]; ok {
+		if u, ok := catalog.OpdUUID(opdID); ok {
 			opdID = u
 		}
-		catUUIDs := map[string]string{
-			"JALAN-RUSAK":          "f0000000-0000-0000-0000-000000000001",
-			"DRAINASE-TERSUMBAT":   "f0000000-0000-0000-0000-000000000002",
-			"SAMPAH-LIAR":          "f0000000-0000-0000-0000-000000000003",
-			"LAMPU-JALAN":          "f0000000-0000-0000-0000-000000000004",
-			"RAMBU-RUSAK":          "f0000000-0000-0000-0000-000000000005",
-			"INFRASTRUKTUR-GEDUNG": "f0000000-0000-0000-0000-000000000006",
-			"FASILITAS-KESEHATAN":  "f0000000-0000-0000-0000-000000000007",
-		}
-		if u, ok := catUUIDs[categoryID]; ok {
+		if u, ok := catalog.CategoryUUID(categoryID); ok {
 			categoryID = u
 		}
 

@@ -1,6 +1,7 @@
 package issue
 
 import (
+	"govra/internal/platform/catalog"
 	"context"
 	"encoding/json"
 	"errors"
@@ -559,29 +560,13 @@ func (r *repository) UpdateStatus(ctx context.Context, issueID string, status Is
 }
 
 func (r *repository) RouteIssue(ctx context.Context, issueID, opdID, categoryID, note string) error {
-	opdUUIDs := map[string]string{
-		"DBM-SDA": "e0000000-0000-0000-0000-000000000001",
-		"DLHK":    "e0000000-0000-0000-0000-000000000002",
-		"DISHUB":  "e0000000-0000-0000-0000-000000000003",
-		"DINKES":  "e0000000-0000-0000-0000-000000000004",
-		"PUPR":    "e0000000-0000-0000-0000-000000000007",
-	}
 	targetOpdUUID := opdID
-	if mapped, ok := opdUUIDs[opdID]; ok {
+	if mapped, ok := catalog.OpdUUID(opdID); ok {
 		targetOpdUUID = mapped
 	}
 
-	catUUIDs := map[string]string{
-		"JALAN-RUSAK":          "f0000000-0000-0000-0000-000000000001",
-		"DRAINASE-TERSUMBAT":   "f0000000-0000-0000-0000-000000000002",
-		"SAMPAH-LIAR":          "f0000000-0000-0000-0000-000000000003",
-		"LAMPU-JALAN":          "f0000000-0000-0000-0000-000000000004",
-		"RAMBU-RUSAK":          "f0000000-0000-0000-0000-000000000005",
-		"INFRASTRUKTUR-GEDUNG": "f0000000-0000-0000-0000-000000000006",
-		"FASILITAS-KESEHATAN":  "f0000000-0000-0000-0000-000000000007",
-	}
 	targetCatUUID := categoryID
-	if mapped, ok := catUUIDs[categoryID]; ok {
+	if mapped, ok := catalog.CategoryUUID(categoryID); ok {
 		targetCatUUID = mapped
 	}
 
