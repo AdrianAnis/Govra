@@ -62,6 +62,11 @@ function isUrgency(value: string): value is Urgency {
   return value === "NORMAL" || value === "TINGGI" || value === "URGENT";
 }
 
+export function findIssueStatus(value: string | undefined): StatusMeta | null {
+  const key = (value ?? "").toUpperCase();
+  return isIssueStatus(key) ? ISSUE_STATUS[key] : null;
+}
+
 export function toProgramStatus(value: string): ProgramStatus {
   return isProgramStatus(value) ? value : "SESUAI_JADWAL";
 }

@@ -233,7 +233,7 @@ export async function listRoleNotifications(
           when: formatRelativeTime(time),
           href: `/pelapor/laporan/${rep.code}`,
           tabKey: tab,
-          unread: status === "SELESAI" || status === "DIPROSES" || status === "DITERUSKAN",
+          unread: status === "SELESAI" || status === "DIPROSES" || status === "DITERUSKAN" || status === "DITOLAK",
           meta: { code: rep.code, opdName, status },
         });
 

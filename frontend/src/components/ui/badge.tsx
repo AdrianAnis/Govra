@@ -2,18 +2,20 @@ import { cva, type VariantProps } from "class-variance-authority";
 import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
+const WEIGHT_TONE = {
+  netral: "border border-border-strong text-fg-muted",
+  berjalan: "bg-primary-soft text-primary-hover",
+  perhatian: "border-2 border-secondary text-secondary",
+  serius: "bg-secondary text-secondary-fg",
+  selesai: "bg-accent text-accent-fg",
+  ditolak: "bg-danger-soft text-danger",
+} as const;
+
 const badgeVariants = cva(
   "inline-flex h-7 w-fit shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 text-sm font-semibold [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
-      weight: {
-        netral: "border border-border-strong text-fg-muted",
-        berjalan: "bg-primary-soft text-primary-hover",
-        perhatian: "border-2 border-secondary text-secondary",
-        serius: "bg-secondary text-secondary-fg",
-        selesai: "bg-accent text-accent-fg",
-        ditolak: "bg-danger-soft text-danger",
-      },
+      weight: WEIGHT_TONE,
     },
     defaultVariants: { weight: "netral" },
   },
@@ -35,4 +37,4 @@ function Badge({
   );
 }
 
-export { Badge };
+export { Badge, WEIGHT_TONE };

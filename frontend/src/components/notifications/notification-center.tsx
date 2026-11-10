@@ -4,9 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CheckCheck, CheckCircle2, Clock, ExternalLink, Heart, Inbox, MessageSquare, ShieldCheck, Target, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
+import { WEIGHT_TONE } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDateTime } from "@/lib/format";
 import { useNotifications } from "@/lib/notifications-context";
+import { findIssueStatus } from "@/lib/status";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -294,6 +296,7 @@ export function NotificationCenter({ role = "pemerintah" }: Props) {
         <div className="flex flex-col divide-y divide-border rounded-lg border bg-surface">
           {filteredNotifications.map((item) => {
             const isUnread = item.unread;
+            const statusMeta = item.category === "LAPORAN" ? findIssueStatus(item.meta?.status) : null;
             return (
               <div
                 key={item.id}
@@ -306,7 +309,11 @@ export function NotificationCenter({ role = "pemerintah" }: Props) {
               >
                 <div className="flex items-start gap-3.5">
                   <div className="mt-0.5 relative shrink-0">
-                    {item.category === "VERIFIKASI" ? (
+                    {statusMeta ? (
+                      <div className={cn("grid size-9 place-items-center rounded-md", WEIGHT_TONE[statusMeta.weight])}>
+                        <statusMeta.icon aria-hidden className="size-4" />
+                      </div>
+                    ) : item.category === "VERIFIKASI" ? (
                       <div className="grid size-9 place-items-center rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
                         <ShieldCheck className="size-4" />
                       </div>
