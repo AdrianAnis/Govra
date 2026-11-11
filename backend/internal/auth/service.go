@@ -27,6 +27,7 @@ type Service interface {
 	ForgotPassword(ctx context.Context, emailAddress string) (map[string]any, error)
 	ResetPassword(ctx context.Context, req ResetPasswordRequest) error
 	GetProfile(ctx context.Context, userID string) (*User, error)
+	UpdateProfile(ctx context.Context, userID string, req UpdateProfileRequest) (*User, error)
 	OAuthLogin(ctx context.Context, req OAuthLoginRequest) (*AuthResponse, error)
 }
 
@@ -353,6 +354,30 @@ func (s *service) GetProfile(ctx context.Context, userID string) (*User, error) 
 	return s.repo.GetUserByID(ctx, userID)
 }
 
+func (s *service) UpdateProfile(ctx context.Context, userID string, req UpdateProfileRequest) (*User, error) {
+	if strings.TrimSpace(req.DisplayName) != "" && len(strings.TrimSpace(req.DisplayName)) < 2 {
+		return nil, errors.New("nama lengkap minimal 2 karakter")
+	}
+	var normalizedPhone string
+	if strings.TrimSpace(req.Phone) != "" {
+		np, valid := phone.Normalize(req.Phone)
+		if !valid {
+			return nil, ErrInvalidPhone
+		}
+		normalizedPhone = np
+	}
+	return s.repo.UpdateProfile(ctx, userID, UpdateProfileRequest{
+		DisplayName: strings.TrimSpace(req.DisplayName),
+		Phone:       normalizedPhone,
+		AvatarURL:   strings.TrimSpace(req.AvatarURL),
+		NIK:         strings.TrimSpace(req.NIK),
+		Address:     strings.TrimSpace(req.Address),
+		District:    strings.TrimSpace(req.District),
+		Village:     strings.TrimSpace(req.Village),
+		Bio:         strings.TrimSpace(req.Bio),
+	})
+}
+
 func (s *service) OAuthLogin(ctx context.Context, req OAuthLoginRequest) (*AuthResponse, error) {
 	if req.Email == "" {
 		return nil, errors.New("email wajib diisi")
@@ -397,8 +422,9 @@ func (s *service) OAuthLogin(ctx context.Context, req OAuthLoginRequest) (*AuthR
 		if u.Status != "ACTIVE" {
 			return nil, errors.New("akun anda sedang dinonaktifkan")
 		}
-		if req.AvatarURL != "" && u.AvatarURL == "" {
+		if req.AvatarURL != "" {
 			u.AvatarURL = req.AvatarURL
+			_, _ = s.repo.UpdateProfile(ctx, u.ID, UpdateProfileRequest{AvatarURL: req.AvatarURL})
 		}
 	}
 

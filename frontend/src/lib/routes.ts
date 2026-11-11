@@ -2,6 +2,7 @@ export const REPORTER_HOME = "/pelapor";
 export const REPORT_NEW = "/pelapor/lapor";
 export const REPORT_DETAIL_PREFIX = "/pelapor/laporan";
 export const PROFILE = "/pelapor/profil";
+export const PROFILE_EDIT = "/pelapor/profil/edit";
 export const AGENCY_HOME = "/dinas";
 export const ADMIN_HOME = "/admin";
 export const PEMERINTAH_HOME = "/pemerintah";

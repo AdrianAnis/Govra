@@ -75,13 +75,18 @@ func (r *repository) ListFeeds(ctx context.Context, userID, tab string) ([]FeedI
 			}
 
 			var profList []struct {
-				ID          string `json:"id"`
-				DisplayName string `json:"display_name"`
+				ID          string  `json:"id"`
+				DisplayName string  `json:"display_name"`
+				AvatarURL   *string `json:"avatar_url"`
 			}
-			_ = r.db.PostgRESTGet(ctx, "profiles?select=id,display_name", &profList)
+			_ = r.db.PostgRESTGet(ctx, "profiles?select=id,display_name,avatar_url", &profList)
 			profMap := make(map[string]string)
+			avatarMap := make(map[string]string)
 			for _, p := range profList {
 				profMap[p.ID] = p.DisplayName
+				if p.AvatarURL != nil {
+					avatarMap[p.ID] = *p.AvatarURL
+				}
 			}
 
 			var distList []struct {
@@ -143,8 +148,16 @@ func (r *repository) ListFeeds(ctx context.Context, userID, tab string) ([]FeedI
 			items := make([]FeedItem, 0, len(repList))
 			for _, rep := range repList {
 				author := "Warga Bandung"
-				if rep.ReporterID != nil && profMap[*rep.ReporterID] != "" {
-					author = profMap[*rep.ReporterID]
+				authorAvatar := ""
+				authorID := ""
+				if rep.ReporterID != nil {
+					authorID = *rep.ReporterID
+					if profMap[authorID] != "" {
+						author = profMap[authorID]
+					}
+					if avatarMap[authorID] != "" {
+						authorAvatar = avatarMap[authorID]
+					}
 				}
 
 				locParts := []string{}
@@ -224,8 +237,9 @@ func (r *repository) ListFeeds(ctx context.Context, userID, tab string) ([]FeedI
 
 				items = append(items, FeedItem{
 					ID:            rep.ID,
-					AuthorID:      "",
+					AuthorID:      authorID,
 					AuthorName:    author,
+					AuthorAvatar:  authorAvatar,
 					ReportID:      rep.ID,
 					ReportCode:    rep.Code,
 					IssueTitle:    title,
@@ -398,15 +412,36 @@ func (r *repository) ListComments(ctx context.Context, feedID string) ([]Comment
 		}
 		endpoint := fmt.Sprintf("feed_comments?feed_id=eq.%s&order=created_at.asc", url.QueryEscape(feedID))
 		if err := r.db.PostgRESTGet(ctx, endpoint, &dbComments); err == nil && len(dbComments) > 0 {
+			userIDs := make([]string, 0, len(dbComments))
+			for _, c := range dbComments {
+				if c.UserID != "" {
+					userIDs = append(userIDs, c.UserID)
+				}
+			}
+			commentAvatars := make(map[string]string)
+			if len(userIDs) > 0 {
+				var cProfs []struct {
+					ID        string  `json:"id"`
+					AvatarURL *string `json:"avatar_url"`
+				}
+				_ = r.db.PostgRESTGet(ctx, fmt.Sprintf("profiles?select=id,avatar_url&id=in.(%s)", strings.Join(userIDs, ",")), &cProfs)
+				for _, cp := range cProfs {
+					if cp.AvatarURL != nil {
+						commentAvatars[cp.ID] = *cp.AvatarURL
+					}
+				}
+			}
+
 			res := make([]CommentItem, len(dbComments))
 			for i, c := range dbComments {
 				res[i] = CommentItem{
-					ID:         c.ID,
-					FeedID:     c.FeedID,
-					UserID:     c.UserID,
-					AuthorName: c.AuthorName,
-					Content:    c.Content,
-					CreatedAt:  c.CreatedAt,
+					ID:           c.ID,
+					FeedID:       c.FeedID,
+					UserID:       c.UserID,
+					AuthorName:   c.AuthorName,
+					AuthorAvatar: commentAvatars[c.UserID],
+					Content:      c.Content,
+					CreatedAt:    c.CreatedAt,
 				}
 			}
 			return res, nil

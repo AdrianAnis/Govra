@@ -71,6 +71,27 @@ function renderStatusBadge(status?: string) {
   }
 }
 
+function AuthorAvatar({ avatarUrl, name }: { avatarUrl?: string | undefined; name: string }) {
+  const [error, setError] = useState(false);
+  const initial = name ? name.charAt(0).toUpperCase() : "W";
+
+  return (
+    <div className="relative flex size-9 sm:size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-xs sm:text-sm font-bold text-secondary-fg overflow-hidden border border-border">
+      {avatarUrl && !error ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={avatarUrl}
+          alt={name}
+          className="size-full object-cover"
+          onError={() => setError(true)}
+        />
+      ) : (
+        initial
+      )}
+    </div>
+  );
+}
+
 export function FeedCard({ item, now }: FeedCardProps) {
   const [liked, setLiked] = useState(item.is_liked);
   const [likesCount, setLikesCount] = useState(item.likes_count);
@@ -171,9 +192,7 @@ export function FeedCard({ item, now }: FeedCardProps) {
         <div className="flex flex-col gap-3 p-3.5 sm:p-5">
           <div className="flex items-start justify-between gap-2.5">
             <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
-              <div className="flex size-9 sm:size-10 shrink-0 items-center justify-center rounded-full bg-secondary text-xs sm:text-sm font-bold text-secondary-fg">
-                {item.author_name.charAt(0).toUpperCase()}
-              </div>
+              <AuthorAvatar avatarUrl={item.author_avatar} name={item.author_name} />
               <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="font-semibold text-fg text-sm truncate max-w-[150px] sm:max-w-xs">

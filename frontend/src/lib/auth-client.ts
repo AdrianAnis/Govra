@@ -40,3 +40,31 @@ export function resetPassword(password: string, email?: string, token?: string, 
 export function deleteAccount() {
   return request("/api/me", { method: "DELETE" }, okSchema);
 }
+
+export interface UpdateProfileInput {
+  displayName: string;
+  phone?: string;
+  avatarUrl?: string;
+  nik?: string;
+  address?: string;
+  district?: string;
+  village?: string;
+  bio?: string;
+}
+
+const profileUpdateResultSchema = z.object({
+  ok: z.literal(true),
+  profile: z.record(z.string(), z.unknown()).optional(),
+});
+
+export function updateProfile(input: UpdateProfileInput) {
+  return request(
+    "/api/me",
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+    profileUpdateResultSchema,
+  );
+}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { NavLink } from "@/components/layout/nav-link";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { UserMenu } from "@/components/layout/user-menu";
@@ -41,15 +42,27 @@ function UserActions({ user, notifications }: UserActionsProps) {
 }
 
 function MobileAccount({ user, onNavigate }: { user: SessionUser; onNavigate: () => void }) {
+  const [imageError, setImageError] = useState(false);
+
   return (
     <div className="flex flex-col gap-3 border-t pt-4">
       <div className="flex items-center gap-3 px-1">
-        <span className="grid size-10 place-items-center rounded-full bg-secondary text-sm font-semibold text-secondary-fg">
-          {user.initials}
-        </span>
-        <span className="flex flex-col">
-          <span className="font-semibold">{user.name}</span>
-          <span className="text-sm text-fg-muted">{user.email}</span>
+        <div className="relative size-10 rounded-full bg-secondary text-secondary-fg flex items-center justify-center overflow-hidden shrink-0 border border-border">
+          {user.avatarUrl && !imageError ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={user.avatarUrl}
+              alt={user.name}
+              className="size-full object-cover"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <span className="text-sm font-semibold">{user.initials}</span>
+          )}
+        </div>
+        <span className="flex flex-col min-w-0">
+          <span className="font-semibold truncate">{user.name}</span>
+          <span className="text-sm text-fg-muted truncate">{user.email}</span>
         </span>
       </div>
       <NavLink

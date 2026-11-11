@@ -30,6 +30,7 @@ export interface CommentItem {
   feed_id: string;
   user_id: string;
   author_name: string;
+  author_avatar?: string;
   content: string;
   created_at: string;
 }

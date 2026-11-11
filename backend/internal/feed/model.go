@@ -38,12 +38,13 @@ type FeedItem struct {
 }
 
 type CommentItem struct {
-	ID         string    `json:"id"`
-	FeedID     string    `json:"feed_id"`
-	UserID     string    `json:"user_id"`
-	AuthorName string    `json:"author_name"`
-	Content    string    `json:"content"`
-	CreatedAt  time.Time `json:"created_at"`
+	ID           string    `json:"id"`
+	FeedID       string    `json:"feed_id"`
+	UserID       string    `json:"user_id"`
+	AuthorName   string    `json:"author_name"`
+	AuthorAvatar string    `json:"author_avatar,omitempty"`
+	Content      string    `json:"content"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 type SupporterItem struct {

@@ -25,8 +25,24 @@ type User struct {
 	Status       string    `json:"status"`
 	Phone        string    `json:"phone,omitempty"`
 	AvatarURL    string    `json:"avatar_url,omitempty"`
+	NIK          string    `json:"nik,omitempty"`
+	Address      string    `json:"address,omitempty"`
+	District     string    `json:"district,omitempty"`
+	Village      string    `json:"village,omitempty"`
+	Bio          string    `json:"bio,omitempty"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type UpdateProfileRequest struct {
+	DisplayName string `json:"display_name"`
+	Phone       string `json:"phone,omitempty"`
+	AvatarURL   string `json:"avatar_url,omitempty"`
+	NIK         string `json:"nik,omitempty"`
+	Address     string `json:"address,omitempty"`
+	District    string `json:"district,omitempty"`
+	Village     string `json:"village,omitempty"`
+	Bio         string `json:"bio,omitempty"`
 }
 
 type OTPVerification struct {

@@ -12,6 +12,27 @@ interface FeedCommentsProps {
   onCommentAdded?: () => void;
 }
 
+function CommentAvatar({ avatarUrl, name }: { avatarUrl?: string | undefined; name: string }) {
+  const [error, setError] = useState(false);
+  const initial = name ? name.charAt(0).toUpperCase() : "W";
+
+  return (
+    <div className="relative flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary text-[10px] font-bold text-secondary-fg overflow-hidden border border-border">
+      {avatarUrl && !error ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={avatarUrl}
+          alt={name}
+          className="size-full object-cover"
+          onError={() => setError(true)}
+        />
+      ) : (
+        initial
+      )}
+    </div>
+  );
+}
+
 export function FeedComments({ feedId, onCommentAdded }: FeedCommentsProps) {
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [content, setContent] = useState("");
@@ -72,9 +93,7 @@ export function FeedComments({ feedId, onCommentAdded }: FeedCommentsProps) {
         ) : (
           comments.map((cm) => (
             <div key={cm.id} className="flex gap-2.5 text-xs">
-              <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary text-[10px] font-bold text-secondary-fg">
-                {cm.author_name.charAt(0).toUpperCase()}
-              </div>
+              <CommentAvatar avatarUrl={cm.author_avatar} name={cm.author_name} />
               <div className="flex flex-1 flex-col rounded-md border border-border/80 bg-surface px-3 py-2">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-semibold text-fg">{cm.author_name}</span>

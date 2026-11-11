@@ -20,6 +20,7 @@ type Repository interface {
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
 	GetUserByID(ctx context.Context, id string) (*User, error)
 	UpdatePassword(ctx context.Context, email, newPasswordHash string) error
+	UpdateProfile(ctx context.Context, id string, req UpdateProfileRequest) (*User, error)
 	SaveOTP(ctx context.Context, otp *OTPVerification) error
 	GetLatestOTP(ctx context.Context, email, purpose string) (*OTPVerification, error)
 	GetOTPByToken(ctx context.Context, token string) (*OTPVerification, error)
@@ -187,9 +188,9 @@ func (r *repository) CreateUser(ctx context.Context, u *User) error {
 	u.UpdatedAt = time.Now()
 
 	if r.db != nil && r.db.Pool != nil {
-		query := `INSERT INTO app.profiles (id, email, password_hash, display_name, role, opd_id, status, phone, created_at, updated_at) 
-		          VALUES ($1, $2, $3, $4, $5, NULLIF($6, '')::uuid, $7, $8, $9, $10)`
-		_, err := r.db.Pool.Exec(ctx, query, u.ID, u.Email, u.PasswordHash, u.DisplayName, string(u.Role), u.OpdID, u.Status, u.Phone, u.CreatedAt, u.UpdatedAt)
+		query := `INSERT INTO app.profiles (id, email, password_hash, display_name, role, opd_id, status, phone, avatar_url, created_at, updated_at) 
+		          VALUES ($1, $2, $3, $4, $5, NULLIF($6, '')::uuid, $7, $8, $9, $10, $11)`
+		_, err := r.db.Pool.Exec(ctx, query, u.ID, u.Email, u.PasswordHash, u.DisplayName, string(u.Role), u.OpdID, u.Status, u.Phone, u.AvatarURL, u.CreatedAt, u.UpdatedAt)
 		return err
 	}
 
@@ -203,6 +204,7 @@ func (r *repository) CreateUser(ctx context.Context, u *User) error {
 			OpdID        *string `json:"opd_id,omitempty"`
 			Status       string  `json:"status"`
 			Phone        string  `json:"phone,omitempty"`
+			AvatarURL    string  `json:"avatar_url,omitempty"`
 		}
 		ru := restUser{
 			ID:           u.ID,
@@ -212,6 +214,7 @@ func (r *repository) CreateUser(ctx context.Context, u *User) error {
 			Role:         string(u.Role),
 			Status:       u.Status,
 			Phone:        u.Phone,
+			AvatarURL:    u.AvatarURL,
 		}
 		if u.OpdID != "" {
 			ru.OpdID = &u.OpdID
@@ -390,6 +393,84 @@ func (r *repository) UpdatePassword(ctx context.Context, email, newPasswordHash 
 	}
 	u.PasswordHash = newPasswordHash
 	return nil
+}
+
+func (r *repository) UpdateProfile(ctx context.Context, id string, req UpdateProfileRequest) (*User, error) {
+	if r.db != nil && r.db.Pool != nil {
+		if req.AvatarURL == "__REMOVE__" {
+			query := `UPDATE app.profiles 
+			          SET display_name = COALESCE(NULLIF($2, ''), display_name),
+			              phone = COALESCE(NULLIF($3, ''), phone),
+			              avatar_url = NULL,
+			              updated_at = now() 
+			          WHERE id = $1`
+			_, _ = r.db.Pool.Exec(ctx, query, id, req.DisplayName, req.Phone)
+		} else {
+			query := `UPDATE app.profiles 
+			          SET display_name = COALESCE(NULLIF($2, ''), display_name),
+			              phone = COALESCE(NULLIF($3, ''), phone),
+			              avatar_url = COALESCE(NULLIF($4, ''), avatar_url),
+			              updated_at = now() 
+			          WHERE id = $1`
+			_, _ = r.db.Pool.Exec(ctx, query, id, req.DisplayName, req.Phone, req.AvatarURL)
+		}
+	}
+
+	if r.db != nil && r.db.HasREST() {
+		endpoint := fmt.Sprintf("profiles?id=eq.%s", url.QueryEscape(id))
+		patchData := map[string]any{
+			"updated_at": time.Now(),
+		}
+		if req.DisplayName != "" {
+			patchData["display_name"] = req.DisplayName
+		}
+		if req.Phone != "" {
+			patchData["phone"] = req.Phone
+		}
+		if req.AvatarURL == "__REMOVE__" {
+			patchData["avatar_url"] = nil
+		} else if req.AvatarURL != "" {
+			patchData["avatar_url"] = req.AvatarURL
+		}
+		_ = r.db.PostgRESTPatch(ctx, endpoint, patchData)
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, u := range r.users {
+		if u.ID == id {
+			if req.DisplayName != "" {
+				u.DisplayName = req.DisplayName
+			}
+			if req.Phone != "" {
+				u.Phone = req.Phone
+			}
+			if req.AvatarURL == "__REMOVE__" {
+				u.AvatarURL = ""
+			} else if req.AvatarURL != "" {
+				u.AvatarURL = req.AvatarURL
+			}
+			if req.NIK != "" {
+				u.NIK = req.NIK
+			}
+			if req.Address != "" {
+				u.Address = req.Address
+			}
+			if req.District != "" {
+				u.District = req.District
+			}
+			if req.Village != "" {
+				u.Village = req.Village
+			}
+			if req.Bio != "" {
+				u.Bio = req.Bio
+			}
+			u.UpdatedAt = time.Now()
+			return u, nil
+		}
+	}
+
+	return r.GetUserByID(ctx, id)
 }
 
 func (r *repository) SaveOTP(ctx context.Context, otp *OTPVerification) error {

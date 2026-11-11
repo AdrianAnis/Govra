@@ -28,6 +28,8 @@ func (h *Handler) RegisterRoutes(app fiber.Router) {
 	g.Post("/oauth-login", h.OAuthLogin)
 
 	app.Get("/me", h.GetMe)
+	app.Put("/me", h.UpdateMe)
+	app.Patch("/me", h.UpdateMe)
 	app.Get("/me/export", h.ExportMyData)
 }
 
@@ -130,7 +132,50 @@ func (h *Handler) GetMe(c *fiber.Ctx) error {
 		"display_name": user.DisplayName,
 		"role":         user.Role,
 		"opd_id":       user.OpdID,
+		"opd_name":     user.OpdName,
+		"status":       user.Status,
 		"phone":        user.Phone,
+		"avatar_url":   user.AvatarURL,
+		"nik":          user.NIK,
+		"address":      user.Address,
+		"district":     user.District,
+		"village":      user.Village,
+		"bio":          user.Bio,
+	})
+}
+
+func (h *Handler) UpdateMe(c *fiber.Ctx) error {
+	role := auth.CurrentRole(c)
+	if role == "anon" {
+		return httpx.NewAppError(fiber.StatusUnauthorized, "UNAUTHORIZED", "Wajib login")
+	}
+	userID := auth.CurrentUserID(c)
+	var req UpdateProfileRequest
+	if err := c.BodyParser(&req); err != nil {
+		return httpx.NewAppError(fiber.StatusBadRequest, "BAD_REQUEST", "Format permintaan tidak valid")
+	}
+	user, err := h.service.UpdateProfile(c.Context(), userID, req)
+	if err != nil {
+		if errors.Is(err, ErrInvalidPhone) {
+			return httpx.NewAppError(fiber.StatusUnprocessableEntity, "INVALID_PHONE", err.Error())
+		}
+		return httpx.NewAppError(fiber.StatusBadRequest, "UPDATE_FAILED", err.Error())
+	}
+	return c.JSON(fiber.Map{
+		"id":           user.ID,
+		"email":        user.Email,
+		"display_name": user.DisplayName,
+		"role":         user.Role,
+		"opd_id":       user.OpdID,
+		"opd_name":     user.OpdName,
+		"status":       user.Status,
+		"phone":        user.Phone,
+		"avatar_url":   user.AvatarURL,
+		"nik":          user.NIK,
+		"address":      user.Address,
+		"district":     user.District,
+		"village":      user.Village,
+		"bio":          user.Bio,
 	})
 }
 

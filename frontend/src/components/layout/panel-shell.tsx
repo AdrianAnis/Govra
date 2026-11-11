@@ -77,9 +77,14 @@ function PanelSidebar({
       </div>
       <div className="mt-auto flex flex-col gap-2 border-t border-secondary-fg/20 pt-3">
         <div className={cn("flex items-center gap-3 px-2", collapsed && "justify-center px-0")}>
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-secondary-fg/15 text-sm font-semibold">
-            {user.initials}
-          </span>
+          <div className="relative size-9 shrink-0 rounded-full bg-secondary-fg/15 text-sm font-semibold flex items-center justify-center overflow-hidden border border-secondary-fg/20">
+            {user.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={user.avatarUrl} alt={user.name} className="size-full object-cover" />
+            ) : (
+              user.initials
+            )}
+          </div>
           {!collapsed && (
             <span className="flex min-w-0 flex-col">
               <span className="truncate text-sm font-semibold">{user.name}</span>
@@ -127,7 +132,17 @@ function PanelMobileBar({ title, items, user }: PanelMobileProps) {
             <PanelNav items={items} tone="light" onNavigate={() => setOpen(false)} />
           </div>
           <div className="mt-auto flex flex-col gap-2 border-t p-3">
-            <p className="px-2 text-sm font-semibold">{user.name}</p>
+            <div className="flex items-center gap-3 px-2 py-1">
+              <div className="relative size-8 rounded-full bg-secondary text-secondary-fg flex items-center justify-center overflow-hidden shrink-0 border border-border">
+                {user.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.avatarUrl} alt={user.name} className="size-full object-cover" />
+                ) : (
+                  <span className="text-xs font-semibold">{user.initials}</span>
+                )}
+              </div>
+              <p className="text-sm font-semibold truncate">{user.name}</p>
+            </div>
             <a href="/api/auth/keluar" className={cn(buttonVariants({ variant: "ghost" }), "justify-start")}>
               <LogOut aria-hidden />
               Keluar

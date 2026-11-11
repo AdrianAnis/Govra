@@ -313,3 +313,67 @@ func TestOAuthLogin(t *testing.T) {
 		t.Fatalf("expected role pelapor, got: %s", resLogin.Profile.Role)
 	}
 }
+
+func TestUpdateProfile(t *testing.T) {
+	app, _, tm, _ := setupTestApp()
+
+	token, err := tm.Generate("00000000-0000-0000-0000-000000000007", "rina.pelapor@gmail.com", "Rina Handayani", "pelapor", "")
+	if err != nil {
+		t.Fatalf("failed to generate token: %v", err)
+	}
+
+	body, _ := json.Marshal(auth.UpdateProfileRequest{
+		DisplayName: "Rina Handayani S.T.",
+		Phone:       "081234567890",
+		NIK:         "3273012304950002",
+		District:    "Regol",
+		Village:     "Ciateul",
+		Address:     "Jl. Ciateul No. 12",
+		Bio:         "Warga aktif pemerhati jalan lingkungan",
+	})
+
+	req := httptest.NewRequest(http.MethodPut, "/me", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := app.Test(req, 5000)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", resp.StatusCode)
+	}
+
+	var updated map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&updated); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if updated["display_name"] != "Rina Handayani S.T." {
+		t.Fatalf("expected updated display_name, got %v", updated["display_name"])
+	}
+	if updated["phone"] != "6281234567890" {
+		t.Fatalf("expected normalized phone 6281234567890, got %v", updated["phone"])
+	}
+	if updated["nik"] != "3273012304950002" {
+		t.Fatalf("expected nik 3273012304950002, got %v", updated["nik"])
+	}
+
+	reqGet := httptest.NewRequest(http.MethodGet, "/me", nil)
+	reqGet.Header.Set("Authorization", "Bearer "+token)
+	respGet, err := app.Test(reqGet, 5000)
+	if err != nil {
+		t.Fatalf("get request failed: %v", err)
+	}
+	if respGet.StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200 on get, got %d", respGet.StatusCode)
+	}
+
+	var fetched map[string]any
+	if err := json.NewDecoder(respGet.Body).Decode(&fetched); err != nil {
+		t.Fatalf("failed to decode get response: %v", err)
+	}
+	if fetched["display_name"] != "Rina Handayani S.T." {
+		t.Fatalf("expected persisted display_name, got %v", fetched["display_name"])
+	}
+}

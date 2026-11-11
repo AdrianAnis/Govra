@@ -136,8 +136,21 @@ export function MobileBottomNav({ user, notifications = [] }: MobileBottomNavPro
               />
             }
           >
-            <div className="relative">
-              {user ? <User className="size-5" /> : <Menu className="size-5" />}
+            <div className="relative flex items-center justify-center">
+              {user ? (
+                user.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.name}
+                    className="size-5 rounded-full object-cover border border-border"
+                  />
+                ) : (
+                  <User className="size-5" />
+                )
+              ) : (
+                <Menu className="size-5" />
+              )}
               {unreadCount > 0 && (
                 <span className="absolute -top-0.5 -right-1 flex size-2 rounded-full bg-destructive" />
               )}
@@ -154,9 +167,14 @@ export function MobileBottomNav({ user, notifications = [] }: MobileBottomNavPro
               </SheetTitle>
               {user ? (
                 <div className="flex items-center gap-3 pt-2">
-                  <span className="grid size-10 place-items-center rounded-full bg-secondary text-sm font-bold text-secondary-fg shrink-0">
-                    {user.initials}
-                  </span>
+                  <div className="relative size-10 rounded-full bg-secondary flex items-center justify-center overflow-hidden shrink-0 border border-border">
+                    {user.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={user.avatarUrl} alt={user.name} className="size-full object-cover" />
+                    ) : (
+                      <span className="text-sm font-bold text-secondary-fg">{user.initials}</span>
+                    )}
+                  </div>
                   <div className="flex flex-col min-w-0">
                     <span className="text-sm font-bold text-foreground truncate">{user.name}</span>
                     <span className="text-xs text-muted-foreground truncate">{user.email}</span>

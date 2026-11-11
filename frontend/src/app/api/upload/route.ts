@@ -39,7 +39,8 @@ export async function POST(request: Request) {
 
     const ext = file.name.split(".").pop() || "jpg";
     const cleanExt = ext.toLowerCase().replace(/[^a-z0-9]/g, "");
-    const filename = `proker-${Date.now()}-${Math.random().toString(36).slice(2, 9)}.${cleanExt || "jpg"}`;
+    const prefix = formData.get("type") === "avatar" || file.name.includes("avatar") ? "avatar" : "proker";
+    const filename = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}.${cleanExt || "jpg"}`;
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
